@@ -115,7 +115,6 @@ const buildPrompt = (topic: string): string => {
   `;
 };
 
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -130,9 +129,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { topic } = req.body;
-
   if (!topic) {
-    return res.status(400).json({ error: 'Topic is required' });
+    return res.status(400).json({ error: 'Topic is required for analysis' });
   }
   
   const apiKey = process.env.API_KEY;
@@ -142,6 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   
   try {
     const ai = new GoogleGenAI({ apiKey });
+    
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: buildPrompt(topic),
@@ -153,16 +152,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const jsonText = response.text?.trim();
     if (!jsonText) {
-      throw new Error("Received an empty response from the AI model.");
+      throw new Error("Received an empty response from the AI model for analysis.");
     }
     
-    const cleanedJsonText = jsonText.replace(/^```json\s*|```$/g, '');
-    const result = JSON.parse(cleanedJsonText);
-    
+    const result = JSON.parse(jsonText);
     return res.status(200).json(result);
 
   } catch (error) {
     console.error('Error calling Gemini API:', error);
-    return res.status(500).json({ error: `Failed to get analysis from Gemini. Reason: ${error.message}` });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return res.status(500).json({ error: `Failed to get data from Gemini. Reason: ${errorMessage}` });
   }
 }

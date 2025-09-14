@@ -2,80 +2,80 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { AnalysisReport } from '../types';
 
 const analysisSchema = {
-  type: Type.OBJECT,
-  properties: {
-    summary: {
-      type: Type.STRING,
-      description: "关于核心事件或主题的1-3句话摘要。",
-    },
-    analysis: {
-      type: Type.OBJECT,
-      properties: {
-        macroPolicy: {
-          type: Type.STRING,
-          description: "分析该事件与当前宏观经济环境和相关政策的关联。",
-        },
-        industryChain: {
-          type: Type.STRING,
-          description: "分析对相关行业及其产业链（上游、中游、下游）的传导效应。",
-        },
-        companyFundamentals: {
-          type: Type.STRING,
-          description: "分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响。",
-        },
-        marketSentiment: {
-          type: Type.STRING,
-          description: "评估该事件在资本市场的关注度、可能引发的市场情绪以及其作为股价催化剂的潜力。",
-        },
+    type: Type.OBJECT,
+    properties: {
+      summary: {
+        type: Type.STRING,
+        description: "关于核心事件或主题的1-3句话摘要。",
       },
-      required: ["macroPolicy", "industryChain", "companyFundamentals", "marketSentiment"],
-    },
-    investmentStrategy: {
-      type: Type.OBJECT,
-      properties: {
-        logic: {
-          type: Type.STRING,
-          description: "基于四维一体分析凝练出的核心投资逻辑。",
-        },
-        suggestion: {
-          type: Type.STRING,
-          description: "策略建议，例如是短期交易型机会还是长期价值布局。",
-        },
-        risks: {
-          type: Type.STRING,
-          description: "明确提示可能面临的潜在风险（政策风险、技术风险、市场竞争风险等）。",
-        },
-      },
-      required: ["logic", "suggestion", "risks"],
-    },
-    recommendedStocks: {
-      type: Type.ARRAY,
-      items: {
+      analysis: {
         type: Type.OBJECT,
         properties: {
-          name: { type: Type.STRING, description: "公司名称" },
-          ticker: { type: Type.STRING, description: "股票代码" },
-          market: {
+          macroPolicy: {
             type: Type.STRING,
-            enum: ["A-Share", "Hong Kong", "US", "Other"],
-            description: "所属市场（A-Share, Hong Kong, US, Other）",
+            description: "分析该事件与当前宏观经济环境和相关政策的关联。",
           },
-          reason: {
+          industryChain: {
             type: Type.STRING,
-            description: "一句话概括的推荐理由，需关联分析结论。",
+            description: "分析对相关行业及其产业链（上游、中游、下游）的传导效应。",
           },
-          relevance: {
+          companyFundamentals: {
             type: Type.STRING,
-            enum: ["High", "Medium", "Low"],
-            description: "与分析事件的关联度（高/中/低）。",
+            description: "分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响。",
+          },
+          marketSentiment: {
+            type: Type.STRING,
+            description: "评估该事件在资本市场的关注度、可能引发的市场情绪以及其作为股价催化剂的潜力。",
           },
         },
-        required: ["name", "ticker", "market", "reason", "relevance"],
+        required: ["macroPolicy", "industryChain", "companyFundamentals", "marketSentiment"],
+      },
+      investmentStrategy: {
+        type: Type.OBJECT,
+        properties: {
+          logic: {
+            type: Type.STRING,
+            description: "基于四维一体分析凝练出的核心投资逻辑。",
+          },
+          suggestion: {
+            type: Type.STRING,
+            description: "策略建议，例如是短期交易型机会还是长期价值布局。",
+          },
+          risks: {
+            type: Type.STRING,
+            description: "明确提示可能面临的潜在风险（政策风险、技术风险、市场竞争风险等）。",
+          },
+        },
+        required: ["logic", "suggestion", "risks"],
+      },
+      recommendedStocks: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING, description: "公司名称" },
+            ticker: { type: Type.STRING, description: "股票代码" },
+            market: {
+              type: Type.STRING,
+              enum: ["A-Share", "Hong Kong", "US", "Other"],
+              description: "所属市场（A-Share, Hong Kong, US, Other）",
+            },
+            reason: {
+              type: Type.STRING,
+              description: "一句话概括的推荐理由，需关联分析结论。",
+            },
+            relevance: {
+              type: Type.STRING,
+              enum: ["High", "Medium", "Low"],
+              description: "与分析事件的关联度（高/中/低）。",
+            },
+          },
+          required: ["name", "ticker", "market", "reason", "relevance"],
+        },
       },
     },
-  },
-  required: ["summary", "analysis", "investmentStrategy", "recommendedStocks"],
-};
+    required: ["summary", "analysis", "investmentStrategy", "recommendedStocks"],
+  };
 
 const buildPrompt = (topic: string): string => {
   return `
@@ -96,70 +96,33 @@ const buildPrompt = (topic: string): string => {
   `;
 };
 
-
 export const getAnalysis = async (topic: string, apiKey: string, model: string): Promise<AnalysisReport> => {
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: buildPrompt(topic),
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: analysisSchema,
-      },
-    });
-
-    const jsonText = response.text?.trim();
-    if (!jsonText) {
-      throw new Error("模型返回了空的回应。");
+    if (!apiKey) {
+      throw new Error("API key is not provided.");
     }
     
-    // The response is already a JSON string due to the schema, no need to strip markdown
-    const result: AnalysisReport = JSON.parse(jsonText);
-    return result;
-
-  } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    // Provide a more user-friendly error message
-    if (error.message.includes('API key not valid')) {
-        throw new Error('提供的 API 密钥无效，请检查。');
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const response = await ai.models.generateContent({
+        model: model,
+        contents: buildPrompt(topic),
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: analysisSchema,
+        },
+      });
+  
+      const jsonText = response.text?.trim();
+      if (!jsonText) {
+        throw new Error("Received an empty response from the AI model.");
+      }
+      
+      return JSON.parse(jsonText) as AnalysisReport;
+  
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      throw new Error(`Failed to get analysis from Gemini. Reason: ${errorMessage}`);
     }
-    throw new Error(error.message || '调用 Gemini API 时发生未知错误。');
-  }
-};
-
-const buildSummaryPrompt = (content: string): string => {
-  return `请为以下新闻内容生成一个非常简洁的、不超过 50 字的摘要。直接返回摘要文本，不要添加任何额外的前缀、标签或 markdown 格式。\n\n新闻内容：\n---\n${content}\n---`;
-};
-
-export const getSummary = async (content: string, apiKey: string, model: string): Promise<string> => {
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    // Use flash model for speed and cost-effectiveness on this simple task
-    const effectiveModel = model.includes('flash') ? model : 'gemini-2.5-flash';
-
-    const response = await ai.models.generateContent({
-      model: effectiveModel,
-      contents: buildSummaryPrompt(content),
-      config: {
-        maxOutputTokens: 100,
-        thinkingConfig: { thinkingBudget: 25 },
-      },
-    });
-
-    const summaryText = response.text?.trim();
-    if (!summaryText) {
-      throw new Error("模型返回了空的摘要。");
-    }
-
-    return summaryText;
-
-  } catch (error) {
-    console.error('Error calling Gemini API for summary:', error);
-    if (error.message.includes('API key not valid')) {
-        throw new Error('提供的 API 密钥无效，请检查。');
-    }
-    // Let the caller display a generic error.
-    throw new Error('Failed to generate summary.');
-  }
-};
+  };

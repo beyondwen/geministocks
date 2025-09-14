@@ -11,15 +11,15 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, initialApiKey, initialModel }) => {
   const [apiKey, setApiKey] = useState(initialApiKey);
-  const [model, setModel] = useState(initialModel);
+  const [selectedModel, setSelectedModel] = useState(initialModel);
 
   useEffect(() => {
     setApiKey(initialApiKey);
-    setModel(initialModel);
+    setSelectedModel(initialModel);
   }, [initialApiKey, initialModel, isOpen]);
 
   const handleSave = () => {
-    onSave(apiKey, model);
+    onSave(apiKey, selectedModel);
     onClose();
   };
 
@@ -73,18 +73,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, 
             </p>
           </div>
           <div>
-            <label htmlFor="model-select" className="block text-sm font-medium text-gray-700">
-              模型选择
-            </label>
-            <select
-              id="model-select"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
-            >
-              <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700">模型选择</label>
+            <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
+                <button
+                    onClick={() => setSelectedModel('gemini-2.5-flash')}
+                    className={`w-full rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedModel === 'gemini-2.5-flash'
+                            ? 'bg-white shadow-sm text-cyan-600'
+                            : 'text-gray-600 hover:bg-gray-200'
+                    }`}
+                    aria-pressed={selectedModel === 'gemini-2.5-flash'}
+                >
+                    Flash (更快)
+                </button>
+                <button
+                    onClick={() => setSelectedModel('gemini-2.5-pro')}
+                    className={`w-full rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedModel === 'gemini-2.5-pro'
+                            ? 'bg-white shadow-sm text-cyan-600'
+                            : 'text-gray-600 hover:bg-gray-200'
+                    }`}
+                    aria-pressed={selectedModel === 'gemini-2.5-pro'}
+                >
+                    Pro (更强)
+                </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Flash 模型响应速度更快，Pro 模型分析质量更高。
+            </p>
           </div>
         </div>
 
