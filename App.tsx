@@ -256,8 +256,6 @@ const App: React.FC = () => {
               onClear={handleClearHistory}
             />
 
-            <LatestNews onAnalyze={handleNewsSelect} />
-
             <AnalysisInput
               userInput={userInput}
               setUserInput={setUserInput}
@@ -274,6 +272,8 @@ const App: React.FC = () => {
             )}
 
             {analysisReport && <AnalysisResult report={analysisReport} userInput={userInput} />}
+            
+            <LatestNews onAnalyze={handleNewsSelect} />
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
