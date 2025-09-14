@@ -27,6 +27,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex justify-between items-center p-4 text-left focus:outline-none"
         aria-expanded={isExpanded}
+        aria-controls="history-content"
       >
         <div className="flex items-center">
           <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
@@ -35,6 +36,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
           <h2 className="text-xl font-semibold text-gray-800">分析历史 📜</h2>
         </div>
         <svg
+          aria-hidden="true"
           className={`h-6 w-6 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
@@ -45,7 +47,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
       </button>
 
       {isExpanded && (
-        <div className="px-4 pb-4 animate-fade-in">
+        <div id="history-content" className="px-4 pb-4 animate-fade-in">
           <div className="max-h-60 overflow-y-auto pr-2">
             <ul className="space-y-2">
               {history.map((entry) => (

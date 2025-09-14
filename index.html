@@ -5,19 +5,31 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>股市超级挖掘机 - Gemini 智能投策分析</title>
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#8B5CF6" />
+
     <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.11"
-  }
-}
-</script>
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
+          "react/": "https://aistudiocdn.com/react@^19.1.1/",
+          "react": "https://aistudiocdn.com/react@^19.1.1",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+          "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.11"
+        }
+      }
+    </script>
+    <style>
+      :focus-visible {
+        outline: 3px solid #6366F1; /* A distinct indigo color for high contrast */
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
   <body class="bg-gray-100 text-gray-900">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
