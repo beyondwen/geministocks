@@ -135,26 +135,94 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>('');
   const [model, setModel] = useState<string>('gemini-2.5-flash');
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [pageViews, setPageViews] = useState<number>(0);
+  const [analysisCount, setAnalysisCount] = useState<number>(0);
+  const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
+  const [shareId, setShareId] = useState<string | null>(null);
+
+  const fetchReport = useCallback(async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    setAnalysisReport(null);
+    setShareId(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      const response = await fetch(`/api/reports?id=${id}`);
+      if (!response.ok) {
+        throw new Error('报告未找到或加载失败。');
+      }
+      const data = await response.json();
+      if (data.report && data.topic) {
+        setAnalysisReport(data.report);
+        setUserInput(data.topic);
+        setShareId(id);
+        // Clean URL after loading to prevent re-fetching on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        throw new Error('分享报告的格式无效。');
+      }
+    } catch (err) {
+      console.error("Failed to fetch shared report:", err);
+      const errorMessage = err instanceof Error ? `加载分享失败：${err.message} 😭` : '发生未知错误。🤯';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Load history and settings
+    // Load history and settings from localStorage
     try {
       const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory));
-      }
+      if (storedHistory) setHistory(JSON.parse(storedHistory));
       const storedApiKey = localStorage.getItem('gemini-api-key');
-      if (storedApiKey) {
-        setApiKey(storedApiKey);
-      }
+      if (storedApiKey) setApiKey(storedApiKey);
       const storedModel = localStorage.getItem('gemini-model');
-      if (storedModel) {
-        setModel(storedModel);
-      }
+      if (storedModel) setModel(storedModel);
     } catch (err) {
       console.error("Failed to load from localStorage", err);
     }
-  }, []);
+
+    // Check for a reportId in the URL to load a shared analysis
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportId = urlParams.get('reportId');
+    if (reportId) {
+      fetchReport(reportId);
+    }
+    
+    // Load and update local user statistics
+    try {
+      const currentViews = parseInt(localStorage.getItem('stats-page-views') || '0', 10) + 1;
+      localStorage.setItem('stats-page-views', currentViews.toString());
+      setPageViews(currentViews);
+      const currentAnalysisCount = parseInt(localStorage.getItem('stats-analysis-count') || '0', 10);
+      setAnalysisCount(currentAnalysisCount);
+    } catch (err) {
+      console.error("Failed to update stats in localStorage", err);
+    }
+
+    // Load and update global statistics
+    const updateAndFetchGlobalStats = async () => {
+      try {
+        const response = await fetch('/api/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'pageView' }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setGlobalStats({ 
+            pageViews: data.pageViews || 0, 
+            analysisCount: data.analysisCount || 0 
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch global stats", err);
+      }
+    };
+    updateAndFetchGlobalStats();
+  }, [fetchReport]);
 
   const handleSaveSettings = (newApiKey: string, newModel: string) => {
     setApiKey(newApiKey);
@@ -182,15 +250,53 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setAnalysisReport(null);
+    setShareId(null);
 
     try {
       const report = await getAnalysis(topic, apiKey, model);
       setAnalysisReport(report);
+      setIsLoading(false); // Set loading to false as soon as the report is fetched
+
+      // --- Post-analysis tasks (run in the background) ---
+
+      let currentShareId: string | undefined;
+      try {
+        const shareResponse = await fetch('/api/reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ report, topic }),
+        });
+        if (shareResponse.ok) {
+          const data = await shareResponse.json();
+          currentShareId = data.id;
+          setShareId(currentShareId);
+        }
+      } catch (err) {
+        console.warn("Could not save report for sharing.", err);
+      }
+
+      // Increment local analysis count on success
+      const newAnalysisCount = (parseInt(localStorage.getItem('stats-analysis-count') || '0', 10)) + 1;
+      localStorage.setItem('stats-analysis-count', newAnalysisCount.toString());
+      setAnalysisCount(newAnalysisCount);
+
+      // Increment global analysis count
+      try {
+        const statsResponse = await fetch('/api/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'analysis' }),
+        });
+        if (statsResponse.ok) setGlobalStats(await statsResponse.json());
+      } catch (err) {
+        console.error("Failed to update global analysis count", err);
+      }
 
       const newEntry: HistoryEntry = {
         id: Date.now(),
         topic: topic,
         report: report,
+        shareId: currentShareId,
       };
       const newHistory = [newEntry, ...history].slice(0, 20); // Limit history to 20 items
       updateHistory(newHistory);
@@ -199,8 +305,7 @@ const App: React.FC = () => {
       console.error(err);
       const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
       setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Ensure loading is stopped on error
     }
   }, [history, apiKey, model]);
 
@@ -213,6 +318,7 @@ const App: React.FC = () => {
   const handleSelectHistory = (entry: HistoryEntry) => {
     setUserInput(entry.topic);
     setAnalysisReport(entry.report);
+    setShareId(entry.shareId ?? null);
     setError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -271,15 +377,25 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {analysisReport && <AnalysisResult report={analysisReport} userInput={userInput} />}
+            {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} shareId={shareId} />}
             
             <LatestNews onAnalyze={handleNewsSelect} />
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mb-2">
               由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
             </p>
+            <div className="text-xs text-gray-400 space-y-1">
+                <p>
+                    您已访问本站 {pageViews} 次，共完成 {analysisCount} 次分析。
+                </p>
+                {(globalStats.pageViews > 0 || globalStats.analysisCount > 0) &&
+                <p>
+                    全站已累计访问 {globalStats.pageViews.toLocaleString()} 次，共完成 {globalStats.analysisCount.toLocaleString()} 次分析。
+                </p>
+                }
+            </div>
           </footer>
         </div>
       </div>

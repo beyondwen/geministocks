@@ -24,8 +24,20 @@ const analysisSchema = {
             description: "分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响。",
           },
           marketSentiment: {
-            type: Type.STRING,
+            type: Type.OBJECT,
             description: "评估该事件在资本市场的关注度、可能引发的市场情绪以及其作为股价催化剂的潜力。",
+            properties: {
+              sentiment: {
+                type: Type.STRING,
+                enum: ["Positive", "Neutral", "Negative"],
+                description: "对市场情绪的总体评估（正面、中性或负面）。"
+              },
+              description: {
+                type: Type.STRING,
+                description: "对市场情绪和催化剂潜力的详细文字分析。"
+              }
+            },
+            required: ["sentiment", "description"]
           },
         },
         required: ["macroPolicy", "industryChain", "companyFundamentals", "marketSentiment"],
@@ -85,7 +97,7 @@ const buildPrompt = (topic: string): string => {
     1.  宏观与政策面 (macroPolicy): 分析事件与宏观经济环境（如利率、通胀）和相关政策的关联。
     2.  行业与产业链 (industryChain): 分析对核心行业及其产业链（上游、中游、下游）的影响。
     3.  公司基本面 (companyFundamentals): 分析对核心公司的财务、技术和市场地位的潜在影响。
-    4.  市场情绪与催化剂 (marketSentiment): 评估事件的市场关注度、情绪以及成为股价催化剂的潜力。
+    4.  市场情绪与催化剂 (marketSentiment): 评估事件的市场关注度、情绪以及成为股价催化剂的潜力。请提供一个总体情绪评估（'Positive', 'Neutral', 'Negative'）和详细的文字描述。
 
     这是需要分析的文本：
     ---

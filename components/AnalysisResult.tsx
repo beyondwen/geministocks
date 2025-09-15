@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import type { AnalysisReport, StockTicker } from '../types';
-import { DownloadIcon } from './icons/Icons';
+import { DownloadIcon, ShareIcon } from './icons/Icons';
 import StockRelevanceChart from './StockRelevanceChart';
 
 // Helper component for highlighting text. It wraps keywords in a styled <mark> tag.
@@ -30,6 +30,34 @@ const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text,
       })}
     </>
   );
+};
+
+const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negative' }> = ({ sentiment }) => {
+    const sentimentConfig = {
+      Positive: {
+        label: '乐观',
+        color: 'text-green-800 bg-green-100',
+        icon: '😊',
+      },
+      Neutral: {
+        label: '中性',
+        color: 'text-yellow-800 bg-yellow-100',
+        icon: '😐',
+      },
+      Negative: {
+        label: '悲观',
+        color: 'text-red-800 bg-red-100',
+        icon: '😟',
+      },
+    };
+  
+    const config = sentimentConfig[sentiment] || sentimentConfig.Neutral;
+  
+    return (
+      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${config.color}`}>
+        {config.icon} <span className="ml-1.5">{config.label}</span>
+      </div>
+    );
 };
 
 const InfoCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -79,12 +107,14 @@ const StockTable: React.FC<{ stocks: StockTicker[], keywords: string[] }> = ({ s
 interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
+  shareId: string | null;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, shareId }) => {
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState<string>('');
 
   const keywords = useMemo(() => {
     if (!report || !userInput) return [];
@@ -131,9 +161,40 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
       });
   }, [report]);
 
+  const handleShare = useCallback(() => {
+    if (!shareId) return;
+
+    const shareUrl = `${window.location.origin}${window.location.pathname}?reportId=${shareId}`;
+    navigator.clipboard.writeText(shareUrl).then(
+      () => {
+        setCopySuccess('链接已复制！');
+        setTimeout(() => setCopySuccess(''), 2000);
+      },
+      (err) => {
+        console.error('Failed to copy share link:', err);
+        setCopySuccess('复制失败。');
+        setTimeout(() => setCopySuccess(''), 2000);
+      }
+    );
+  }, [shareId]);
+
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="flex justify-end">
+      <div className="relative flex justify-end gap-x-2">
+        {copySuccess && (
+          <div className="absolute right-0 -top-10 bg-gray-800 text-white text-sm py-1.5 px-3 rounded-lg shadow-lg animate-fade-in">
+            {copySuccess}
+          </div>
+        )}
+        <button
+          onClick={handleShare}
+          disabled={!shareId}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="分享报告"
+        >
+          <ShareIcon className="-ml-1 mr-2 h-5 w-5" />
+          分享
+        </button>
         <button
           onClick={handleExport}
           disabled={isExporting}
@@ -167,7 +228,15 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
             <p><strong>宏观与政策面：</strong> <HighlightedText text={report.analysis.macroPolicy} keywords={keywords} /></p>
             <p><strong>行业与产业链：</strong> <HighlightedText text={report.analysis.industryChain} keywords={keywords} /></p>
             <p><strong>公司基本面：</strong> <HighlightedText text={report.analysis.companyFundamentals} keywords={keywords} /></p>
-            <p><strong>市场情绪与催化剂：</strong> <HighlightedText text={report.analysis.marketSentiment} keywords={keywords} /></p>
+            <div>
+              <div className="flex items-center mb-1">
+                  <strong className="mr-2">市场情绪与催化剂：</strong>
+                  <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
+              </div>
+              <p className="pl-1">
+                  <HighlightedText text={report.analysis.marketSentiment.description} keywords={keywords} />
+              </p>
+            </div>
           </InfoCard>
     
           <InfoCard title="投资策略与风险提示 💡">
