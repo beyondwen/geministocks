@@ -1,4 +1,7 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
+import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { getAnalysis } from './services/geminiService';
 import type { AnalysisReport, HistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
@@ -7,10 +10,30 @@ import Loader from './components/Loader';
 import AnalysisHistory from './components/AnalysisHistory';
 import { NewspaperIcon, SparklesIcon, SettingsIcon } from './components/icons/Icons';
 import SettingsModal from './components/ApiKeySetup';
+import AboutPage from './components/AboutPage';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
+const NEWS_SOURCE_STORAGE_KEY = 'gemini-news-source';
 
-// --- Helper & News Component ---
+// --- Data & Types ---
+interface NewsArticle {
+  title: string;
+  link: string;
+  description: string;
+}
+
+interface NewsSource {
+  id: string;
+  name: string;
+  url: string;
+}
+
+const NEWS_SOURCES: NewsSource[] = [
+  { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
+  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
+];
+
+// --- Helper Components ---
 
 const stripHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -20,12 +43,6 @@ const stripHtml = (html: string) => {
 const truncateText = (text: string, length: number) => {
   return text.length > length ? text.substring(0, length) + '...' : text;
 };
-
-interface NewsArticle {
-  title: string;
-  link: string;
-  description: string;
-}
 
 const NewsSkeleton: React.FC = () => (
     <div className="space-y-4">
@@ -43,19 +60,33 @@ const NewsSkeleton: React.FC = () => (
     </div>
 );
 
-const LatestNews: React.FC<{
+// --- Enhanced LatestNews Component ---
+interface LatestNewsProps {
   onAnalyze: (topic: string) => void;
-}> = ({ onAnalyze }) => {
+  sources: NewsSource[];
+  selectedSourceId: string;
+  onSourceChange: (sourceId: string) => void;
+}
+
+const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSourceId, onSourceChange }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNews = async () => {
+      const source = sources.find(s => s.id === selectedSourceId);
+      if (!source) {
+        setError("无效的新闻源。");
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
-      // Using Solidot RSS feed via a CORS-friendly proxy.
-      const RSS_URL = "https://www.solidot.org/index.rss";
+      setArticles([]); // Clear old articles for better user feedback
+
+      const RSS_URL = source.url;
       const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`;
 
       try {
@@ -85,16 +116,34 @@ const LatestNews: React.FC<{
     };
 
     fetchNews();
-  }, []);
+  }, [selectedSourceId, sources]);
 
   return (
     <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
-      <div className="flex items-center mb-4">
-        <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
-            <NewspaperIcon className="h-6 w-6"/>
-        </span>
-        <h2 className="text-xl font-semibold text-gray-800">奇客 Solidot <span className="text-sm font-normal text-gray-500">(源: solidot.org)</span></h2>
-      </div>
+        <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+                <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
+                    <NewspaperIcon className="h-6 w-6"/>
+                </span>
+                <h2 className="text-xl font-semibold text-gray-800">最新动态</h2>
+            </div>
+            <div className="relative">
+                <select
+                    id="news-source-select"
+                    value={selectedSourceId}
+                    onChange={(e) => onSourceChange(e.target.value)}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full pl-3 pr-8 py-2 appearance-none transition"
+                    aria-label="选择新闻源"
+                >
+                    {sources.map(source => (
+                        <option key={source.id} value={source.id}>{source.name}</option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+            </div>
+        </div>
       {isLoading ? (
         <NewsSkeleton />
       ) : error ? (
@@ -126,7 +175,7 @@ const LatestNews: React.FC<{
 };
 
 
-const App: React.FC = () => {
+const MainPage: React.FC = () => {
   const [userInput, setUserInput] = useState<string>('');
   const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -135,60 +184,30 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>('');
   const [model, setModel] = useState<string>('gemini-2.5-flash');
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState<boolean>(false);
   const [pageViews, setPageViews] = useState<number>(0);
   const [analysisCount, setAnalysisCount] = useState<number>(0);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
-  const [shareId, setShareId] = useState<string | null>(null);
-
-  const fetchReport = useCallback(async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    setAnalysisReport(null);
-    setShareId(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    try {
-      const response = await fetch(`/api/reports?id=${id}`);
-      if (!response.ok) {
-        throw new Error('报告未找到或加载失败。');
-      }
-      const data = await response.json();
-      if (data.report && data.topic) {
-        setAnalysisReport(data.report);
-        setUserInput(data.topic);
-        setShareId(id);
-        // Clean URL after loading to prevent re-fetching on refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else {
-        throw new Error('分享报告的格式无效。');
-      }
-    } catch (err) {
-      console.error("Failed to fetch shared report:", err);
-      const errorMessage = err instanceof Error ? `加载分享失败：${err.message} 😭` : '发生未知错误。🤯';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
 
   useEffect(() => {
     // Load history and settings from localStorage
     try {
       const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (storedHistory) setHistory(JSON.parse(storedHistory));
+
       const storedApiKey = localStorage.getItem('gemini-api-key');
       if (storedApiKey) setApiKey(storedApiKey);
+      
       const storedModel = localStorage.getItem('gemini-model');
       if (storedModel) setModel(storedModel);
+
+      const storedSourceId = localStorage.getItem(NEWS_SOURCE_STORAGE_KEY);
+      if (storedSourceId && NEWS_SOURCES.some(s => s.id === storedSourceId)) {
+        setSelectedNewsSourceId(storedSourceId);
+      }
     } catch (err) {
       console.error("Failed to load from localStorage", err);
-    }
-
-    // Check for a reportId in the URL to load a shared analysis
-    const urlParams = new URLSearchParams(window.location.search);
-    const reportId = urlParams.get('reportId');
-    if (reportId) {
-      fetchReport(reportId);
     }
     
     // Load and update local user statistics
@@ -222,7 +241,7 @@ const App: React.FC = () => {
       }
     };
     updateAndFetchGlobalStats();
-  }, [fetchReport]);
+  }, []);
 
   const handleSaveSettings = (newApiKey: string, newModel: string) => {
     setApiKey(newApiKey);
@@ -235,10 +254,15 @@ const App: React.FC = () => {
     setHistory(newHistory);
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
   };
+  
+  const handleSourceChange = (sourceId: string) => {
+    setSelectedNewsSourceId(sourceId);
+    localStorage.setItem(NEWS_SOURCE_STORAGE_KEY, sourceId);
+  };
 
   const handleAnalyze = useCallback(async (topic: string) => {
     if (!apiKey) {
-      setError('请在设置中输入您的 Gemini API 密钥。');
+      setShowApiKeyWarning(true);
       setIsSettingsOpen(true);
       return;
     }
@@ -250,30 +274,11 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setAnalysisReport(null);
-    setShareId(null);
 
     try {
       const report = await getAnalysis(topic, apiKey, model);
       setAnalysisReport(report);
       setIsLoading(false); // Set loading to false as soon as the report is fetched
-
-      // --- Post-analysis tasks (run in the background) ---
-
-      let currentShareId: string | undefined;
-      try {
-        const shareResponse = await fetch('/api/reports', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ report, topic }),
-        });
-        if (shareResponse.ok) {
-          const data = await shareResponse.json();
-          currentShareId = data.id;
-          setShareId(currentShareId);
-        }
-      } catch (err) {
-        console.warn("Could not save report for sharing.", err);
-      }
 
       // Increment local analysis count on success
       const newAnalysisCount = (parseInt(localStorage.getItem('stats-analysis-count') || '0', 10)) + 1;
@@ -296,7 +301,6 @@ const App: React.FC = () => {
         id: Date.now(),
         topic: topic,
         report: report,
-        shareId: currentShareId,
       };
       const newHistory = [newEntry, ...history].slice(0, 20); // Limit history to 20 items
       updateHistory(newHistory);
@@ -318,7 +322,6 @@ const App: React.FC = () => {
   const handleSelectHistory = (entry: HistoryEntry) => {
     setUserInput(entry.topic);
     setAnalysisReport(entry.report);
-    setShareId(entry.shareId ?? null);
     setError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -377,22 +380,26 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} shareId={shareId} />}
+            {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
             
-            <LatestNews onAnalyze={handleNewsSelect} />
+            <LatestNews 
+              onAnalyze={handleNewsSelect} 
+              sources={NEWS_SOURCES}
+              selectedSourceId={selectedNewsSourceId}
+              onSourceChange={handleSourceChange}
+            />
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
             <p className="text-sm text-gray-500 mb-2">
-              由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
+              <Link to="/about" className="text-cyan-600 hover:underline">关于此应用</Link>
+              <span className="mx-2 text-gray-300">|</span>
+              <span>由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号</span>
             </p>
             <div className="text-xs text-gray-400 space-y-1">
+                {globalStats.pageViews > 0 &&
                 <p>
-                    您已访问本站 {pageViews} 次，共完成 {analysisCount} 次分析。
-                </p>
-                {(globalStats.pageViews > 0 || globalStats.analysisCount > 0) &&
-                <p>
-                    全站已累计访问 {globalStats.pageViews.toLocaleString()} 次，共完成 {globalStats.analysisCount.toLocaleString()} 次分析。
+                    历史累计访客数: {globalStats.pageViews.toLocaleString()}
                 </p>
                 }
             </div>
@@ -401,12 +408,27 @@ const App: React.FC = () => {
       </div>
       <SettingsModal
         isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={() => {
+          setIsSettingsOpen(false);
+          setShowApiKeyWarning(false);
+        }}
         onSave={handleSaveSettings}
         initialApiKey={apiKey}
         initialModel={model}
+        showApiKeyWarning={showApiKeyWarning}
       />
     </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/about" element={<AboutPage />} />
+      </Routes>
+    </HashRouter>
   );
 };
 

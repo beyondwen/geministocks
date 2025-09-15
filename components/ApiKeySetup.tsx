@@ -7,16 +7,25 @@ interface SettingsModalProps {
   onSave: (apiKey: string, model: string) => void;
   initialApiKey: string;
   initialModel: string;
+  showApiKeyWarning?: boolean;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, initialApiKey, initialModel }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, initialApiKey, initialModel, showApiKeyWarning }) => {
   const [apiKey, setApiKey] = useState(initialApiKey);
   const [selectedModel, setSelectedModel] = useState(initialModel);
+  const [isWarningVisible, setIsWarningVisible] = useState(false);
 
   useEffect(() => {
     setApiKey(initialApiKey);
     setSelectedModel(initialModel);
-  }, [initialApiKey, initialModel, isOpen]);
+    if (isOpen && showApiKeyWarning) {
+      setIsWarningVisible(true);
+    }
+    // Reset warning when modal is closed
+    if (!isOpen) {
+      setIsWarningVisible(false);
+    }
+  }, [initialApiKey, initialModel, isOpen, showApiKeyWarning]);
 
   const handleSave = () => {
     onSave(apiKey, selectedModel);
@@ -53,6 +62,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, 
         </div>
 
         <div className="space-y-6">
+          {isWarningVisible && (
+            <div role="alert" className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 rounded-md flex items-center justify-between text-sm animate-fade-in">
+              <p>请输入您的 API 密钥以开始分析。</p>
+              <button
+                onClick={() => setIsWarningVisible(false)}
+                className="ml-2 p-1 rounded-full text-yellow-600 hover:bg-yellow-200 transition-colors"
+                aria-label="关闭警告"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           <div>
             <label htmlFor="api-key" className="block text-sm font-medium text-gray-700">
               Gemini API 密钥

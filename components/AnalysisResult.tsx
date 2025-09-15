@@ -1,8 +1,9 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import type { AnalysisReport, StockTicker } from '../types';
-import { DownloadIcon, ShareIcon } from './icons/Icons';
+import { DownloadIcon } from './icons/Icons';
 import StockRelevanceChart from './StockRelevanceChart';
+import IndustryChainViz from './IndustryChainViz';
 
 // Helper component for highlighting text. It wraps keywords in a styled <mark> tag.
 const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text, keywords }) => {
@@ -63,7 +64,7 @@ const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negati
 const InfoCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200">
     <h3 className="text-2xl font-bold text-gray-800 mb-4">{title}</h3>
-    <div className="text-gray-700 space-y-2">{children}</div>
+    <div className="text-gray-700 space-y-4">{children}</div>
   </div>
 );
 
@@ -107,14 +108,12 @@ const StockTable: React.FC<{ stocks: StockTicker[], keywords: string[] }> = ({ s
 interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
-  shareId: string | null;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, shareId }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) => {
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [copySuccess, setCopySuccess] = useState<string>('');
 
   const keywords = useMemo(() => {
     if (!report || !userInput) return [];
@@ -161,40 +160,9 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, shar
       });
   }, [report]);
 
-  const handleShare = useCallback(() => {
-    if (!shareId) return;
-
-    const shareUrl = `${window.location.origin}${window.location.pathname}?reportId=${shareId}`;
-    navigator.clipboard.writeText(shareUrl).then(
-      () => {
-        setCopySuccess('链接已复制！');
-        setTimeout(() => setCopySuccess(''), 2000);
-      },
-      (err) => {
-        console.error('Failed to copy share link:', err);
-        setCopySuccess('复制失败。');
-        setTimeout(() => setCopySuccess(''), 2000);
-      }
-    );
-  }, [shareId]);
-
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="relative flex justify-end gap-x-2">
-        {copySuccess && (
-          <div className="absolute right-0 -top-10 bg-gray-800 text-white text-sm py-1.5 px-3 rounded-lg shadow-lg animate-fade-in">
-            {copySuccess}
-          </div>
-        )}
-        <button
-          onClick={handleShare}
-          disabled={!shareId}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="分享报告"
-        >
-          <ShareIcon className="-ml-1 mr-2 h-5 w-5" />
-          分享
-        </button>
         <button
           onClick={handleExport}
           disabled={isExporting}
@@ -225,9 +193,16 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, shar
           </div>
     
           <InfoCard title="四维一体立体化分析 🔬">
-            <p><strong>宏观与政策面：</strong> <HighlightedText text={report.analysis.macroPolicy} keywords={keywords} /></p>
-            <p><strong>行业与产业链：</strong> <HighlightedText text={report.analysis.industryChain} keywords={keywords} /></p>
-            <p><strong>公司基本面：</strong> <HighlightedText text={report.analysis.companyFundamentals} keywords={keywords} /></p>
+            <div><strong>宏观与政策面：</strong> <HighlightedText text={report.analysis.macroPolicy} keywords={keywords} /></div>
+            <div>
+                <strong>行业与产业链：</strong>
+                {typeof report.analysis.industryChain === 'object' && report.analysis.industryChain !== null ? (
+                    <IndustryChainViz chain={report.analysis.industryChain} />
+                ) : (
+                    <p className='inline'><HighlightedText text={report.analysis.industryChain as string} keywords={keywords} /></p>
+                )}
+            </div>
+            <div><strong>公司基本面：</strong> <HighlightedText text={report.analysis.companyFundamentals} keywords={keywords} /></div>
             <div>
               <div className="flex items-center mb-1">
                   <strong className="mr-2">市场情绪与催化剂：</strong>
@@ -240,9 +215,9 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, shar
           </InfoCard>
     
           <InfoCard title="投资策略与风险提示 💡">
-            <p><strong>核心投资逻辑：</strong> <HighlightedText text={report.investmentStrategy.logic} keywords={keywords} /></p>
-            <p><strong>操作建议：</strong> <HighlightedText text={report.investmentStrategy.suggestion} keywords={keywords} /></p>
-            <p><strong>风险提示：</strong> <HighlightedText text={report.investmentStrategy.risks} keywords={keywords} /></p>
+            <div><strong>核心投资逻辑：</strong> <HighlightedText text={report.investmentStrategy.logic} keywords={keywords} /></div>
+            <div><strong>操作建议：</strong> <HighlightedText text={report.investmentStrategy.suggestion} keywords={keywords} /></div>
+            <div><strong>风险提示：</strong> <HighlightedText text={report.investmentStrategy.risks} keywords={keywords} /></div>
           </InfoCard>
     
           <InfoCard title="相关标的推荐 🎯">

@@ -1,4 +1,5 @@
 
+
 export interface StockTicker {
   name: string;
   ticker: string;
@@ -12,11 +13,22 @@ export interface MarketSentiment {
   description: string;
 }
 
+export interface IndustryChainNode {
+  name: string;
+  description: string;
+}
+
+export interface IndustryChain {
+  upstream: IndustryChainNode[];
+  midstream: IndustryChainNode[];
+  downstream: IndustryChainNode[];
+}
+
 export interface AnalysisReport {
   summary: string;
   analysis: {
     macroPolicy: string;
-    industryChain: string;
+    industryChain: IndustryChain | string;
     companyFundamentals: string;
     marketSentiment: MarketSentiment;
   };
@@ -32,5 +44,4 @@ export interface HistoryEntry {
   id: number;
   topic: string;
   report: AnalysisReport;
-  shareId?: string;
 }

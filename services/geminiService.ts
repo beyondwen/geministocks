@@ -16,8 +16,47 @@ const analysisSchema = {
             description: "分析该事件与当前宏观经济环境和相关政策的关联。",
           },
           industryChain: {
-            type: Type.STRING,
-            description: "分析对相关行业及其产业链（上游、中游、下游）的传导效应。",
+            type: Type.OBJECT,
+            description: "分析对相关行业及其产业链（上游、中游、下游）的传导效应。每个环节应列出关键组成部分及其描述。",
+            properties: {
+                upstream: {
+                    type: Type.ARRAY,
+                    description: "产业链上游，提供原材料或初级产品的环节。",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            name: { type: Type.STRING, description: "上游环节/组件的名称" },
+                            description: { type: Type.STRING, description: "对该环节/组件的简要描述" },
+                        },
+                        required: ["name", "description"]
+                    }
+                },
+                midstream: {
+                    type: Type.ARRAY,
+                    description: "产业链中游，进行加工、制造或组装的环节。",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            name: { type: Type.STRING, description: "中游环节/组件的名称" },
+                            description: { type: Type.STRING, description: "对该环节/组件的简要描述" },
+                        },
+                        required: ["name", "description"]
+                    }
+                },
+                downstream: {
+                    type: Type.ARRAY,
+                    description: "产业链下游，面向终端市场和消费者的环节。",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            name: { type: Type.STRING, description: "下游环节/组件的名称" },
+                            description: { type: Type.STRING, description: "对该环节/组件的简要描述" },
+                        },
+                        required: ["name", "description"]
+                    }
+                }
+            },
+            required: ["upstream", "midstream", "downstream"]
           },
           companyFundamentals: {
             type: Type.STRING,
@@ -95,7 +134,7 @@ const buildPrompt = (topic: string): string => {
 
     “四维一体立体化挖掘法”包含以下四个维度：
     1.  宏观与政策面 (macroPolicy): 分析事件与宏观经济环境（如利率、通胀）和相关政策的关联。
-    2.  行业与产业链 (industryChain): 分析对核心行业及其产业链（上游、中游、下游）的影响。
+    2.  行业与产业链 (industryChain): 分析对核心行业及其产业链（上游、中游、下游）的影响。请为每个环节提供关键组成部分及其描述。
     3.  公司基本面 (companyFundamentals): 分析对核心公司的财务、技术和市场地位的潜在影响。
     4.  市场情绪与催化剂 (marketSentiment): 评估事件的市场关注度、情绪以及成为股价催化剂的潜力。请提供一个总体情绪评估（'Positive', 'Neutral', 'Negative'）和详细的文字描述。
 
