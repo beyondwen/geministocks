@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import type { AnalysisReport, StockTicker } from '../types';
 import { DownloadIcon } from './icons/Icons';
-import StockRelevanceChart from './StockRelevanceChart';
+import StockRecommendations from './StockRelevanceChart';
 import IndustryChainViz from './IndustryChainViz';
 
 // Helper component for highlighting text. It wraps keywords in a styled <mark> tag.
@@ -65,43 +65,6 @@ const InfoCard: React.FC<{ title: string; children: React.ReactNode }> = ({ titl
   <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200">
     <h3 className="text-2xl font-bold text-gray-800 mb-4">{title}</h3>
     <div className="text-gray-700 space-y-4">{children}</div>
-  </div>
-);
-
-const StockTable: React.FC<{ stocks: StockTicker[], keywords: string[] }> = ({ stocks, keywords }) => (
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm text-left text-gray-600">
-      <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-        <tr>
-          <th scope="col" className="px-4 py-3">名称</th>
-          <th scope="col" className="px-4 py-3">代码</th>
-          <th scope="col" className="px-4 py-3">市场</th>
-          <th scope="col" className="px-4 py-3">推荐理由</th>
-          <th scope="col" className="px-4 py-3">关联度</th>
-        </tr>
-      </thead>
-      <tbody>
-        {stocks.map((stock, index) => (
-          <tr key={index} className="bg-white border-b hover:bg-gray-50">
-            <td className="px-4 py-3 font-medium text-gray-900">{stock.name}</td>
-            <td className="px-4 py-3">{stock.ticker}</td>
-            <td className="px-4 py-3">{stock.market}</td>
-            <td className="px-4 py-3">
-              <HighlightedText text={stock.reason} keywords={keywords} />
-            </td>
-            <td className="px-4 py-3">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                stock.relevance === 'High' ? 'bg-green-100 text-green-800' :
-                stock.relevance === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {stock.relevance}
-              </span>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   </div>
 );
 
@@ -222,16 +185,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
     
           <InfoCard title="相关标的推荐 🎯">
             {report.recommendedStocks && report.recommendedStocks.length > 0 ? (
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-700 mb-3">关联度可视化</h4>
-                  <StockRelevanceChart stocks={report.recommendedStocks} />
-                </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-700 mb-3">详细列表</h4>
-                  <StockTable stocks={report.recommendedStocks} keywords={keywords} />
-                </div>
-              </div>
+              <StockRecommendations stocks={report.recommendedStocks} keywords={keywords} />
             ) : (
               <p className="text-gray-500">未找到相关的股票标的。</p>
             )}

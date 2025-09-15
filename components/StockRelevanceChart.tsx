@@ -1,93 +1,91 @@
-import React, { useMemo } from 'react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
+import React from 'react';
 import type { StockTicker } from '../types';
 
-interface StockRelevanceChartProps {
-  stocks: StockTicker[];
-}
+// Helper component for highlighting text.
+const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text, keywords }) => {
+  if (!keywords || keywords.length === 0 || !text) {
+    return <>{text}</>;
+  }
 
-const relevanceMap: { [key in 'High' | 'Medium' | 'Low']: number } = {
-  'High': 3,
-  'Medium': 2,
-  'Low': 1,
-};
-
-const relevanceLabels: { [key: number]: string } = {
-  1: 'Low',
-  2: 'Medium',
-  3: 'High',
-};
-
-const relevanceColors: { [key: number]: string } = {
-    3: '#10B981', // green-500
-    2: '#F59E0B', // amber-500
-    1: '#EF4444', // red-500
-};
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const relevanceValue = payload[0].value;
-      return (
-        <div className="bg-white p-2 border border-gray-300 rounded shadow-lg">
-          <p className="font-bold">{`股票代码: ${label}`}</p>
-          <p style={{ color: relevanceColors[relevanceValue] }}>
-            {`关联度: ${relevanceLabels[relevanceValue]}`}
-          </p>
-        </div>
-      );
-    }
-    return null;
-};
-
-const StockRelevanceChart: React.FC<StockRelevanceChartProps> = ({ stocks }) => {
-  const chartData = useMemo(() => {
-    return stocks.map(stock => ({
-      name: stock.ticker,
-      relevance: relevanceMap[stock.relevance],
-    }));
-  }, [stocks]);
+  const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${keywords.map(escapeRegExp).join('|')})`, 'gi');
+  const parts = text.split(regex);
 
   return (
-    <div style={{ width: '100%', height: 300 }}>
-        <ResponsiveContainer>
-            <BarChart
-            data={chartData}
-            margin={{
-                top: 5,
-                right: 20,
-                left: -10,
-                bottom: 5,
-            }}
-            >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-            <YAxis
-                axisLine={false}
-                tickLine={false}
-                domain={[0, 3]}
-                ticks={[1, 2, 3]}
-                tickFormatter={(value) => relevanceLabels[value] || ''}
-                tick={{ fontSize: 12 }}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(239, 246, 255, 0.5)'}}/>
-            <Bar dataKey="relevance">
-                {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={relevanceColors[entry.relevance]} />
-                ))}
-            </Bar>
-            </BarChart>
-        </ResponsiveContainer>
+    <>
+      {parts.map((part, index) => {
+        const isKeyword = keywords.some(keyword => keyword.toLowerCase() === part.toLowerCase());
+        if (isKeyword) {
+          return (
+            <mark key={index} className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
+              {part}
+            </mark>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+};
+
+const StockCard: React.FC<{ stock: StockTicker; keywords: string[] }> = ({ stock, keywords }) => {
+  const relevanceConfig = {
+    High: {
+      label: '高',
+      borderColor: 'border-green-500',
+      bgColor: 'bg-green-100',
+      textColor: 'text-green-800'
+    },
+    Medium: {
+      label: '中',
+      borderColor: 'border-yellow-500',
+      bgColor: 'bg-yellow-100',
+      textColor: 'text-yellow-800'
+    },
+    Low: {
+      label: '低',
+      borderColor: 'border-red-500',
+      bgColor: 'bg-red-100',
+      textColor: 'text-red-800'
+    },
+  };
+
+  const config = relevanceConfig[stock.relevance] || relevanceConfig.Medium;
+
+  return (
+    <div className={`bg-white rounded-lg shadow-sm border-l-4 ${config.borderColor} p-4 flex flex-col justify-between transition-shadow hover:shadow-lg h-full`}>
+      <div>
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h5 className="font-bold text-gray-800 pr-2">{stock.name}</h5>
+            <p className="text-xs text-gray-500 font-mono">{stock.ticker} ({stock.market})</p>
+          </div>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.bgColor} ${config.textColor} flex-shrink-0`}>
+            关联度: {config.label}
+          </span>
+        </div>
+        <p className="text-sm text-gray-700 leading-relaxed">
+          <HighlightedText text={stock.reason} keywords={keywords} />
+        </p>
+      </div>
     </div>
   );
 };
 
-export default StockRelevanceChart;
+
+interface StockRecommendationsProps {
+  stocks: StockTicker[];
+  keywords: string[];
+}
+
+const StockRecommendations: React.FC<StockRecommendationsProps> = ({ stocks, keywords }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {stocks.map((stock, index) => (
+            <StockCard key={index} stock={stock} keywords={keywords} />
+        ))}
+    </div>
+  );
+};
+
+export default StockRecommendations;
