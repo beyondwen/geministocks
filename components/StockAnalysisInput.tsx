@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface StockAnalysisInputProps {
+  stockQuery: string;
+  setStockQuery: (query: string) => void;
   onAnalyze: (stockQuery: string) => void;
   isLoading: boolean;
 }
 
-const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ onAnalyze, isLoading }) => {
-  const [stockQuery, setStockQuery] = useState('');
-
+const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAnalyze(stockQuery);

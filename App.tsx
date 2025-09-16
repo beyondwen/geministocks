@@ -8,6 +8,7 @@ import StockAnalysisInput from './components/StockAnalysisInput';
 import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
 import AnalysisHistory from './components/AnalysisHistory';
+import HotStocks from './components/HotStocks';
 import { NewspaperIcon, SparklesIcon, SettingsIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
 import SettingsModal from './components/ApiKeySetup';
 import AboutPage from './components/AboutPage';
@@ -184,6 +185,7 @@ const MainPage: React.FC = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   
   // State for Stock Analysis
+  const [stockQuery, setStockQuery] = useState<string>('');
   const [stockAnalysisReport, setStockAnalysisReport] = useState<StockAnalysisReport | null>(null);
   const [isStockLoading, setIsStockLoading] = useState<boolean>(false);
   const [stockError, setStockError] = useState<string | null>(null);
@@ -309,13 +311,13 @@ const MainPage: React.FC = () => {
     }
   }, [history, apiKey, model]);
 
-  const handleStockAnalyze = useCallback(async (stockQuery: string) => {
+  const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!apiKey) {
       setShowApiKeyWarning(true);
       setIsSettingsOpen(true);
       return;
     }
-    if (!stockQuery.trim()) {
+    if (!stockQueryToAnalyze.trim()) {
       setStockError('股票代码或名称为必填项。');
       return;
     }
@@ -328,7 +330,7 @@ const MainPage: React.FC = () => {
     setError(null);
 
     try {
-      const report = await getStockAnalysis(stockQuery, apiKey, model);
+      const report = await getStockAnalysis(stockQueryToAnalyze, apiKey, model);
       setStockAnalysisReport(report);
       incrementAnalysisCount();
     } catch (err) {
@@ -345,6 +347,12 @@ const MainPage: React.FC = () => {
     setUserInput(newsTopic);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     handleAnalyze(newsTopic);
+  };
+  
+  const handleHotStockSelect = (query: string) => {
+    setStockQuery(query);
+    handleStockAnalyze(query);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSelectHistory = (entry: HistoryEntry) => {
@@ -422,7 +430,14 @@ const MainPage: React.FC = () => {
             <div className="space-y-8">
                 {activeTab === 'stock' && (
                     <div className="space-y-8 animate-fade-in" role="tabpanel">
-                        <StockAnalysisInput onAnalyze={handleStockAnalyze} isLoading={isStockLoading} />
+                        <StockAnalysisInput
+                          stockQuery={stockQuery}
+                          setStockQuery={setStockQuery}
+                          onAnalyze={handleStockAnalyze}
+                          isLoading={isStockLoading}
+                        />
+
+                        <HotStocks onSelect={handleHotStockSelect} />
                         
                         {isStockLoading && <Loader />}
             
