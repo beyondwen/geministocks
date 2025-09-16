@@ -1,5 +1,6 @@
 import React from 'react';
 import type { StockTicker } from '../types';
+import { ExternalLinkIcon } from './icons/Icons';
 
 // Helper component for highlighting text.
 const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text, keywords }) => {
@@ -28,6 +29,22 @@ const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text,
   );
 };
 
+const generateStockLink = (stock: StockTicker): string => {
+    const { ticker, market } = stock;
+    switch (market) {
+      case 'A-Share':
+        const prefix = ticker.startsWith('6') ? 'sh' : 'sz';
+        return `https://quote.eastmoney.com/${prefix}${ticker}.html`;
+      case 'Hong Kong':
+        return `https://www.google.com/finance/quote/${ticker}:HKG`;
+      case 'US':
+        return `https://www.google.com/finance/quote/${ticker}`;
+      case 'Other':
+      default:
+        return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
+    }
+};
+
 const StockCard: React.FC<{ stock: StockTicker; keywords: string[] }> = ({ stock, keywords }) => {
   const relevanceConfig = {
     High: {
@@ -51,13 +68,20 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[] }> = ({ stock
   };
 
   const config = relevanceConfig[stock.relevance] || relevanceConfig.Medium;
+  const link = generateStockLink(stock);
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border-l-4 ${config.borderColor} p-4 flex flex-col justify-between transition-shadow hover:shadow-lg h-full`}>
+    <a 
+      href={link} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className={`group bg-white rounded-lg shadow-sm border-l-4 ${config.borderColor} p-4 flex flex-col justify-between transition-shadow hover:shadow-lg h-full`}
+      aria-label={`View details for ${stock.name}`}
+    >
       <div>
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h5 className="font-bold text-gray-800 pr-2">{stock.name}</h5>
+            <h5 className="font-bold text-gray-800 pr-2 group-hover:text-cyan-600 transition-colors">{stock.name}</h5>
             <p className="text-xs text-gray-500 font-mono">{stock.ticker} ({stock.market})</p>
           </div>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.bgColor} ${config.textColor} flex-shrink-0`}>
@@ -68,7 +92,12 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[] }> = ({ stock
           <HighlightedText text={stock.reason} keywords={keywords} />
         </p>
       </div>
-    </div>
+      <div className="mt-3 flex items-center justify-end text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity"
+           aria-hidden="true">
+        <span className="text-xs font-semibold">查看详情</span>
+        <ExternalLinkIcon className="h-3.5 w-3.5 ml-1" />
+      </div>
+    </a>
   );
 };
 

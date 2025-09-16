@@ -341,7 +341,7 @@ const MainPage: React.FC = () => {
         <div className="w-full max-w-4xl mx-auto">
           <header className="text-center mb-8 relative">
             <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-              股市超级挖掘机 📈
+              股市超级挖掘机
             </h1>
             <p className="text-gray-600 mt-2">
               利用 Gemini 模型进行多维度投资分析 🚀

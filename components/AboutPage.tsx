@@ -9,7 +9,7 @@ const AboutPage: React.FC = () => {
         
         <header className="text-center border-b pb-6">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-            关于 股市超级挖掘机 📈
+            关于 股市超级挖掘机
           </h1>
           <p className="text-gray-600 mt-2">
             您的智能投资研究助手
