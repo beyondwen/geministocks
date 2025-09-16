@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { AnalysisReport } from '../types';
+import type { AnalysisReport, StockAnalysisReport } from '../types';
 
 const analysisSchema = {
     type: Type.OBJECT,
@@ -175,5 +175,120 @@ export const getAnalysis = async (topic: string, apiKey: string, model: string):
       console.error('Error calling Gemini API:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       throw new Error(`Failed to get analysis from Gemini. Reason: ${errorMessage}`);
+    }
+  };
+
+// --- New Service for Stock Analysis ---
+
+const stockAnalysisSchema = {
+  type: Type.OBJECT,
+  properties: {
+    companyProfile: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: "公司全名" },
+        ticker: { type: Type.STRING, description: "股票代码" },
+        exchange: { type: Type.STRING, description: "上市交易所" },
+        sector: { type: Type.STRING, description: "所属行业板块" },
+        industry: { type: Type.STRING, description: "所属具体行业" },
+        summary: { type: Type.STRING, description: "公司业务简介" },
+      },
+      required: ["name", "ticker", "exchange", "sector", "industry", "summary"]
+    },
+    financialSummary: {
+      type: Type.OBJECT,
+      properties: {
+        period: { type: Type.STRING, description: "财报周期，例如 '最近财年' 或 '最新季度'" },
+        highlights: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              metric: { type: Type.STRING, description: "财务指标名称，如 '营收', '净利润', '市盈率(PE)'" },
+              value: { type: Type.STRING, description: "指标数值" },
+              comment: { type: Type.STRING, description: "对该指标的简要解读" },
+            },
+            required: ["metric", "value", "comment"]
+          }
+        }
+      },
+      required: ["period", "highlights"]
+    },
+    swotAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "优势 (Strengths)" },
+        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "劣势 (Weaknesses)" },
+        opportunities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "机会 (Opportunities)" },
+        threats: { type: Type.ARRAY, items: { type: Type.STRING }, description: "威胁 (Threats)" },
+      },
+      required: ["strengths", "weaknesses", "opportunities", "threats"]
+    },
+    investmentThesis: {
+      type: Type.OBJECT,
+      properties: {
+        bull: { type: Type.STRING, description: "看涨理由 (Bull Case)" },
+        bear: { type: Type.STRING, description: "看跌理由 (Bear Case)" },
+        conclusion: { type: Type.STRING, description: "综合投资结论" },
+      },
+      required: ["bull", "bear", "conclusion"]
+    },
+    riskAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        level: { type: Type.STRING, enum: ["High", "Medium", "Low"], description: "综合风险评级 (高/中/低)" },
+        description: { type: Type.STRING, description: "风险评级描述" },
+        factors: { type: Type.ARRAY, items: { type: Type.STRING }, description: "主要风险因素列表" },
+      },
+      required: ["level", "description", "factors"]
+    }
+  },
+  required: ["companyProfile", "financialSummary", "swotAnalysis", "investmentThesis", "riskAnalysis"]
+};
+
+const buildStockPrompt = (stockQuery: string): string => {
+  return `
+    你是一位顶级的股票研究分析师，拥有多年的金融市场经验。你的任务是针对给定的股票（通过名称或代码识别）提供一份全面、深入、客观的综合分析报告。
+
+    请使用你的专业知识库，并假设你可以访问最新的市场数据来完成分析。你的报告必须严格遵守所提供的 schema，并以 JSON 格式输出。
+
+    分析的股票是:
+    ---
+    ${stockQuery}
+    ---
+
+    请立即生成完整的分析报告。确保你的输出是一个符合所要求 schema 的、单一且有效的 JSON 对象。
+  `;
+};
+
+
+export const getStockAnalysis = async (stockQuery: string, apiKey: string, model: string): Promise<StockAnalysisReport> => {
+    if (!apiKey) {
+      throw new Error("API key is not provided.");
+    }
+    
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const response = await ai.models.generateContent({
+        model: model,
+        contents: buildStockPrompt(stockQuery),
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: stockAnalysisSchema,
+        },
+      });
+  
+      const jsonText = response.text?.trim();
+      if (!jsonText) {
+        throw new Error("Received an empty response from the AI model.");
+      }
+      
+      return JSON.parse(jsonText) as StockAnalysisReport;
+  
+    } catch (error) {
+      console.error('Error calling Gemini API for stock analysis:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      throw new Error(`Failed to get stock analysis from Gemini. Reason: ${errorMessage}`);
     }
   };

@@ -45,3 +45,52 @@ export interface HistoryEntry {
   topic: string;
   report: AnalysisReport;
 }
+
+// --- New Types for Stock Analysis ---
+
+export interface CompanyProfile {
+  name: string;
+  ticker: string;
+  exchange: string;
+  sector: string;
+  industry: string;
+  summary: string;
+}
+
+export interface FinancialMetric {
+  metric: string;
+  value: string;
+  comment: string;
+}
+
+export interface FinancialSummary {
+  period: string;
+  highlights: FinancialMetric[];
+}
+
+export interface SWOT {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+}
+
+export interface InvestmentThesis {
+  bull: string;
+  bear: string;
+  conclusion: string;
+}
+
+export interface RiskAnalysis {
+  level: 'High' | 'Medium' | 'Low';
+  description: string;
+  factors: string[];
+}
+
+export interface StockAnalysisReport {
+  companyProfile: CompanyProfile;
+  financialSummary: FinancialSummary;
+  swotAnalysis: SWOT;
+  investmentThesis: InvestmentThesis;
+  riskAnalysis: RiskAnalysis;
+}

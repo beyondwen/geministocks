@@ -1,14 +1,14 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
-import { getAnalysis } from './services/geminiService';
-import type { AnalysisReport, HistoryEntry } from './types';
+import { getAnalysis, getStockAnalysis } from './services/geminiService';
+import type { AnalysisReport, HistoryEntry, StockAnalysisReport } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
+import StockAnalysisInput from './components/StockAnalysisInput';
+import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
 import AnalysisHistory from './components/AnalysisHistory';
-import { NewspaperIcon, SparklesIcon, SettingsIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, SettingsIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
 import SettingsModal from './components/ApiKeySetup';
 import AboutPage from './components/AboutPage';
 
@@ -176,17 +176,24 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSou
 
 
 const MainPage: React.FC = () => {
+  // State for Topic Analysis
   const [userInput, setUserInput] = useState<string>('');
   const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  
+  // State for Stock Analysis
+  const [stockAnalysisReport, setStockAnalysisReport] = useState<StockAnalysisReport | null>(null);
+  const [isStockLoading, setIsStockLoading] = useState<boolean>(false);
+  const [stockError, setStockError] = useState<string | null>(null);
+
+  // Common State
+  const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
   const [apiKey, setApiKey] = useState<string>('');
   const [model, setModel] = useState<string>('gemini-2.5-flash');
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [showApiKeyWarning, setShowApiKeyWarning] = useState<boolean>(false);
-  const [pageViews, setPageViews] = useState<number>(0);
-  const [analysisCount, setAnalysisCount] = useState<number>(0);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
 
@@ -210,19 +217,8 @@ const MainPage: React.FC = () => {
       console.error("Failed to load from localStorage", err);
     }
     
-    // Load and update local user statistics
-    try {
-      const currentViews = parseInt(localStorage.getItem('stats-page-views') || '0', 10) + 1;
-      localStorage.setItem('stats-page-views', currentViews.toString());
-      setPageViews(currentViews);
-      const currentAnalysisCount = parseInt(localStorage.getItem('stats-analysis-count') || '0', 10);
-      setAnalysisCount(currentAnalysisCount);
-    } catch (err) {
-      console.error("Failed to update stats in localStorage", err);
-    }
-
-    // Load and update global statistics
-    const updateAndFetchGlobalStats = async () => {
+    // Load global statistics
+    const fetchGlobalStats = async () => {
       try {
         const response = await fetch('/api/stats', {
           method: 'POST',
@@ -240,7 +236,7 @@ const MainPage: React.FC = () => {
         console.error("Failed to fetch global stats", err);
       }
     };
-    updateAndFetchGlobalStats();
+    fetchGlobalStats();
   }, []);
 
   const handleSaveSettings = (newApiKey: string, newModel: string) => {
@@ -259,6 +255,19 @@ const MainPage: React.FC = () => {
     setSelectedNewsSourceId(sourceId);
     localStorage.setItem(NEWS_SOURCE_STORAGE_KEY, sourceId);
   };
+  
+  const incrementAnalysisCount = async () => {
+     try {
+        const statsResponse = await fetch('/api/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'analysis' }),
+        });
+        if (statsResponse.ok) setGlobalStats(await statsResponse.json());
+      } catch (err) {
+        console.error("Failed to update global analysis count", err);
+      }
+  }
 
   const handleAnalyze = useCallback(async (topic: string) => {
     if (!apiKey) {
@@ -271,31 +280,17 @@ const MainPage: React.FC = () => {
       return;
     }
     
+    setActiveTab('topic');
     setIsLoading(true);
     setError(null);
     setAnalysisReport(null);
+    setStockAnalysisReport(null); // Clear other report
+    setStockError(null);
 
     try {
       const report = await getAnalysis(topic, apiKey, model);
       setAnalysisReport(report);
-      setIsLoading(false); // Set loading to false as soon as the report is fetched
-
-      // Increment local analysis count on success
-      const newAnalysisCount = (parseInt(localStorage.getItem('stats-analysis-count') || '0', 10)) + 1;
-      localStorage.setItem('stats-analysis-count', newAnalysisCount.toString());
-      setAnalysisCount(newAnalysisCount);
-
-      // Increment global analysis count
-      try {
-        const statsResponse = await fetch('/api/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'analysis' }),
-        });
-        if (statsResponse.ok) setGlobalStats(await statsResponse.json());
-      } catch (err) {
-        console.error("Failed to update global analysis count", err);
-      }
+      incrementAnalysisCount();
 
       const newEntry: HistoryEntry = {
         id: Date.now(),
@@ -309,9 +304,42 @@ const MainPage: React.FC = () => {
       console.error(err);
       const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
       setError(errorMessage);
-      setIsLoading(false); // Ensure loading is stopped on error
+    } finally {
+        setIsLoading(false);
     }
   }, [history, apiKey, model]);
+
+  const handleStockAnalyze = useCallback(async (stockQuery: string) => {
+    if (!apiKey) {
+      setShowApiKeyWarning(true);
+      setIsSettingsOpen(true);
+      return;
+    }
+    if (!stockQuery.trim()) {
+      setStockError('股票代码或名称为必填项。');
+      return;
+    }
+
+    setActiveTab('stock');
+    setIsStockLoading(true);
+    setStockError(null);
+    setStockAnalysisReport(null);
+    setAnalysisReport(null); // Clear other report
+    setError(null);
+
+    try {
+      const report = await getStockAnalysis(stockQuery, apiKey, model);
+      setStockAnalysisReport(report);
+      incrementAnalysisCount();
+    } catch (err) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
+      setStockError(errorMessage);
+    } finally {
+      setIsStockLoading(false);
+    }
+  }, [apiKey, model]);
+
 
   const handleNewsSelect = (newsTopic: string) => {
     setUserInput(newsTopic);
@@ -322,7 +350,10 @@ const MainPage: React.FC = () => {
   const handleSelectHistory = (entry: HistoryEntry) => {
     setUserInput(entry.topic);
     setAnalysisReport(entry.report);
+    setStockAnalysisReport(null);
     setError(null);
+    setStockError(null);
+    setActiveTab('topic');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -334,6 +365,21 @@ const MainPage: React.FC = () => {
   const handleClearHistory = () => {
     updateHistory([]);
   };
+
+  const TabButton = ({ isActive, onClick, children }: { isActive: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none ${
+        isActive
+          ? 'border-cyan-500 text-cyan-600'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+      role="tab"
+      aria-selected={isActive}
+    >
+      {children}
+    </button>
+  );
 
   return (
     <>
@@ -357,37 +403,74 @@ const MainPage: React.FC = () => {
             </div>
           </header>
 
-          <main className="space-y-8">
-            <AnalysisHistory
-              history={history}
-              onSelect={handleSelectHistory}
-              onDelete={handleDeleteHistory}
-              onClear={handleClearHistory}
-            />
-
-            <AnalysisInput
-              userInput={userInput}
-              setUserInput={setUserInput}
-              onAnalyze={() => handleAnalyze(userInput)}
-              isLoading={isLoading}
-            />
-
-            {isLoading && <Loader />}
-
-            {error && (
-              <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-                <p>{error}</p>
+          <main>
+            {/* --- Tabs Navigation --- */}
+            <div className="mb-6 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-2">
+              <div className="flex justify-center border-b border-gray-200" role="tablist" aria-label="分析模式">
+                <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
+                   <DocumentTextIcon className="w-5 h-5" />
+                   <span>主题投策分析</span>
+                </TabButton>
+                <TabButton isActive={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
+                  <ChartBarIcon className="w-5 h-5" />
+                  <span>个股综合分析</span>
+                </TabButton>
               </div>
-            )}
-
-            {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
+            </div>
             
-            <LatestNews 
-              onAnalyze={handleNewsSelect} 
-              sources={NEWS_SOURCES}
-              selectedSourceId={selectedNewsSourceId}
-              onSourceChange={handleSourceChange}
-            />
+            {/* --- Tabs Content --- */}
+            <div className="space-y-8">
+                {activeTab === 'stock' && (
+                    <div className="space-y-8 animate-fade-in" role="tabpanel">
+                        <StockAnalysisInput onAnalyze={handleStockAnalyze} isLoading={isStockLoading} />
+                        
+                        {isStockLoading && <Loader />}
+            
+                        {stockError && (
+                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
+                            <p>{stockError}</p>
+                          </div>
+                        )}
+            
+                        {stockAnalysisReport && !isStockLoading && <StockAnalysisResult report={stockAnalysisReport} />}
+                    </div>
+                )}
+                
+                {activeTab === 'topic' && (
+                    <div className="space-y-8 animate-fade-in" role="tabpanel">
+                        <AnalysisInput
+                          userInput={userInput}
+                          setUserInput={setUserInput}
+                          onAnalyze={() => handleAnalyze(userInput)}
+                          isLoading={isLoading}
+                        />
+            
+                        {isLoading && <Loader />}
+            
+                        {error && (
+                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
+                            <p>{error}</p>
+                          </div>
+                        )}
+            
+                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
+                        
+                        <AnalysisHistory
+                          history={history}
+                          onSelect={handleSelectHistory}
+                          onDelete={handleDeleteHistory}
+                          onClear={handleClearHistory}
+                        />
+
+                        <LatestNews 
+                          onAnalyze={handleNewsSelect} 
+                          sources={NEWS_SOURCES}
+                          selectedSourceId={selectedNewsSourceId}
+                          onSourceChange={handleSourceChange}
+                        />
+                    </div>
+                )}
+            </div>
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
