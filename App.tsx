@@ -406,14 +406,16 @@ const MainPage: React.FC = () => {
     <>
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl mx-auto">
-          <header className="text-center mb-8 relative">
-            <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-              股市超级挖掘机
-            </h1>
-            <p className="text-gray-600 mt-2">
-              利用 Gemini 模型进行多维度投资分析 🚀
-            </p>
-            <div className="absolute top-0 right-0 flex items-center gap-x-4">
+          <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
+            <div className="order-2 sm:order-1 text-center sm:text-left">
+              <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
+                股市超级挖掘机
+              </h1>
+              <p className="text-gray-600 mt-2">
+                利用 Gemini 模型进行多维度投资分析 🚀
+              </p>
+            </div>
+            <div className="order-1 sm:order-2 flex items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
                 <Link to="/about" className="text-sm text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">
                   使用说明
                 </Link>
