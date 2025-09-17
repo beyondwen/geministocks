@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SparklesIcon } from './icons/Icons';
 
 const AboutPage: React.FC = () => {
+  useEffect(() => {
+    const title = "使用说明 - 股市超级挖掘机";
+    const description = "了解“股市超级挖掘机”如何利用Gemini AI进行四维一体分析，以及如何获取和设置您的API密钥，快速上手这款强大的智能投研工具。";
+
+    document.title = title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 animate-fade-in">
       <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-8 space-y-8">
         
         <header className="text-center border-b pb-6">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-            关于 股市超级挖掘机
+            使用说明
           </h1>
           <p className="text-gray-600 mt-2">
             您的智能投资研究助手

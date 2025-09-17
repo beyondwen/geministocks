@@ -55,7 +55,7 @@ const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negati
     const config = sentimentConfig[sentiment] || sentimentConfig.Neutral;
   
     return (
-      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${config.color}`}>
+      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap ${config.color}`}>
         {config.icon} <span className="ml-1.5">{config.label}</span>
       </div>
     );

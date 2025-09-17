@@ -241,6 +241,19 @@ const MainPage: React.FC = () => {
     fetchGlobalStats();
   }, []);
 
+  // SEO: Set meta tags for the main page
+  useEffect(() => {
+    const title = "股市超级挖掘机 | AI驱动的智能投研与股票分析利器";
+    const description = "利用Google Gemini AI，股市超级挖掘机能将任何财经新闻或主题一键转化为深度投资分析报告。覆盖宏观、产业链、基本面与市场情绪，助您精准挖掘A股、港股、美股的投资机会。";
+    
+    document.title = title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+  }, []);
+
   const handleSaveSettings = (newApiKey: string, newModel: string) => {
     setApiKey(newApiKey);
     setModel(newModel);
@@ -400,7 +413,10 @@ const MainPage: React.FC = () => {
             <p className="text-gray-600 mt-2">
               利用 Gemini 模型进行多维度投资分析 🚀
             </p>
-            <div className="absolute top-0 right-0">
+            <div className="absolute top-0 right-0 flex items-center gap-x-4">
+                <Link to="/about" className="text-sm text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">
+                  使用说明
+                </Link>
                 <button
                     onClick={() => setIsSettingsOpen(true)}
                     className="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors"
@@ -490,9 +506,7 @@ const MainPage: React.FC = () => {
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
             <p className="text-sm text-gray-500 mb-2">
-              <Link to="/about" className="text-cyan-600 hover:underline">关于此应用</Link>
-              <span className="mx-2 text-gray-300">|</span>
-              <span>由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号</span>
+              由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
             </p>
             <div className="text-xs text-gray-400 space-y-1">
                 {globalStats.pageViews > 0 &&
