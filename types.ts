@@ -87,10 +87,21 @@ export interface RiskAnalysis {
   factors: string[];
 }
 
+export interface CorporateGovernance {
+    summary: string;
+}
+
+export interface ESGRating {
+    rating: string;
+    summary: string;
+}
+
 export interface StockAnalysisReport {
   companyProfile: CompanyProfile;
   financialSummary: FinancialSummary;
   swotAnalysis: SWOT;
   investmentThesis: InvestmentThesis;
   riskAnalysis: RiskAnalysis;
+  corporateGovernance: CorporateGovernance;
+  esgRating: ESGRating;
 }

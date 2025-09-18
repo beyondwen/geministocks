@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { HOT_STOCKS } from './HotStocks'; // Import the hot stocks list
 
 interface StockAnalysisInputProps {
   stockQuery: string;
@@ -8,10 +9,52 @@ interface StockAnalysisInputProps {
 }
 
 const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading }) => {
+  const [suggestions, setSuggestions] = useState<{name: string; ticker: string}[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const componentRef = useRef<HTMLDivElement>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSuggestions(false);
     onAnalyze(stockQuery);
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setStockQuery(query);
+
+    if (query.trim().length > 0) {
+      const filteredSuggestions = HOT_STOCKS.filter(
+        stock =>
+          stock.name.toLowerCase().includes(query.toLowerCase()) ||
+          stock.ticker.toLowerCase().includes(query.toLowerCase())
+      );
+      setSuggestions(filteredSuggestions);
+      setShowSuggestions(filteredSuggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (stockName: string) => {
+    setStockQuery(stockName);
+    setShowSuggestions(false);
+    onAnalyze(stockName); // Trigger analysis on selection
+  };
+  
+  // Effect to handle clicks outside the component to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (componentRef.current && !componentRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
@@ -23,16 +66,43 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
           例如: "AAPL", "苹果公司", "00700.HK", "腾讯控股"。
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <input
-            id="stock-input"
-            type="text"
-            className="flex-grow w-full bg-gray-50 border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
-            placeholder="输入股票代码或名称..."
-            value={stockQuery}
-            onChange={(e) => setStockQuery(e.target.value)}
-            disabled={isLoading}
-            aria-describedby="stock-input-description"
-          />
+          <div className="relative flex-grow w-full" ref={componentRef}>
+            <input
+              id="stock-input"
+              type="text"
+              className="w-full bg-gray-50 border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+              placeholder="输入股票代码或名称..."
+              value={stockQuery}
+              onChange={handleInputChange}
+              onFocus={handleInputChange} // Show suggestions on focus as well
+              disabled={isLoading}
+              aria-describedby="stock-input-description"
+              autoComplete="off"
+              aria-controls="stock-suggestions"
+              aria-expanded={showSuggestions}
+              aria-haspopup="listbox"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <ul
+                id="stock-suggestions"
+                role="listbox"
+                className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto animate-fade-in"
+              >
+                {suggestions.map((stock) => (
+                  <li
+                    key={stock.ticker}
+                    role="option"
+                    aria-selected="false"
+                    className="px-4 py-2 text-gray-800 cursor-pointer hover:bg-teal-100 transition-colors"
+                    // Use onMouseDown to prevent blur event from hiding suggestions before click is registered
+                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(stock.name); }}
+                  >
+                    {stock.name} <span className="text-gray-500 font-mono">{stock.ticker}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isLoading || !stockQuery.trim()}

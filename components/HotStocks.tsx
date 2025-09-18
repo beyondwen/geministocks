@@ -5,7 +5,8 @@ interface HotStocksProps {
   onSelect: (query: string) => void;
 }
 
-const HOT_STOCKS = [
+// Export this array to be used in other components for suggestions
+export const HOT_STOCKS = [
   { name: '英伟达', ticker: 'NVDA' },
   { name: '特斯拉', ticker: 'TSLA' },
   { name: '苹果', ticker: 'AAPL' },

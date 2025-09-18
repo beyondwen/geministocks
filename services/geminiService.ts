@@ -204,7 +204,7 @@ const stockAnalysisSchema = {
           items: {
             type: Type.OBJECT,
             properties: {
-              metric: { type: Type.STRING, description: "财务指标名称，如 '营收', '净利润', '市盈率(PE)'" },
+              metric: { type: Type.STRING, description: "财务指标名称，如 '营收', '净利润', '市盈率(PE)', '市净率(PB)'" },
               value: { type: Type.STRING, description: "指标数值" },
               comment: { type: Type.STRING, description: "对该指标的简要解读" },
             },
@@ -241,9 +241,24 @@ const stockAnalysisSchema = {
         factors: { type: Type.ARRAY, items: { type: Type.STRING }, description: "主要风险因素列表" },
       },
       required: ["level", "description", "factors"]
+    },
+    corporateGovernance: {
+      type: Type.OBJECT,
+      properties: {
+        summary: { type: Type.STRING, description: "对公司治理结构的分析，包括董事会结构、股东权利、管理层激励等方面的总结。" },
+      },
+      required: ["summary"]
+    },
+    esgRating: {
+      type: Type.OBJECT,
+      properties: {
+        rating: { type: Type.STRING, description: "综合ESG评级 (例如: 'AA', 'B', 'CCC')" },
+        summary: { type: Type.STRING, description: "对公司在环境、社会和治理 (ESG) 方面表现的总结。" },
+      },
+      required: ["rating", "summary"]
     }
   },
-  required: ["companyProfile", "financialSummary", "swotAnalysis", "investmentThesis", "riskAnalysis"]
+  required: ["companyProfile", "financialSummary", "swotAnalysis", "investmentThesis", "riskAnalysis", "corporateGovernance", "esgRating"]
 };
 
 const buildStockPrompt = (stockQuery: string): string => {
@@ -251,6 +266,15 @@ const buildStockPrompt = (stockQuery: string): string => {
     你是一位顶级的股票研究分析师，拥有多年的金融市场经验。你的任务是针对给定的股票（通过名称或代码识别）提供一份全面、深入、客观的综合分析报告。
 
     为确保报告的时效性，请务必结合最新的网络搜索结果、市场数据和相关新闻进行分析。你的报告必须严格遵守所提供的 schema，并以 JSON 格式输出。
+
+    你的分析需要包含以下几个核心部分：
+    1.  **公司概况 (Company Profile):** 基本信息。
+    2.  **财务摘要 (Financial Summary):** 必须包含关键财务指标，如营收、净利润、市盈率(PE)、市净率(PB)等，并提供简要解读。
+    3.  **SWOT 分析:** 优势、劣势、机会、威胁。
+    4.  **投资论点 (Investment Thesis):** 看涨和看跌理由，以及综合结论。
+    5.  **风险分析 (Risk Analysis):** 综合风险评级和主要风险因素。
+    6.  **公司治理 (Corporate Governance):** 对公司治理结构的分析总结。
+    7.  **ESG 评级 (ESG Rating):** 对公司在环境、社会和治理方面表现的评级和总结。
 
     分析的股票是:
     ---

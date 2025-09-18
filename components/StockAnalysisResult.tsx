@@ -25,6 +25,16 @@ const ShieldExclamationIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) =
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
     </svg>
 );
+const UsersIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.663M12 12.031c-1.63 0-3.07.73-4.025 1.887M12 12.031c.64.043 1.282.082 1.94.121a5.964 5.964 0 013.913 1.152m-11.854.482a6.375 6.375 0 0011.964-4.663M4.5 12.031a9.37 9.37 0 019.375-9.375 9.37 9.37 0 019.375 9.375c0 4.135-2.693 7.62-6.375 8.92-2.124.762-4.383 1.15-6.75.981-2.5-1.5-4.5-4.5-4.5-7.844z" />
+    </svg>
+);
+const GlobeAltIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+    </svg>
+);
 
 
 // --- Reusable Components ---
@@ -141,18 +151,36 @@ const ThesisSection: React.FC<{ thesis: StockAnalysisReport['investmentThesis'] 
 );
 
 const RiskSection: React.FC<{ risk: StockAnalysisReport['riskAnalysis'] }> = ({ risk }) => (
-    <Card title="风险分析" icon={<ShieldExclamationIcon className="w-6 h-6" />}>
+    <div className="col-span-1 md:col-span-2">
+        <Card title="风险分析" icon={<ShieldExclamationIcon className="w-6 h-6" />}>
+            <div className="flex items-center gap-x-4 mb-3">
+                <h4 className="font-bold text-gray-800">综合风险评级:</h4>
+                <RiskIndicator level={risk.level} />
+            </div>
+            <p className="text-sm mb-3">{risk.description}</p>
+            <div>
+                <h4 className="font-bold text-gray-800 mb-2">主要风险因素:</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                    {risk.factors.map((factor, i) => <li key={i}>{factor}</li>)}
+                </ul>
+            </div>
+        </Card>
+    </div>
+);
+
+const GovernanceSection: React.FC<{ governance: StockAnalysisReport['corporateGovernance'] }> = ({ governance }) => (
+    <Card title="公司治理" icon={<UsersIcon className="w-6 h-6" />}>
+        <p className="text-sm leading-relaxed">{governance.summary}</p>
+    </Card>
+);
+
+const ESGSection: React.FC<{ esg: StockAnalysisReport['esgRating'] }> = ({ esg }) => (
+    <Card title="ESG 评级" icon={<GlobeAltIcon className="w-6 h-6" />}>
         <div className="flex items-center gap-x-4 mb-3">
-            <h4 className="font-bold text-gray-800">综合风险评级:</h4>
-            <RiskIndicator level={risk.level} />
+            <h4 className="font-bold text-gray-800">综合评级:</h4>
+            <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md">{esg.rating}</span>
         </div>
-        <p className="text-sm mb-3">{risk.description}</p>
-        <div>
-            <h4 className="font-bold text-gray-800 mb-2">主要风险因素:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-                {risk.factors.map((factor, i) => <li key={i}>{factor}</li>)}
-            </ul>
-        </div>
+        <p className="text-sm leading-relaxed">{esg.summary}</p>
     </Card>
 );
 
@@ -258,8 +286,10 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileSection profile={report.companyProfile} />
                 <FinancialsSection summary={report.financialSummary} />
-                <SWOTSection swot={report.swotAnalysis} />
                 <ThesisSection thesis={report.investmentThesis} />
+                <SWOTSection swot={report.swotAnalysis} />
+                <GovernanceSection governance={report.corporateGovernance} />
+                <ESGSection esg={report.esgRating} />
                 <RiskSection risk={report.riskAnalysis} />
             </div>
         </div>
