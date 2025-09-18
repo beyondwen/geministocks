@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 import type { AnalysisReport, StockTicker } from '../types';
-import { DownloadIcon } from './icons/Icons';
+import { DownloadIcon, DocumentArrowDownIcon } from './icons/Icons';
 import StockRecommendations from './StockRelevanceChart';
 import IndustryChainViz from './IndustryChainViz';
 
@@ -76,6 +77,7 @@ interface AnalysisResultProps {
 const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) => {
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const keywords = useMemo(() => {
@@ -123,17 +125,75 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
       });
   }, [report]);
 
+  const handleExportPdf = useCallback(() => {
+    if (exportRef.current === null) {
+      return;
+    }
+    setIsExportingPdf(true);
+    setExportError(null);
+
+    toPng(exportRef.current, { cacheBust: true, pixelRatio: 2 })
+      .then((dataUrl) => {
+        const pdf = new jsPDF('p', 'px', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        const img = new Image();
+        img.src = dataUrl;
+        img.onload = () => {
+          const imgWidth = img.width;
+          const imgHeight = img.height;
+          const ratio = imgHeight / imgWidth;
+          const contentHeight = pdfWidth * ratio;
+
+          let position = 0;
+          let heightLeft = contentHeight;
+
+          pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, contentHeight);
+          heightLeft -= pdfHeight;
+
+          while (heightLeft > 0) {
+            position -= pdfHeight;
+            pdf.addPage();
+            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, contentHeight);
+            heightLeft -= pdfHeight;
+          }
+          
+          const date = new Date().toISOString().split('T')[0];
+          const topic = report.summary.substring(0, 30).replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+          const fileName = `投资分析报告_${topic || 'report'}_${date}.pdf`;
+          pdf.save(fileName);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to export PDF:', err);
+        setExportError('导出 PDF 失败。请稍后再试。');
+      })
+      .finally(() => {
+        setIsExportingPdf(false);
+      });
+  }, [report]);
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="relative flex justify-end gap-x-2">
         <button
           onClick={handleExport}
-          disabled={isExporting}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isExporting || isExportingPdf}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="导出为图片"
         >
           <DownloadIcon className="-ml-1 mr-2 h-5 w-5" />
-          {isExporting ? '正在导出...' : '导出为图片'}
+          {isExporting ? '正在导出...' : '导出图片'}
+        </button>
+        <button
+          onClick={handleExportPdf}
+          disabled={isExportingPdf || isExporting}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="导出为 PDF"
+        >
+          <DocumentArrowDownIcon className="-ml-1 mr-2 h-5 w-5" />
+          {isExportingPdf ? '正在导出...' : '导出 PDF'}
         </button>
       </div>
 

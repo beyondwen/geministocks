@@ -15,6 +15,7 @@
     "react-router": "^6.25.1",
     "react-router-dom": "^6.25.1",
     "html-to-image": "^1.11.11",
+    "jspdf": "^2.5.1",
     "recharts": "^2.12.7",
     "crypto": "^1.0.1"
   },
