@@ -14,6 +14,7 @@ import AboutPage from './components/AboutPage';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const NEWS_SOURCE_STORAGE_KEY = 'gemini-news-source';
+const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 
 // --- Data & Types ---
 interface NewsArticle {
@@ -192,6 +193,7 @@ const MainPage: React.FC = () => {
   // Common State
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
+  const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
 
   useEffect(() => {
@@ -204,6 +206,12 @@ const MainPage: React.FC = () => {
       if (storedSourceId && NEWS_SOURCES.some(s => s.id === storedSourceId)) {
         setSelectedNewsSourceId(storedSourceId);
       }
+      
+      const storedUserCount = localStorage.getItem(USER_ANALYSIS_COUNT_KEY);
+      if (storedUserCount) {
+        setUserAnalysisCount(JSON.parse(storedUserCount));
+      }
+
     } catch (err) {
       console.error("Failed to load from localStorage", err);
     }
@@ -253,6 +261,14 @@ const MainPage: React.FC = () => {
     localStorage.setItem(NEWS_SOURCE_STORAGE_KEY, sourceId);
   };
   
+  const incrementUserAnalysisCount = () => {
+    setUserAnalysisCount(prevCount => {
+        const newCount = prevCount + 1;
+        localStorage.setItem(USER_ANALYSIS_COUNT_KEY, JSON.stringify(newCount));
+        return newCount;
+    });
+  };
+
   const incrementAnalysisCount = async () => {
      try {
         const statsResponse = await fetch('/api/stats', {
@@ -283,6 +299,7 @@ const MainPage: React.FC = () => {
       const report = await getAnalysis(topic);
       setAnalysisReport(report);
       incrementAnalysisCount();
+      incrementUserAnalysisCount();
 
       const newEntry: HistoryEntry = {
         id: Date.now(),
@@ -318,6 +335,7 @@ const MainPage: React.FC = () => {
       const report = await getStockAnalysis(stockQueryToAnalyze);
       setStockAnalysisReport(report);
       incrementAnalysisCount();
+      incrementUserAnalysisCount();
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
@@ -390,6 +408,11 @@ const MainPage: React.FC = () => {
               </p>
             </div>
             <div className="order-1 sm:order-2 flex items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
+                <div className="text-right">
+                  <p className="text-sm text-gray-600 whitespace-nowrap">
+                    本次会话分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
+                  </p>
+                </div>
                 <Link to="/about" className="text-sm text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">
                   使用说明
                 </Link>
@@ -479,9 +502,9 @@ const MainPage: React.FC = () => {
             </p>
             <div className="text-xs text-gray-400 space-y-1">
                 {globalStats.pageViews > 0 &&
-                <p>
-                    历史累计访客数: {globalStats.pageViews.toLocaleString()}
-                </p>
+                  <p>
+                      历史累计访客数: {globalStats.pageViews.toLocaleString()} | 历史累计分析数: {globalStats.analysisCount.toLocaleString()}
+                  </p>
                 }
                 <p>
                     系统部署更新于 {formattedDate}
