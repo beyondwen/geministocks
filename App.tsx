@@ -358,6 +358,13 @@ const MainPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAnalyzeStockFromTopic = (query: string) => {
+    setActiveTab('stock');
+    setStockQuery(query);
+    handleStockAnalyze(query);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSelectHistory = (entry: HistoryEntry) => {
     setUserInput(entry.topic);
     setAnalysisReport(entry.report);
@@ -476,7 +483,7 @@ const MainPage: React.FC = () => {
                           </div>
                         )}
             
-                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
+                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} onAnalyzeStock={handleAnalyzeStockFromTopic} />}
                         
                         <AnalysisHistory
                           history={history}
@@ -500,16 +507,6 @@ const MainPage: React.FC = () => {
             <p className="text-sm text-gray-500 mb-2">
               由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
             </p>
-            <div className="text-xs text-gray-400 space-y-1">
-                {globalStats.pageViews > 0 &&
-                  <p>
-                      历史累计访客数: {globalStats.pageViews.toLocaleString()} | 历史累计分析数: {globalStats.analysisCount.toLocaleString()}
-                  </p>
-                }
-                <p>
-                    系统部署更新于 {formattedDate}
-                </p>
-            </div>
           </footer>
         </div>
       </div>
@@ -517,6 +514,7 @@ const MainPage: React.FC = () => {
   );
 };
 
+// FIX: Added App component with routing and default export to resolve module import error.
 const App: React.FC = () => {
   return (
     <HashRouter>
