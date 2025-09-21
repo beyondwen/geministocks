@@ -1,318 +1,199 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import type { AnalysisReport, StockAnalysisReport } from '../types';
 
-const analysisSchema = {
-    type: Type.OBJECT,
-    properties: {
-      summary: {
-        type: Type.STRING,
-        description: "关于核心事件或主题的1-3句话摘要。",
-      },
-      analysis: {
-        type: Type.OBJECT,
-        properties: {
-          macroPolicy: {
-            type: Type.STRING,
-            description: "分析该事件与当前宏观经济环境和相关政策的关联。",
-          },
-          industryChain: {
-            type: Type.OBJECT,
-            description: "分析对相关行业及其产业链（上游、中游、下游）的传导效应。每个环节应列出关键组成部分及其描述。",
-            properties: {
-                upstream: {
-                    type: Type.ARRAY,
-                    description: "产业链上游，提供原材料或初级产品的环节。",
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING, description: "上游环节/组件的名称" },
-                            description: { type: Type.STRING, description: "对该环节/组件的简要描述" },
-                        },
-                        required: ["name", "description"]
-                    }
-                },
-                midstream: {
-                    type: Type.ARRAY,
-                    description: "产业链中游，进行加工、制造或组装的环节。",
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING, description: "中游环节/组件的名称" },
-                            description: { type: Type.STRING, description: "对该环节/组件的简要描述" },
-                        },
-                        required: ["name", "description"]
-                    }
-                },
-                downstream: {
-                    type: Type.ARRAY,
-                    description: "产业链下游，面向终端市场和消费者的环节。",
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING, description: "下游环节/组件的名称" },
-                            description: { type: Type.STRING, description: "对该环节/组件的简要描述" },
-                        },
-                        required: ["name", "description"]
-                    }
-                }
-            },
-            required: ["upstream", "midstream", "downstream"]
-          },
-          companyFundamentals: {
-            type: Type.STRING,
-            description: "分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响。",
-          },
-          marketSentiment: {
-            type: Type.OBJECT,
-            description: "评估该事件在资本市场的关注度、可能引发的市场情绪以及其作为股价催化剂的潜力。",
-            properties: {
-              sentiment: {
-                type: Type.STRING,
-                enum: ["Positive", "Neutral", "Negative"],
-                description: "对市场情绪的总体评估（正面、中性或负面）。"
-              },
-              description: {
-                type: Type.STRING,
-                description: "对市场情绪和催化剂潜力的详细文字分析。"
-              }
-            },
-            required: ["sentiment", "description"]
-          },
+const API_KEY = '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';
+const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MODEL = 'x-ai/grok-4-fast:free';
+
+// Common function to call the OpenRouter API
+const callOpenRouter = async (prompt: string): Promise<any> => {
+    const response = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json',
         },
-        required: ["macroPolicy", "industryChain", "companyFundamentals", "marketSentiment"],
-      },
-      investmentStrategy: {
-        type: Type.OBJECT,
-        properties: {
-          logic: {
-            type: Type.STRING,
-            description: "基于四维一体分析凝练出的核心投资逻辑。",
-          },
-          suggestion: {
-            type: Type.STRING,
-            description: "策略建议，例如是短期交易型机会还是长期价值布局。",
-          },
-          risks: {
-            type: Type.STRING,
-            description: "明确提示可能面临的潜在风险（政策风险、技术风险、市场竞争风险等）。",
-          },
-        },
-        required: ["logic", "suggestion", "risks"],
-      },
-      recommendedStocks: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING, description: "公司名称" },
-            ticker: { type: Type.STRING, description: "股票代码" },
-            market: {
-              type: Type.STRING,
-              enum: ["A-Share", "Hong Kong", "US", "Other"],
-              description: "所属市场（A-Share, Hong Kong, US, Other）",
-            },
-            reason: {
-              type: Type.STRING,
-              description: "一句话概括的推荐理由，需关联分析结论。",
-            },
-            relevance: {
-              type: Type.STRING,
-              enum: ["High", "Medium", "Low"],
-              description: "与分析事件的关联度（高/中/低）。",
-            },
-          },
-          required: ["name", "ticker", "market", "reason", "relevance"],
-        },
-      },
+        body: JSON.stringify({
+            model: MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+        }),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('API Error Body:', errorBody);
+        throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const jsonText = data.choices[0]?.message?.content?.trim();
+    if (!jsonText) {
+        throw new Error("Received an empty or invalid response from the AI model.");
+    }
+
+    try {
+        return JSON.parse(jsonText);
+    } catch (e) {
+        console.error("Failed to parse JSON response:", jsonText);
+        throw new Error("AI model returned malformed JSON.");
+    }
+};
+
+
+// --- Topic Analysis Service ---
+
+const analysisSchemaDescription = `
+{
+  "summary": "关于核心事件或主题的1-3句话摘要。",
+  "analysis": {
+    "macroPolicy": "分析该事件与当前宏观经济环境和相关政策的关联。",
+    "industryChain": {
+        "upstream": [{ "name": "上游环节/组件的名称", "description": "对该环节/组件的简要描述" }],
+        "midstream": [{ "name": "中游环节/组件的名称", "description": "对该环节/组件的简要描述" }],
+        "downstream": [{ "name": "下游环节/组件的名称", "description": "对该环节/组件的简要描述" }]
     },
-    required: ["summary", "analysis", "investmentStrategy", "recommendedStocks"],
-  };
+    "companyFundamentals": "分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响。",
+    "marketSentiment": {
+      "sentiment": "Positive",
+      "description": "对市场情绪和催化剂潜力的详细文字分析。"
+    }
+  },
+  "investmentStrategy": {
+    "logic": "基于四维一体分析凝练出的核心投资逻辑。",
+    "suggestion": "策略建议，例如是短期交易型机会还是长期价值布局。",
+    "risks": "明确提示可能面临的潜在风险。"
+  },
+  "recommendedStocks": [
+    {
+      "name": "公司名称",
+      "ticker": "股票代码",
+      "market": "A-Share",
+      "reason": "一句话概括的推荐理由。",
+      "relevance": "High"
+    }
+  ]
+}
+`;
 
 const buildPrompt = (topic: string): string => {
   return `
-    你是一位专业的金融分析师，专长于投资研究。你的任务是使用“四维一体立体化挖掘法”来分析所提供的财经新闻、主题或文本。你的分析必须具有时效性，请结合最新的网络信息和市场数据进行。基于你的分析，请提供一份结构化的投资策略报告，该报告必须是严格遵守所提供 schema 的 JSON 格式。
+    你是一位专业的金融分析师，专长于投资研究。你的任务是使用“四维一体立体化挖掘法”来分析所提供的财经新闻、主题或文本。你的分析必须具有时效性，请结合最新的网络信息和市场数据进行。基于你的分析，请提供一份结构化的投资策略报告。
+
+    你的输出必须是一个严格遵循以下 JSON 结构的、单一且有效的 JSON 对象。不要包含任何 markdown 代码块或额外的解释性文本。
+
+    JSON 结构:
+    ${analysisSchemaDescription}
 
     “四维一体立体化挖掘法”包含以下四个维度：
-    1.  宏观与政策面 (macroPolicy): 分析事件与宏观经济环境（如利率、通胀）和相关政策的关联。
-    2.  行业与产业链 (industryChain): 分析对核心行业及其产业链（上游、中游、下游）的影响。请为每个环节提供关键组成部分及其描述。
-    3.  公司基本面 (companyFundamentals): 分析对核心公司的财务、技术和市场地位的潜在影响。
-    4.  市场情绪与催化剂 (marketSentiment): 评估事件的市场关注度、情绪以及成为股价催化剂的潜力。请提供一个总体情绪评估（'Positive', 'Neutral', 'Negative'）和详细的文字描述。
+    1.  宏观与政策面 (macroPolicy)
+    2.  行业与产业链 (industryChain)
+    3.  公司基本面 (companyFundamentals)
+    4.  市场情绪与催化剂 (marketSentiment)
 
     这是需要分析的文本：
     ---
     ${topic}
     ---
 
-    请立即生成完整的分析报告。确保你的输出是一个符合所要求 schema 的、单一且有效的 JSON 对象。
+    请立即生成完整的分析报告。
   `;
 };
 
-export const getAnalysis = async (topic: string, apiKey: string, model: string): Promise<AnalysisReport> => {
-    if (!apiKey) {
-      throw new Error("API key is not provided.");
-    }
-    
+export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      
-      const response = await ai.models.generateContent({
-        model: model,
-        contents: buildPrompt(topic),
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: analysisSchema,
-        },
-      });
-  
-      const jsonText = response.text?.trim();
-      if (!jsonText) {
-        throw new Error("Received an empty response from the AI model.");
-      }
-      
-      return JSON.parse(jsonText) as AnalysisReport;
-  
+        const prompt = buildPrompt(topic);
+        return await callOpenRouter(prompt) as AnalysisReport;
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      throw new Error(`Failed to get analysis from Gemini. Reason: ${errorMessage}`);
+        console.error('Error in getAnalysis:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        throw new Error(`Failed to get analysis. Reason: ${errorMessage}`);
     }
-  };
-
-// --- New Service for Stock Analysis ---
-
-const stockAnalysisSchema = {
-  type: Type.OBJECT,
-  properties: {
-    companyProfile: {
-      type: Type.OBJECT,
-      properties: {
-        name: { type: Type.STRING, description: "公司全名" },
-        ticker: { type: Type.STRING, description: "股票代码" },
-        exchange: { type: Type.STRING, description: "上市交易所" },
-        sector: { type: Type.STRING, description: "所属行业板块" },
-        industry: { type: Type.STRING, description: "所属具体行业" },
-        summary: { type: Type.STRING, description: "公司业务简介" },
-      },
-      required: ["name", "ticker", "exchange", "sector", "industry", "summary"]
-    },
-    financialSummary: {
-      type: Type.OBJECT,
-      properties: {
-        period: { type: Type.STRING, description: "财报周期，例如 '最近财年' 或 '最新季度'" },
-        highlights: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              metric: { type: Type.STRING, description: "财务指标名称，如 '营收', '净利润', '市盈率(PE)', '市净率(PB)'" },
-              value: { type: Type.STRING, description: "指标数值" },
-              comment: { type: Type.STRING, description: "对该指标的简要解读" },
-            },
-            required: ["metric", "value", "comment"]
-          }
-        }
-      },
-      required: ["period", "highlights"]
-    },
-    swotAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "优势 (Strengths)" },
-        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "劣势 (Weaknesses)" },
-        opportunities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "机会 (Opportunities)" },
-        threats: { type: Type.ARRAY, items: { type: Type.STRING }, description: "威胁 (Threats)" },
-      },
-      required: ["strengths", "weaknesses", "opportunities", "threats"]
-    },
-    investmentThesis: {
-      type: Type.OBJECT,
-      properties: {
-        bull: { type: Type.STRING, description: "看涨理由 (Bull Case)" },
-        bear: { type: Type.STRING, description: "看跌理由 (Bear Case)" },
-        conclusion: { type: Type.STRING, description: "综合投资结论" },
-      },
-      required: ["bull", "bear", "conclusion"]
-    },
-    riskAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        level: { type: Type.STRING, enum: ["High", "Medium", "Low"], description: "综合风险评级 (高/中/低)" },
-        description: { type: Type.STRING, description: "风险评级描述" },
-        factors: { type: Type.ARRAY, items: { type: Type.STRING }, description: "主要风险因素列表" },
-      },
-      required: ["level", "description", "factors"]
-    },
-    corporateGovernance: {
-      type: Type.OBJECT,
-      properties: {
-        summary: { type: Type.STRING, description: "对公司治理结构的分析，包括董事会结构、股东权利、管理层激励等方面的总结。" },
-      },
-      required: ["summary"]
-    },
-    esgRating: {
-      type: Type.OBJECT,
-      properties: {
-        rating: { type: Type.STRING, description: "综合ESG评级 (例如: 'AA', 'B', 'CCC')" },
-        summary: { type: Type.STRING, description: "对公司在环境、社会和治理 (ESG) 方面表现的总结。" },
-      },
-      required: ["rating", "summary"]
-    }
-  },
-  required: ["companyProfile", "financialSummary", "swotAnalysis", "investmentThesis", "riskAnalysis", "corporateGovernance", "esgRating"]
 };
+
+// --- Stock Analysis Service ---
+
+const stockAnalysisSchemaDescription = `
+{
+  "companyProfile": {
+    "name": "公司全名",
+    "ticker": "股票代码",
+    "exchange": "上市交易所",
+    "sector": "所属行业板块",
+    "industry": "所属具体行业",
+    "summary": "公司业务简介"
+  },
+  "financialSummary": {
+    "period": "财报周期，例如 '最近财年' 或 '最新季度'",
+    "highlights": [
+      {
+        "metric": "营收",
+        "value": "100亿",
+        "comment": "同比增长10%"
+      }
+    ]
+  },
+  "swotAnalysis": {
+    "strengths": ["优势 (Strengths)"],
+    "weaknesses": ["劣势 (Weaknesses)"],
+    "opportunities": ["机会 (Opportunities)"],
+    "threats": ["威胁 (Threats)"]
+  },
+  "investmentThesis": {
+    "bull": "看涨理由 (Bull Case)",
+    "bear": "看跌理由 (Bear Case)",
+    "conclusion": "综合投资结论"
+  },
+  "riskAnalysis": {
+    "level": "Medium",
+    "description": "风险评级描述",
+    "factors": ["主要风险因素列表"]
+  },
+  "corporateGovernance": {
+    "summary": "对公司治理结构的分析总结。"
+  },
+  "esgRating": {
+    "rating": "AA",
+    "summary": "对公司在环境、社会和治理 (ESG) 方面表现的总结。"
+  }
+}
+`;
 
 const buildStockPrompt = (stockQuery: string): string => {
   return `
     你是一位顶级的股票研究分析师，拥有多年的金融市场经验。你的任务是针对给定的股票（通过名称或代码识别）提供一份全面、深入、客观的综合分析报告。
 
-    为确保报告的时效性，请务必结合最新的网络搜索结果、市场数据和相关新闻进行分析。你的报告必须严格遵守所提供的 schema，并以 JSON 格式输出。
+    为确保报告的时效性，请务必结合最新的网络搜索结果、市场数据和相关新闻进行分析。
+    
+    你的输出必须是一个严格遵循以下 JSON 结构的、单一且有效的 JSON 对象。不要包含任何 markdown 代码块或额外的解释性文本。
+
+    JSON 结构:
+    ${stockAnalysisSchemaDescription}
 
     你的分析需要包含以下几个核心部分：
-    1.  **公司概况 (Company Profile):** 基本信息。
-    2.  **财务摘要 (Financial Summary):** 必须包含关键财务指标，如营收、净利润、市盈率(PE)、市净率(PB)等，并提供简要解读。
-    3.  **SWOT 分析:** 优势、劣势、机会、威胁。
-    4.  **投资论点 (Investment Thesis):** 看涨和看跌理由，以及综合结论。
-    5.  **风险分析 (Risk Analysis):** 综合风险评级和主要风险因素。
-    6.  **公司治理 (Corporate Governance):** 对公司治理结构的分析总结。
-    7.  **ESG 评级 (ESG Rating):** 对公司在环境、社会和治理方面表现的评级和总结。
+    1.  公司概况 (Company Profile)
+    2.  财务摘要 (Financial Summary)
+    3.  SWOT 分析
+    4.  投资论点 (Investment Thesis)
+    5.  风险分析 (Risk Analysis)
+    6.  公司治理 (Corporate Governance)
+    7.  ESG 评级 (ESG Rating)
 
     分析的股票是:
     ---
     ${stockQuery}
     ---
 
-    请立即生成完整的分析报告。确保你的输出是一个符合所要求 schema 的、单一且有效的 JSON 对象。
+    请立即生成完整的分析报告。
   `;
 };
 
-
-export const getStockAnalysis = async (stockQuery: string, apiKey: string, model: string): Promise<StockAnalysisReport> => {
-    if (!apiKey) {
-      throw new Error("API key is not provided.");
-    }
-    
+export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      
-      const response = await ai.models.generateContent({
-        model: model,
-        contents: buildStockPrompt(stockQuery),
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: stockAnalysisSchema,
-        },
-      });
-  
-      const jsonText = response.text?.trim();
-      if (!jsonText) {
-        throw new Error("Received an empty response from the AI model.");
-      }
-      
-      return JSON.parse(jsonText) as StockAnalysisReport;
-  
+        const prompt = buildStockPrompt(stockQuery);
+        return await callOpenRouter(prompt) as StockAnalysisReport;
     } catch (error) {
-      console.error('Error calling Gemini API for stock analysis:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      throw new Error(`Failed to get stock analysis from Gemini. Reason: ${errorMessage}`);
+        console.error('Error in getStockAnalysis:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        throw new Error(`Failed to get stock analysis. Reason: ${errorMessage}`);
     }
-  };
+};

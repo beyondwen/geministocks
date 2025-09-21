@@ -10,7 +10,6 @@ import Loader from './components/Loader';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
 import { NewspaperIcon, SparklesIcon, SettingsIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
-import SettingsModal from './components/ApiKeySetup';
 import AboutPage from './components/AboutPage';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -192,10 +191,6 @@ const MainPage: React.FC = () => {
 
   // Common State
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
-  const [apiKey, setApiKey] = useState<string>('');
-  const [model, setModel] = useState<string>('gemini-2.5-flash');
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [showApiKeyWarning, setShowApiKeyWarning] = useState<boolean>(false);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
 
@@ -204,12 +199,6 @@ const MainPage: React.FC = () => {
     try {
       const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (storedHistory) setHistory(JSON.parse(storedHistory));
-
-      const storedApiKey = localStorage.getItem('gemini-api-key');
-      if (storedApiKey) setApiKey(storedApiKey);
-      
-      const storedModel = localStorage.getItem('gemini-model');
-      if (storedModel) setModel(storedModel);
 
       const storedSourceId = localStorage.getItem(NEWS_SOURCE_STORAGE_KEY);
       if (storedSourceId && NEWS_SOURCES.some(s => s.id === storedSourceId)) {
@@ -254,13 +243,6 @@ const MainPage: React.FC = () => {
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
   }, []);
 
-  const handleSaveSettings = (newApiKey: string, newModel: string) => {
-    setApiKey(newApiKey);
-    setModel(newModel);
-    localStorage.setItem('gemini-api-key', newApiKey);
-    localStorage.setItem('gemini-model', newModel);
-  };
-
   const updateHistory = (newHistory: HistoryEntry[]) => {
     setHistory(newHistory);
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
@@ -285,11 +267,6 @@ const MainPage: React.FC = () => {
   }
 
   const handleAnalyze = useCallback(async (topic: string) => {
-    if (!apiKey) {
-      setShowApiKeyWarning(true);
-      setIsSettingsOpen(true);
-      return;
-    }
     if (!topic.trim()) {
       setError('分析主题为必填项。');
       return;
@@ -303,7 +280,7 @@ const MainPage: React.FC = () => {
     setStockError(null);
 
     try {
-      const report = await getAnalysis(topic, apiKey, model);
+      const report = await getAnalysis(topic);
       setAnalysisReport(report);
       incrementAnalysisCount();
 
@@ -322,14 +299,9 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [history, apiKey, model]);
+  }, [history]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
-    if (!apiKey) {
-      setShowApiKeyWarning(true);
-      setIsSettingsOpen(true);
-      return;
-    }
     if (!stockQueryToAnalyze.trim()) {
       setStockError('股票代码或名称为必填项。');
       return;
@@ -343,7 +315,7 @@ const MainPage: React.FC = () => {
     setError(null);
 
     try {
-      const report = await getStockAnalysis(stockQueryToAnalyze, apiKey, model);
+      const report = await getStockAnalysis(stockQueryToAnalyze);
       setStockAnalysisReport(report);
       incrementAnalysisCount();
     } catch (err) {
@@ -353,7 +325,7 @@ const MainPage: React.FC = () => {
     } finally {
       setIsStockLoading(false);
     }
-  }, [apiKey, model]);
+  }, []);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -412,20 +384,13 @@ const MainPage: React.FC = () => {
                 股市超级挖掘机
               </h1>
               <p className="text-gray-600 mt-2">
-                利用 Gemini 模型进行多维度投资分析 🚀
+                利用 AI 模型进行多维度投资分析 🚀
               </p>
             </div>
             <div className="order-1 sm:order-2 flex items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
                 <Link to="/about" className="text-sm text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">
                   使用说明
                 </Link>
-                <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors"
-                    aria-label="打开设置"
-                >
-                    <SettingsIcon className="w-6 h-6" />
-                </button>
             </div>
           </header>
 
@@ -520,17 +485,6 @@ const MainPage: React.FC = () => {
           </footer>
         </div>
       </div>
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => {
-          setIsSettingsOpen(false);
-          setShowApiKeyWarning(false);
-        }}
-        onSave={handleSaveSettings}
-        initialApiKey={apiKey}
-        initialModel={model}
-        showApiKeyWarning={showApiKeyWarning}
-      />
     </>
   );
 };

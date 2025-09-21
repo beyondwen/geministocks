@@ -5,7 +5,7 @@ import { SparklesIcon } from './icons/Icons';
 const AboutPage: React.FC = () => {
   useEffect(() => {
     const title = "使用说明 - 股市超级挖掘机";
-    const description = "了解“股市超级挖掘机”如何利用Gemini AI进行四维一体分析，以及如何获取和设置您的API密钥，快速上手这款强大的智能投研工具。";
+    const description = "了解“股市超级挖掘机”如何利用 AI 进行四维一体分析，快速上手这款强大的智能投研工具。";
 
     document.title = title;
     document.querySelector('meta[name="description"]')?.setAttribute('content', description);
@@ -31,7 +31,7 @@ const AboutPage: React.FC = () => {
         <section aria-labelledby="app-purpose">
           <h2 id="app-purpose" className="text-2xl font-bold text-gray-800 mb-4">应用宗旨</h2>
           <p className="text-gray-700 leading-relaxed">
-            “股市超级挖掘机”是一款智能投研工具，旨在利用尖端的 AI 技术（Google Gemini）将复杂、非结构化的财经新闻、研究报告或市场主题，转化为结构清晰、多维度的投资策略分析报告。我们的目标是帮助投资者节省时间，快速抓住信息重点，发现潜在的投资机会，并理解其中的风险。
+            “股市超级挖掘机”是一款智能投研工具，旨在利用尖端的 AI 技术将复杂、非结构化的财经新闻、研究报告或市场主题，转化为结构清晰、多维度的投资策略分析报告。我们的目标是帮助投资者节省时间，快速抓住信息重点，发现潜在的投资机会，并理解其中的风险。
           </p>
         </section>
 
@@ -56,43 +56,11 @@ const AboutPage: React.FC = () => {
             </li>
             <li>
               <strong>一键导出：</strong> 
-              轻松将完整的分析报告导出为图片，便于分享和保存。
+              轻松将完整的分析报告导出为图片或 PDF，便于分享和保存。
             </li>
           </ul>
         </section>
         
-        <section aria-labelledby="api-key-guide">
-          <h2 id="api-key-guide" className="text-2xl font-bold text-gray-800 mb-4">如何获取 Gemini API 密钥</h2>
-          <div className="space-y-4 text-gray-700 leading-relaxed">
-            <p>本应用需要您自己的 Google Gemini API 密钥才能运行。您的密钥将仅存储在您的浏览器本地，不会上传到任何服务器。</p>
-            <ol className="list-decimal list-inside space-y-3 pl-4">
-              <li>
-                访问{" "}
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-cyan-600 font-medium hover:underline">
-                   Google AI Studio
-                </a>。
-              </li>
-              <li>
-                使用您的 Google 账户登录。
-              </li>
-              <li>
-                点击 "Create API key in new project" 按钮来创建一个新的 API 密钥。
-              </li>
-              <li>
-                复制生成的密钥字符串。
-              </li>
-              <li>
-                回到本应用，点击右上角的设置图标 ⚙️，将密钥粘贴到输入框中并保存。
-              </li>
-            </ol>
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-                <p className="text-yellow-800">
-                    <strong>重要提示：</strong> 请妥善保管您的 API 密钥，不要与他人分享。
-                </p>
-            </div>
-          </div>
-        </section>
-
         <footer className="text-center pt-6 border-t">
             <Link 
                 to="/"
