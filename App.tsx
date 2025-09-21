@@ -358,6 +358,8 @@ const MainPage: React.FC = () => {
   const handleClearHistory = () => {
     updateHistory([]);
   };
+  
+  const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
   const TabButton = ({ isActive, onClick, children }: { isActive: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button
@@ -482,7 +484,7 @@ const MainPage: React.FC = () => {
                 </p>
                 }
                 <p>
-                    系统部署更新于 2024-07-31
+                    系统部署更新于 {formattedDate}
                 </p>
             </div>
           </footer>
