@@ -72,10 +72,9 @@ const InfoCard: React.FC<{ title: string; children: React.ReactNode }> = ({ titl
 interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
-  onAnalyzeStock: (stockQuery: string) => void;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onAnalyzeStock }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) => {
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -248,8 +247,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onAn
             {report.recommendedStocks && report.recommendedStocks.length > 0 ? (
               <StockRecommendations 
                 stocks={report.recommendedStocks} 
-                keywords={keywords} 
-                onAnalyzeStock={onAnalyzeStock} 
+                keywords={keywords}
               />
             ) : (
               <p className="text-gray-500">未找到相关的股票标的。</p>

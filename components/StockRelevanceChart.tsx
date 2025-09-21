@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StockTicker } from '../types';
-import { ExternalLinkIcon, SparklesIcon } from './icons/Icons';
+import { ExternalLinkIcon } from './icons/Icons';
 
 // Helper component for highlighting text.
 const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text, keywords }) => {
@@ -45,7 +45,7 @@ const generateStockLink = (stock: StockTicker): string => {
     }
 };
 
-const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; onAnalyzeStock: (stockQuery: string) => void; }> = ({ stock, keywords, onAnalyzeStock }) => {
+const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stock, keywords }) => {
   const relevanceConfig = {
     High: {
       label: '高',
@@ -69,10 +69,6 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; onAnalyzeSto
 
   const config = relevanceConfig[stock.relevance] || relevanceConfig.Medium;
   const link = generateStockLink(stock);
-  
-  const handleAnalyzeClick = () => {
-    onAnalyzeStock(stock.name);
-  };
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border-l-4 ${config.borderColor} p-4 flex flex-col justify-between transition-shadow hover:shadow-lg h-full`}>
@@ -92,15 +88,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; onAnalyzeSto
         </p>
       </div>
       {/* Actions area */}
-      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-         <button
-            onClick={handleAnalyzeClick}
-            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all"
-            aria-label={`一键分析 ${stock.name}`}
-          >
-            <SparklesIcon className="w-4 h-4 -ml-0.5 mr-1" />
-            一键分析
-        </button>
+      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end">
         <a 
           href={link} 
           target="_blank" 
@@ -120,14 +108,13 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; onAnalyzeSto
 interface StockRecommendationsProps {
   stocks: StockTicker[];
   keywords: string[];
-  onAnalyzeStock: (stockQuery: string) => void;
 }
 
-const StockRecommendations: React.FC<StockRecommendationsProps> = ({ stocks, keywords, onAnalyzeStock }) => {
+const StockRecommendations: React.FC<StockRecommendationsProps> = ({ stocks, keywords }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {stocks.map((stock, index) => (
-            <StockCard key={index} stock={stock} keywords={keywords} onAnalyzeStock={onAnalyzeStock} />
+            <StockCard key={index} stock={stock} keywords={keywords} />
         ))}
     </div>
   );

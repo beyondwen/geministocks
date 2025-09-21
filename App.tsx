@@ -195,8 +195,22 @@ const MainPage: React.FC = () => {
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
+  const [deployTime, setDeployTime] = useState<string>('');
 
   useEffect(() => {
+    // Set deployment time on initial load. In a real CI/CD pipeline, this would be a build-time variable.
+    const now = new Date();
+    const formattedTime = now.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).replace(/\//g, '-');
+    setDeployTime(formattedTime);
+    
     // Load history and settings from localStorage
     try {
       const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -358,13 +372,6 @@ const MainPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAnalyzeStockFromTopic = (query: string) => {
-    setActiveTab('stock');
-    setStockQuery(query);
-    handleStockAnalyze(query);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleSelectHistory = (entry: HistoryEntry) => {
     setUserInput(entry.topic);
     setAnalysisReport(entry.report);
@@ -483,7 +490,7 @@ const MainPage: React.FC = () => {
                           </div>
                         )}
             
-                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} onAnalyzeStock={handleAnalyzeStockFromTopic} />}
+                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
                         
                         <AnalysisHistory
                           history={history}
@@ -507,6 +514,11 @@ const MainPage: React.FC = () => {
             <p className="text-sm text-gray-500 mb-2">
               由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
             </p>
+            {deployTime && (
+                <p className="text-xs text-gray-400">
+                    系统最新部署时间: {deployTime}
+                </p>
+            )}
           </footer>
         </div>
       </div>
