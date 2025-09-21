@@ -481,6 +481,9 @@ const MainPage: React.FC = () => {
                     历史累计访客数: {globalStats.pageViews.toLocaleString()}
                 </p>
                 }
+                <p>
+                    系统部署更新于 2024-07-31
+                </p>
             </div>
           </footer>
         </div>
