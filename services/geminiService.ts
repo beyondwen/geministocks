@@ -72,7 +72,7 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
           ${topic}
           ---
 
-          请严格按照以下 JSON 格式返回你的分析报告，不要添加任何额外的解释或文本。
+          请严格按照以下 JSON 格式返回你的分析报告，不要添加任何额外的解释或文本。所有输出内容必须使用简体中文。
           \`\`\`json
           ${analysisSchemaString}
           \`\`\`
@@ -173,7 +173,7 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
           ${stockQuery}
           ---
 
-          请严格按照以下 JSON 格式返回你的分析报告，不要添加任何额外的解释或文本。
+          请严格按照以下 JSON 格式返回你的分析报告，不要添加任何额外的解释或文本。所有输出内容必须使用简体中文。
           \`\`\`json
           ${stockAnalysisSchemaString}
           \`\`\`
