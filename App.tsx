@@ -35,7 +35,8 @@ const NEWS_SOURCES: NewsSource[] = [
   { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'bloomberg', name: '彭博社', url: 'https://feeds.bloomberg.com/technology/news.rss' },
-  { id: 'shilian', name: '十面埋伏', url: 'https://bloombergnew.buzzing.cc/feed.json', type: 'json' },
+  { id: 'shilian', name: '彭博挖宝', url: 'https://bloombergnew.buzzing.cc/feed.json', type: 'json' },
+  { id: 'treasure', name: '挖宝藏', url: 'https://rsshub.app/river/occasus/vncwdhq2xje7wp' }
 ];
 
 // --- Helper Components ---
@@ -253,7 +254,6 @@ const MainPage: React.FC = () => {
     fetchGlobalStats();
 
     // Register the service worker for PWA capabilities.
-    // We wrap it in a 'load' event listener to ensure the page is fully loaded.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const swUrl = `${window.location.origin}/sw.js`;
