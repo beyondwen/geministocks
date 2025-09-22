@@ -1,84 +1,60 @@
-// FIX: Refactored to use the @google/genai SDK, adhering to security and API guidelines.
-import { GoogleGenAI, Type } from "@google/genai";
 import type { AnalysisReport, StockAnalysisReport } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const MODEL_NAME = 'gemini-2.5-flash';
+const OPENROUTER_API_KEY = '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';
+const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MODEL_NAME = 'x-ai/grok-4-fast:free';
+const SITE_URL = 'https://stock-digger.ai'; 
+const SITE_TITLE = '股市超级挖掘机';
 
-// --- Topic Analysis Service ---
+/**
+ * Extracts a JSON object from a string. It handles cases where the JSON is
+ * wrapped in markdown-style code blocks (```json ... ```).
+ * @param text The string potentially containing the JSON.
+ * @returns The parsed JavaScript object.
+ * @throws An error if parsing fails.
+ */
+const extractJson = (text: string): any => {
+    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+    const match = text.match(jsonRegex);
+    const jsonString = match ? match[1] : text;
 
-const analysisSchema = {
-  type: Type.OBJECT,
-  properties: {
-    summary: { type: Type.STRING, description: "关于核心事件或主题的1-3句话摘要。" },
-    analysis: {
-      type: Type.OBJECT,
-      properties: {
-        macroPolicy: { type: Type.STRING, description: "分析该事件与当前宏观经济环境和相关政策的关联。" },
-        industryChain: {
-          type: Type.OBJECT,
-          description: "产业链分析",
-          properties: {
-            upstream: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: { name: { type: Type.STRING }, description: { type: Type.STRING } }
-              }
-            },
-            midstream: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: { name: { type: Type.STRING }, description: { type: Type.STRING } }
-              }
-            },
-            downstream: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: { name: { type: Type.STRING }, description: { type: Type.STRING } }
-              }
-            }
-          }
-        },
-        companyFundamentals: { type: Type.STRING, description: "分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响。" },
-        marketSentiment: {
-          type: Type.OBJECT,
-          properties: {
-            sentiment: { type: Type.STRING, enum: ["Positive", "Neutral", "Negative"] },
-            description: { type: Type.STRING }
-          }
-        }
-      },
-      required: ['macroPolicy', 'industryChain', 'companyFundamentals', 'marketSentiment']
-    },
-    investmentStrategy: {
-      type: Type.OBJECT,
-      properties: {
-        logic: { type: Type.STRING, description: "基于四维一体分析凝练出的核心投资逻辑。" },
-        suggestion: { type: Type.STRING, description: "策略建议，例如是短期交易型机会还是长期价值布局。" },
-        risks: { type: Type.STRING, description: "明确提示可能面临的潜在风险。" }
-      },
-      required: ['logic', 'suggestion', 'risks']
-    },
-    recommendedStocks: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING },
-          ticker: { type: Type.STRING },
-          market: { type: Type.STRING, enum: ["A-Share", "Hong Kong", "US", "Other"] },
-          reason: { type: Type.STRING },
-          relevance: { type: Type.STRING, enum: ["High", "Medium", "Low"] }
-        },
-        required: ['name', 'ticker', 'market', 'reason', 'relevance']
-      }
+    try {
+        return JSON.parse(jsonString);
+    } catch (e) {
+        console.error("Failed to parse JSON response from AI:", jsonString);
+        throw new Error("Invalid JSON response from AI model.");
     }
-  },
-  required: ['summary', 'analysis', 'investmentStrategy', 'recommendedStocks']
 };
+
+const analysisSchemaString = `{
+    "summary": "string (关于核心事件或主题的1-3句话摘要)",
+    "analysis": {
+        "macroPolicy": "string (分析该事件与当前宏观经济环境和相关政策的关联)",
+        "industryChain": {
+            "upstream": [{"name": "string", "description": "string"}],
+            "midstream": [{"name": "string", "description": "string"}],
+            "downstream": [{"name": "string", "description": "string"}]
+        },
+        "companyFundamentals": "string (分析事件对核心公司的财务、技术、市场地位可能产生的正面或负面影响)",
+        "marketSentiment": {
+            "sentiment": "'Positive' | 'Neutral' | 'Negative'",
+            "description": "string"
+        }
+    },
+    "investmentStrategy": {
+        "logic": "string (基于四维一体分析凝练出的核心投资逻辑)",
+        "suggestion": "string (策略建议，例如是短期交易型机会还是长期价值布局)",
+        "risks": "string (明确提示可能面临的潜在风险)"
+    },
+    "recommendedStocks": [{
+        "name": "string",
+        "ticker": "string",
+        "market": "'A-Share' | 'Hong Kong' | 'US' | 'Other'",
+        "reason": "string",
+        "relevance": "'High' | 'Medium' | 'Low'"
+    }]
+}`;
+
 
 export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
     try {
@@ -96,20 +72,37 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
           ${topic}
           ---
 
-          请立即生成完整的分析报告。
+          请严格按照以下 JSON 格式返回你的分析报告，不要添加任何额外的解释或文本。
+          \`\`\`json
+          ${analysisSchemaString}
+          \`\`\`
         `;
         
-        const response = await ai.models.generateContent({
-            model: MODEL_NAME,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: analysisSchema,
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': SITE_URL,
+                'X-Title': encodeURIComponent(SITE_TITLE)
             },
+            body: JSON.stringify({
+                model: MODEL_NAME,
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' }
+            })
         });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
         
-        const jsonText = response.text.trim();
-        return JSON.parse(jsonText) as AnalysisReport;
+        return extractJson(content) as AnalysisReport;
+
     } catch (error) {
         console.error('Error in getAnalysis:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -117,89 +110,47 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
     }
 };
 
-// --- Stock Analysis Service ---
-
-const stockAnalysisSchema = {
-    type: Type.OBJECT,
-    properties: {
-        companyProfile: {
-            type: Type.OBJECT,
-            properties: {
-                name: { type: Type.STRING },
-                ticker: { type: Type.STRING },
-                exchange: { type: Type.STRING },
-                sector: { type: Type.STRING },
-                industry: { type: Type.STRING },
-                summary: { type: Type.STRING },
-            },
-            required: ['name', 'ticker', 'exchange', 'sector', 'industry', 'summary']
-        },
-        financialSummary: {
-            type: Type.OBJECT,
-            properties: {
-                period: { type: Type.STRING },
-                highlights: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            metric: { type: Type.STRING },
-                            value: { type: Type.STRING },
-                            comment: { type: Type.STRING },
-                        },
-                        required: ['metric', 'value', 'comment']
-                    }
-                }
-            },
-            required: ['period', 'highlights']
-        },
-        swotAnalysis: {
-            type: Type.OBJECT,
-            properties: {
-                strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-                opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-                threats: { type: Type.ARRAY, items: { type: Type.STRING } },
-            },
-            required: ['strengths', 'weaknesses', 'opportunities', 'threats']
-        },
-        investmentThesis: {
-            type: Type.OBJECT,
-            properties: {
-                bull: { type: Type.STRING },
-                bear: { type: Type.STRING },
-                conclusion: { type: Type.STRING },
-            },
-            required: ['bull', 'bear', 'conclusion']
-        },
-        riskAnalysis: {
-            type: Type.OBJECT,
-            properties: {
-                level: { type: Type.STRING, enum: ['High', 'Medium', 'Low'] },
-                description: { type: Type.STRING },
-                factors: { type: Type.ARRAY, items: { type: Type.STRING } },
-            },
-            required: ['level', 'description', 'factors']
-        },
-        corporateGovernance: {
-            type: Type.OBJECT,
-            properties: {
-                summary: { type: Type.STRING },
-            },
-            required: ['summary']
-        },
-        esgRating: {
-            type: Type.OBJECT,
-            properties: {
-                rating: { type: Type.STRING },
-                summary: { type: Type.STRING },
-            },
-            required: ['rating', 'summary']
-        }
+const stockAnalysisSchemaString = `{
+    "companyProfile": {
+        "name": "string",
+        "ticker": "string",
+        "exchange": "string",
+        "sector": "string",
+        "industry": "string",
+        "summary": "string"
     },
-    required: ['companyProfile', 'financialSummary', 'swotAnalysis', 'investmentThesis', 'riskAnalysis', 'corporateGovernance', 'esgRating']
-};
-
+    "financialSummary": {
+        "period": "string",
+        "highlights": [{
+            "metric": "string",
+            "value": "string",
+            "comment": "string"
+        }]
+    },
+    "swotAnalysis": {
+        "strengths": ["string"],
+        "weaknesses": ["string"],
+        "opportunities": ["string"],
+        "threats": ["string"]
+    },
+    "investmentThesis": {
+        "bull": "string",
+        "bear": "string",
+        "conclusion": "string"
+    },
+    "riskAnalysis": {
+        "level": "'High' | 'Medium' | 'Low'",
+        "description": "string",
+        "factors": ["string"]
+    },
+    "corporateGovernance": {
+        "summary": "string"
+    },
+    "esgRating": {
+        "rating": "string",
+        "summary": "string"
+    }
+}`;
 
 export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
     try {
@@ -222,20 +173,36 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
           ${stockQuery}
           ---
 
-          请立即生成完整的分析报告。
+          请严格按照以下 JSON 格式返回你的分析报告，不要添加任何额外的解释或文本。
+          \`\`\`json
+          ${stockAnalysisSchemaString}
+          \`\`\`
         `;
         
-        const response = await ai.models.generateContent({
-            model: MODEL_NAME,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: stockAnalysisSchema,
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': SITE_URL,
+                'X-Title': encodeURIComponent(SITE_TITLE)
             },
+            body: JSON.stringify({
+                model: MODEL_NAME,
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' }
+            })
         });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
         
-        const jsonText = response.text.trim();
-        return JSON.parse(jsonText) as StockAnalysisReport;
+        return extractJson(content) as StockAnalysisReport;
     } catch (error) {
         console.error('Error in getStockAnalysis:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

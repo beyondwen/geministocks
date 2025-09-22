@@ -281,7 +281,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
         <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
             <div className="mb-6 pb-4 border-b border-gray-300">
                 <h2 className="text-3xl font-bold text-gray-900">个股综合分析报告 📊</h2>
-                <p className="text-gray-600">由 Gemini AI 生成</p>
+                <p className="text-gray-600">由 grok-4-fast 生成</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileSection profile={report.companyProfile} />
@@ -294,7 +294,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
             </div>
             <footer className="text-center mt-8 pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500">
-                    本报告使用僧僧开发的股市超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
+                    本报告使用股市超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
                 </p>
             </footer>
         </div>

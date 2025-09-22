@@ -28,11 +28,14 @@ interface NewsSource {
   id: string;
   name: string;
   url: string;
+  type?: 'rss' | 'json';
 }
 
 const NEWS_SOURCES: NewsSource[] = [
   { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
+  { id: 'bloomberg', name: '彭博社', url: 'https://feeds.bloomberg.com/technology/news.rss' },
+  { id: 'shilian', name: '十面埋伏', url: 'https://bloombergnew.buzzing.cc/feed.json', type: 'json' },
 ];
 
 // --- Helper Components ---
@@ -86,26 +89,37 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSou
 
       setIsLoading(true);
       setError(null);
-      setArticles([]); // Clear old articles for better user feedback
-
-      const RSS_URL = source.url;
-      const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`;
+      setArticles([]);
 
       try {
-        const response = await fetch(API_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.status !== 'ok') {
-            throw new Error('Failed to fetch news feed.');
-        }
+        let fetchedArticles: NewsArticle[] = [];
 
-        const fetchedArticles: NewsArticle[] = data.items.slice(0, 3).map((item: any) => ({
-          title: item.title,
-          link: item.link,
-          description: item.description,
-        }));
+        if (source.type === 'json') {
+          // Handle direct JSON feed
+          const response = await fetch(source.url);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const data = await response.json();
+          if (!data.items) throw new Error('Invalid JSON feed format.');
+          
+          fetchedArticles = data.items.slice(0, 3).map((item: any) => ({
+            title: item.title,
+            link: item.url,
+            description: item.summary || item.content_html || '',
+          }));
+        } else {
+          // Default to RSS via rss2json proxy
+          const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
+          const response = await fetch(API_URL);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const data = await response.json();
+          if (data.status !== 'ok') throw new Error('Failed to fetch news feed via rss2json.');
+          
+          fetchedArticles = data.items.slice(0, 3).map((item: any) => ({
+            title: item.title,
+            link: item.link,
+            description: item.description,
+          }));
+        }
         
         setArticles(fetchedArticles);
 
@@ -237,6 +251,22 @@ const MainPage: React.FC = () => {
       }
     };
     fetchGlobalStats();
+
+    // Register the service worker for PWA capabilities.
+    // We wrap it in a 'load' event listener to ensure the page is fully loaded.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swUrl = `${window.location.origin}/sw.js`;
+        navigator.serviceWorker
+          .register(swUrl)
+          .then(registration => {
+            console.log('Service Worker registered with scope:', registration.scope);
+          })
+          .catch(error => {
+            console.error('Service Worker registration failed:', error);
+          });
+      });
+    }
   }, []);
 
   // SEO: Set meta tags for the main page
@@ -411,7 +441,7 @@ const MainPage: React.FC = () => {
             <div className="order-1 sm:order-2 flex items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
                 <div className="text-right">
                   <p className="text-sm text-gray-600 whitespace-nowrap">
-                    本次会话分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
+                    累计分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
                   </p>
                 </div>
                 <Link to="/about" className="text-sm text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">
@@ -501,7 +531,7 @@ const MainPage: React.FC = () => {
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
             <p className="text-sm text-gray-500">
-              由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
+              由僧僧独立开发，欢迎关注“小声读书”公众号
             </p>
             <p className="text-xs text-gray-400 mt-2">
               grok-4-fast inside
