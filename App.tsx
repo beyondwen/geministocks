@@ -195,22 +195,8 @@ const MainPage: React.FC = () => {
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
-  const [deployTime, setDeployTime] = useState<string>('');
 
   useEffect(() => {
-    // Set deployment time on initial load. In a real CI/CD pipeline, this would be a build-time variable.
-    const now = new Date();
-    const formattedTime = now.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    }).replace(/\//g, '-');
-    setDeployTime(formattedTime);
-    
     // Load history and settings from localStorage
     try {
       const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -511,14 +497,12 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500 mb-2">
+            <p className="text-sm text-gray-500">
               由僧僧 GO 开发驱动，欢迎关注“小声读书”公众号
             </p>
-            {deployTime && (
-                <p className="text-xs text-gray-400">
-                    系统最新部署时间: {deployTime}
-                </p>
-            )}
+            <p className="text-xs text-gray-400 mt-2">
+              grok-4-fast inside
+            </p>
           </footer>
         </div>
       </div>
