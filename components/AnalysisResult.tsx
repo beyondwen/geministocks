@@ -1,38 +1,11 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
-import type { AnalysisReport, StockTicker } from '../types';
+import type { AnalysisReport } from '../types';
 import { DownloadIcon, DocumentArrowDownIcon } from './icons/Icons';
 import StockRecommendations from './StockRelevanceChart';
 import IndustryChainViz from './IndustryChainViz';
-
-// Helper component for highlighting text. It wraps keywords in a styled <mark> tag.
-const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text, keywords }) => {
-  if (!keywords || keywords.length === 0 || !text) {
-    return <>{text}</>;
-  }
-
-  // Escape special characters for regex and create a single regex for all keywords
-  const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${keywords.map(escapeRegExp).join('|')})`, 'gi');
-  const parts = text.split(regex);
-
-  return (
-    <>
-      {parts.map((part, index) => {
-        const isKeyword = keywords.some(keyword => keyword.toLowerCase() === part.toLowerCase());
-        if (isKeyword) {
-          return (
-            <mark key={index} className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
-              {part}
-            </mark>
-          );
-        }
-        return <span key={index}>{part}</span>;
-      })}
-    </>
-  );
-};
+import TextRenderer from './TextRenderer';
 
 const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negative' }> = ({ sentiment }) => {
     const sentimentConfig = {
@@ -174,6 +147,11 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
       });
   }, [report]);
 
+  const truncateText = (text: string, length: number): string => {
+    if (!text) return '';
+    return text.length > length ? text.substring(0, length) + '...' : text;
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="relative flex justify-end gap-x-2">
@@ -190,74 +168,107 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
           onClick={handleExportPdf}
           disabled={isExportingPdf || isExporting}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="导出为 PDF"
+          aria-label="导出为PDF"
         >
           <DocumentArrowDownIcon className="-ml-1 mr-2 h-5 w-5" />
           {isExportingPdf ? '正在导出...' : '导出 PDF'}
         </button>
       </div>
 
-      {exportError && (
-        <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-            <p>{exportError}</p>
-        </div>
-      )}
+      {exportError && <div role="alert" className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded text-center"><p>{exportError}</p></div>}
 
-      {/* This ref wrapper provides a solid background and padding for the exported image. */}
-      <div ref={exportRef} className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
-        <div className="space-y-8">
-          <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              投资分析报告 📝
-            </h2>
-            <p className="text-gray-700">
-              <HighlightedText text={report.summary} keywords={keywords} />
-            </p>
+      <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
+        <div className="mb-8 pb-6 border-b border-gray-300">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">四维一体投资分析报告 💡</h2>
+          <p className="text-lg text-gray-800 font-medium italic border-l-4 border-cyan-400 pl-4 py-1 bg-cyan-50/50 rounded-r-md">
+             <TextRenderer text={report.summary} keywords={keywords} />
+          </p>
+          <p className="text-sm text-gray-500 mt-4">
+            分析来源: <span className="font-mono bg-gray-200/60 px-2 py-1 rounded text-xs">
+              {truncateText(userInput, 80)}
+            </span>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <InfoCard title="宏观与政策面 (Macro & Policy)">
+            <TextRenderer text={report.analysis.macroPolicy} keywords={keywords} />
+          </InfoCard>
+          
+          <InfoCard title="市场情绪与催化剂 (Market Sentiment)">
+            <div className="flex items-center space-x-4 mb-2">
+              <span className="font-semibold">情绪评估:</span>
+              <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
+            </div>
+            <TextRenderer text={report.analysis.marketSentiment.description} keywords={keywords} />
+          </InfoCard>
+
+          <div className="md:col-span-2">
+            <InfoCard title="行业与产业链 (Industry Chain)">
+              {typeof report.analysis.industryChain === 'string' ? (
+                <TextRenderer text={report.analysis.industryChain} keywords={keywords} />
+              ) : (
+                <IndustryChainViz chain={report.analysis.industryChain} />
+              )}
+            </InfoCard>
           </div>
-    
-          <InfoCard title="四维一体立体化分析 🔬">
-            <div><strong>宏观与政策面：</strong> <HighlightedText text={report.analysis.macroPolicy} keywords={keywords} /></div>
-            <div>
-                <strong>行业与产业链：</strong>
-                {typeof report.analysis.industryChain === 'object' && report.analysis.industryChain !== null ? (
-                    <IndustryChainViz chain={report.analysis.industryChain} />
-                ) : (
-                    <p className='inline'><HighlightedText text={report.analysis.industryChain as string} keywords={keywords} /></p>
-                )}
-            </div>
-            <div><strong>公司基本面：</strong> <HighlightedText text={report.analysis.companyFundamentals} keywords={keywords} /></div>
-            <div>
-              <div className="flex items-center mb-1">
-                  <strong className="mr-2">市场情绪与催化剂：</strong>
-                  <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
+
+          <div className="md:col-span-2">
+            <InfoCard title="公司基本面 (Company Fundamentals)">
+              <TextRenderer text={report.analysis.companyFundamentals} keywords={keywords} />
+            </InfoCard>
+          </div>
+          
+          <div className="md:col-span-2">
+            <InfoCard title="投资策略 (Investment Strategy)">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">核心投资逻辑:</h4>
+                <p className="pl-4 border-l-4 border-cyan-400"><TextRenderer text={report.investmentStrategy.logic} keywords={keywords} /></p>
               </div>
-              <p className="pl-1">
-                  <HighlightedText text={report.analysis.marketSentiment.description} keywords={keywords} />
-              </p>
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">策略建议:</h4>
+                <p className="pl-4 border-l-4 border-green-400"><TextRenderer text={report.investmentStrategy.suggestion} keywords={keywords} /></p>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">潜在风险:</h4>
+                <p className="pl-4 border-l-4 border-red-400"><TextRenderer text={report.investmentStrategy.risks} keywords={keywords} /></p>
+              </div>
+            </InfoCard>
+          </div>
+
+          <div className="md:col-span-2">
+            <InfoCard title="相关标的推荐 (Stock Recommendations)">
+              <StockRecommendations stocks={report.recommendedStocks} keywords={keywords} />
+            </InfoCard>
+          </div>
+
+          {report.sources && report.sources.length > 0 && (
+            <div className="md:col-span-2">
+                <InfoCard title="参考来源 (Sources)">
+                    <ul className="list-disc list-inside space-y-2 text-sm">
+                        {report.sources.map((source, index) => (
+                            <li key={index}>
+                                <a
+                                    href={source.uri}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-cyan-600 hover:text-cyan-800 hover:underline transition-colors"
+                                    title={source.title}
+                                >
+                                    {source.title}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </InfoCard>
             </div>
-          </InfoCard>
-    
-          <InfoCard title="投资策略与风险提示 💡">
-            <div><strong>核心投资逻辑：</strong> <HighlightedText text={report.investmentStrategy.logic} keywords={keywords} /></div>
-            <div><strong>操作建议：</strong> <HighlightedText text={report.investmentStrategy.suggestion} keywords={keywords} /></div>
-            <div><strong>风险提示：</strong> <HighlightedText text={report.investmentStrategy.risks} keywords={keywords} /></div>
-          </InfoCard>
-    
-          <InfoCard title="相关标的推荐 🎯">
-            {report.recommendedStocks && report.recommendedStocks.length > 0 ? (
-              <StockRecommendations 
-                stocks={report.recommendedStocks} 
-                keywords={keywords}
-              />
-            ) : (
-              <p className="text-gray-500">未找到相关的股票标的。</p>
-            )}
-          </InfoCard>
+          )}
         </div>
         <footer className="text-center mt-8 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500">
-                本报告使用股市超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
-            </p>
+          <p className="text-xs text-gray-500">
+            本报告使用股市超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
+          </p>
         </footer>
       </div>
     </div>

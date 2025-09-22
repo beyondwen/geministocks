@@ -2,7 +2,8 @@ import React, { useRef, useState, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import type { StockAnalysisReport, FinancialMetric, SWOT } from '../types';
-import { DownloadIcon, DocumentArrowDownIcon } from './icons/Icons';
+import { DownloadIcon, DocumentArrowDownIcon, BookmarkSquareIcon } from './icons/Icons';
+import TextRenderer from './TextRenderer';
 
 // --- SVG Icons (defined locally to minimize file changes) ---
 const BuildingOfficeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -55,7 +56,7 @@ const RiskIndicator: React.FC<{ level: 'High' | 'Medium' | 'Low' }> = ({ level }
       Low: { label: '低风险', color: 'bg-green-100 text-green-800 border-green-400' },
     }[level] || { label: '中等风险', color: 'bg-yellow-100 text-yellow-800 border-yellow-400' };
   
-    return <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full border ${config.color}`}>{config.label}</span>;
+    return <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full border ${config.color}`}><TextRenderer text={config.label} /></span>;
 };
 
 // --- Main Display Sections ---
@@ -76,11 +77,11 @@ const ProfileSection: React.FC<{ profile: StockAnalysisReport['companyProfile'] 
                     <p className="text-gray-600">交易所</p>
                 </div>
                 <div>
-                    <p className="font-semibold text-gray-900">{profile.sector}</p>
+                    <p className="font-semibold text-gray-900"><TextRenderer text={profile.sector} /></p>
                     <p className="text-gray-600">行业板块</p>
                 </div>
             </div>
-            <p className="text-sm leading-relaxed mt-4 pt-4 border-t border-gray-200">{profile.summary}</p>
+            <p className="text-sm leading-relaxed mt-4 pt-4 border-t border-gray-200"><TextRenderer text={profile.summary} /></p>
         </Card>
     </div>
 );
@@ -91,8 +92,8 @@ const FinancialsSection: React.FC<{ summary: StockAnalysisReport['financialSumma
             {summary.highlights.map((item, index) => (
                 <li key={index} className="flex flex-col sm:flex-row justify-between sm:items-center p-2 rounded-md hover:bg-gray-100">
                     <div>
-                        <p className="font-semibold text-gray-900">{item.metric}: <span className="font-mono">{item.value}</span></p>
-                        <p className="text-xs text-gray-600">{item.comment}</p>
+                        <p className="font-semibold text-gray-900"><TextRenderer text={item.metric} />: <span className="font-mono">{item.value}</span></p>
+                        <p className="text-xs text-gray-600"><TextRenderer text={item.comment} /></p>
                     </div>
                 </li>
             ))}
@@ -107,25 +108,25 @@ const SWOTSection: React.FC<{ swot: SWOT }> = ({ swot }) => (
                 <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                     <h4 className="font-bold text-green-800 mb-2">优势 (S)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                        {swot.strengths.map((s, i) => <li key={i}><TextRenderer text={s} /></li>)}
                     </ul>
                 </div>
                 <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                     <h4 className="font-bold text-red-800 mb-2">劣势 (W)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
+                        {swot.weaknesses.map((w, i) => <li key={i}><TextRenderer text={w} /></li>)}
                     </ul>
                 </div>
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                     <h4 className="font-bold text-blue-800 mb-2">机会 (O)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.opportunities.map((o, i) => <li key={i}>{o}</li>)}
+                        {swot.opportunities.map((o, i) => <li key={i}><TextRenderer text={o} /></li>)}
                     </ul>
                 </div>
                 <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                     <h4 className="font-bold text-yellow-800 mb-2">威胁 (T)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.threats.map((t, i) => <li key={i}>{t}</li>)}
+                        {swot.threats.map((t, i) => <li key={i}><TextRenderer text={t} /></li>)}
                     </ul>
                 </div>
             </div>
@@ -137,15 +138,15 @@ const ThesisSection: React.FC<{ thesis: StockAnalysisReport['investmentThesis'] 
     <Card title="投资论点" icon={<LightBulbIcon className="w-6 h-6" />}>
         <div>
             <h4 className="font-bold text-gray-800 mb-1">看涨理由 (Bull) 👍</h4>
-            <p className="text-sm leading-relaxed">{thesis.bull}</p>
+            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bull} /></p>
         </div>
         <div className="mt-3">
             <h4 className="font-bold text-gray-800 mb-1">看跌理由 (Bear) 👎</h4>
-            <p className="text-sm leading-relaxed">{thesis.bear}</p>
+            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bear} /></p>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-200">
             <h4 className="font-bold text-gray-800 mb-1">综合结论 🎯</h4>
-            <p className="text-sm font-semibold leading-relaxed">{thesis.conclusion}</p>
+            <p className="text-sm font-semibold leading-relaxed"><TextRenderer text={thesis.conclusion} /></p>
         </div>
     </Card>
 );
@@ -157,11 +158,11 @@ const RiskSection: React.FC<{ risk: StockAnalysisReport['riskAnalysis'] }> = ({ 
                 <h4 className="font-bold text-gray-800">综合风险评级:</h4>
                 <RiskIndicator level={risk.level} />
             </div>
-            <p className="text-sm mb-3">{risk.description}</p>
+            <p className="text-sm mb-3"><TextRenderer text={risk.description} /></p>
             <div>
                 <h4 className="font-bold text-gray-800 mb-2">主要风险因素:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                    {risk.factors.map((factor, i) => <li key={i}>{factor}</li>)}
+                    {risk.factors.map((factor, i) => <li key={i}><TextRenderer text={factor} /></li>)}
                 </ul>
             </div>
         </Card>
@@ -170,7 +171,7 @@ const RiskSection: React.FC<{ risk: StockAnalysisReport['riskAnalysis'] }> = ({ 
 
 const GovernanceSection: React.FC<{ governance: StockAnalysisReport['corporateGovernance'] }> = ({ governance }) => (
     <Card title="公司治理" icon={<UsersIcon className="w-6 h-6" />}>
-        <p className="text-sm leading-relaxed">{governance.summary}</p>
+        <p className="text-sm leading-relaxed"><TextRenderer text={governance.summary} /></p>
     </Card>
 );
 
@@ -178,9 +179,9 @@ const ESGSection: React.FC<{ esg: StockAnalysisReport['esgRating'] }> = ({ esg }
     <Card title="ESG 评级" icon={<GlobeAltIcon className="w-6 h-6" />}>
         <div className="flex items-center gap-x-4 mb-3">
             <h4 className="font-bold text-gray-800">综合评级:</h4>
-            <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md">{esg.rating}</span>
+            <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md"><TextRenderer text={esg.rating} /></span>
         </div>
-        <p className="text-sm leading-relaxed">{esg.summary}</p>
+        <p className="text-sm leading-relaxed"><TextRenderer text={esg.summary} /></p>
     </Card>
 );
 
@@ -281,7 +282,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
         <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
             <div className="mb-6 pb-4 border-b border-gray-300">
                 <h2 className="text-3xl font-bold text-gray-900">个股综合分析报告 📊</h2>
-                <p className="text-gray-600">由 grok-4-fast 生成</p>
+                <p className="text-gray-600">由 AI 生成</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProfileSection profile={report.companyProfile} />
@@ -291,6 +292,27 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                 <GovernanceSection governance={report.corporateGovernance} />
                 <ESGSection esg={report.esgRating} />
                 <RiskSection risk={report.riskAnalysis} />
+                {report.sources && report.sources.length > 0 && (
+                    <div className="col-span-1 md:col-span-2">
+                        <Card title="参考来源" icon={<BookmarkSquareIcon className="w-6 h-6" />}>
+                            <ul className="list-disc list-inside space-y-2 text-sm">
+                                {report.sources.map((source, index) => (
+                                    <li key={index}>
+                                        <a
+                                            href={source.uri}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-cyan-600 hover:text-cyan-800 hover:underline transition-colors"
+                                            title={source.title}
+                                        >
+                                            {source.title}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </Card>
+                    </div>
+                )}
             </div>
             <footer className="text-center mt-8 pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500">

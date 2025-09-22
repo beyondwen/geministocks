@@ -1,3 +1,7 @@
+
+
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis } from './services/geminiService';
@@ -10,7 +14,7 @@ import Loader from './components/Loader';
 import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, SettingsIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -189,6 +193,30 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSou
     </div>
   );
 };
+
+// FIX: Moved TabButton and its props type outside of the MainPage component
+// for better performance, to prevent re-declaration on every render, and to resolve potential type inference issues.
+// FIX: Added `children` to `TabButtonProps` as `React.FC` no longer implicitly includes it. This resolves errors where children were passed to the component without being typed.
+type TabButtonProps = {
+  isActive: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+};
+
+const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none ${
+      isActive
+        ? 'border-cyan-500 text-cyan-600'
+        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+    }`}
+    role="tab"
+    aria-selected={isActive}
+  >
+    {children}
+  </button>
+);
 
 
 const MainPage: React.FC = () => {
@@ -409,21 +437,6 @@ const MainPage: React.FC = () => {
   
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
-  const TabButton = ({ isActive, onClick, children }: { isActive: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-      onClick={onClick}
-      className={`flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none ${
-        isActive
-          ? 'border-cyan-500 text-cyan-600'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-      }`}
-      role="tab"
-      aria-selected={isActive}
-    >
-      {children}
-    </button>
-  );
-
   return (
     <>
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -531,9 +544,8 @@ const MainPage: React.FC = () => {
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
             <p className="text-sm text-gray-500">
               由僧僧独立开发，欢迎关注“小声读书”公众号
-            </p>
-            <p className="text-xs text-gray-400 mt-2">
-              grok-4-fast inside
+              <br />
+              联系邮箱: <a href="mailto:codes@z.org" className="text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">codes@z.org</a>
             </p>
           </footer>
         </div>

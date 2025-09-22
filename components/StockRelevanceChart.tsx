@@ -1,33 +1,7 @@
 import React from 'react';
 import type { StockTicker } from '../types';
 import { ExternalLinkIcon } from './icons/Icons';
-
-// Helper component for highlighting text.
-const HighlightedText: React.FC<{ text: string; keywords: string[] }> = ({ text, keywords }) => {
-  if (!keywords || keywords.length === 0 || !text) {
-    return <>{text}</>;
-  }
-
-  const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${keywords.map(escapeRegExp).join('|')})`, 'gi');
-  const parts = text.split(regex);
-
-  return (
-    <>
-      {parts.map((part, index) => {
-        const isKeyword = keywords.some(keyword => keyword.toLowerCase() === part.toLowerCase());
-        if (isKeyword) {
-          return (
-            <mark key={index} className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
-              {part}
-            </mark>
-          );
-        }
-        return <span key={index}>{part}</span>;
-      })}
-    </>
-  );
-};
+import TextRenderer from './TextRenderer';
 
 const generateStockLink = (stock: StockTicker): string => {
     const { ticker, market } = stock;
@@ -84,7 +58,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
           </span>
         </div>
         <p className="text-sm text-gray-700 leading-relaxed">
-          <HighlightedText text={stock.reason} keywords={keywords} />
+          <TextRenderer text={stock.reason} keywords={keywords} />
         </p>
       </div>
       {/* Actions area */}

@@ -1,5 +1,10 @@
 
 
+export interface GroundingSource {
+  uri: string;
+  title: string;
+}
+
 export interface StockTicker {
   name: string;
   ticker: string;
@@ -38,6 +43,7 @@ export interface AnalysisReport {
     risks: string;
   };
   recommendedStocks: StockTicker[];
+  sources?: GroundingSource[];
 }
 
 export interface HistoryEntry {
@@ -104,4 +110,5 @@ export interface StockAnalysisReport {
   riskAnalysis: RiskAnalysis;
   corporateGovernance: CorporateGovernance;
   esgRating: ESGRating;
+  sources?: GroundingSource[];
 }

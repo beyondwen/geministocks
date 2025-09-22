@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 // Expanded and more dynamic loading messages for a financial context
 const loadingMessages = [
   "正在初始化分析引擎... ⚙️",
-  "正在连接 Gemini 获取深度见解... 🧠",
+  "正在连接 AI 获取深度见解... 🧠",
   "正在交叉验证数据源... 📊",
   "正在应用量化模型... 🧮",
   "正在扫描市场异动信号... 📡",
@@ -15,7 +15,7 @@ const loadingMessages = [
   "正在绘制产业链图谱... 🔗",
   "正在评估公司核心基本面... 🧾",
   "正在衡量当前市场情绪... 🎭",
-  "Gemini 正在深度思考... 🤔",
+  "AI 正在深度思考... 🤔",
   "正在生成投资策略... 📈",
   "即将完成标的推荐... ✅",
 ];
