@@ -256,7 +256,7 @@ const SearchModeToggle: React.FC<{ isEnabled: boolean; onToggle: (e: React.Chang
     </label>
     <div className="hidden sm:block border-l border-gray-300 h-6 mx-2"></div>
     <p className="text-xs text-gray-600 max-w-md text-center sm:text-left mt-1 sm:mt-0">
-      开启后，AI 将联网获取最新信息，分析更精准，但速度可能稍慢。
+      开启后，AI 联网获取最新信息，分析更精准，速度略慢。
     </p>
   </div>
 );
