@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis } from './services/geminiService';
@@ -194,9 +190,31 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSou
   );
 };
 
-// FIX: Moved TabButton and its props type outside of the MainPage component
-// for better performance, to prevent re-declaration on every render, and to resolve potential type inference issues.
-// FIX: Added `children` to `TabButtonProps` as `React.FC` no longer implicitly includes it. This resolves errors where children were passed to the component without being typed.
+const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ message, type }) => {
+  const typeIcons = {
+    success: (
+      <svg className="w-5 h-5 text-green-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
+      </svg>
+    ),
+    info: (
+      <svg className="w-5 h-5 text-blue-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+      </svg>
+    ),
+  };
+
+  return (
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 flex items-center w-full max-w-xs p-4 space-x-4 rtl:space-x-reverse text-gray-500 bg-white divide-x rtl:divide-x-reverse divide-gray-200 rounded-lg shadow-lg animate-fade-in" role="alert">
+        <div className="flex-shrink-0">
+          {typeIcons[type]}
+        </div>
+        <div className="ps-4 text-sm font-normal">{message}</div>
+    </div>
+  );
+};
+
+
 type TabButtonProps = {
   isActive: boolean;
   onClick: () => void;
@@ -218,6 +236,31 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
   </button>
 );
 
+const SearchModeToggle: React.FC<{ isEnabled: boolean; onToggle: (e: React.ChangeEvent<HTMLInputElement>) => void; }> = ({ isEnabled, onToggle }) => (
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 p-3 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-md">
+    <label htmlFor="online-search-toggle" className="flex items-center cursor-pointer">
+      <div className="relative">
+        <input 
+          id="online-search-toggle" 
+          type="checkbox" 
+          className="sr-only peer" 
+          checked={isEnabled} 
+          onChange={onToggle} 
+        />
+        <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-cyan-500 transition-colors"></div>
+        <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
+      </div>
+      <div className="ml-3 text-gray-700">
+        <p className="font-medium text-sm">实时搜索</p>
+      </div>
+    </label>
+    <div className="hidden sm:block border-l border-gray-300 h-6 mx-2"></div>
+    <p className="text-xs text-gray-600 max-w-md text-center sm:text-left mt-1 sm:mt-0">
+      开启后，AI 将联网获取最新信息，分析更精准，但速度可能稍慢。
+    </p>
+  </div>
+);
+
 
 const MainPage: React.FC = () => {
   // State for Topic Analysis
@@ -235,9 +278,21 @@ const MainPage: React.FC = () => {
 
   // Common State
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
+  const [isOnlineSearchEnabled, setIsOnlineSearchEnabled] = useState<boolean>(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
+  
+  // Effect to hide toast after a delay
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 3000); // 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     // Load history and settings from localStorage
@@ -354,7 +409,7 @@ const MainPage: React.FC = () => {
     setStockError(null);
 
     try {
-      const report = await getAnalysis(topic);
+      const report = await getAnalysis(topic, isOnlineSearchEnabled);
       setAnalysisReport(report);
       incrementAnalysisCount();
       incrementUserAnalysisCount();
@@ -374,7 +429,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [history]);
+  }, [history, isOnlineSearchEnabled]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) {
@@ -390,7 +445,7 @@ const MainPage: React.FC = () => {
     setError(null);
 
     try {
-      const report = await getStockAnalysis(stockQueryToAnalyze);
+      const report = await getStockAnalysis(stockQueryToAnalyze, isOnlineSearchEnabled);
       setStockAnalysisReport(report);
       incrementAnalysisCount();
       incrementUserAnalysisCount();
@@ -401,7 +456,7 @@ const MainPage: React.FC = () => {
     } finally {
       setIsStockLoading(false);
     }
-  }, []);
+  }, [isOnlineSearchEnabled]);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -434,11 +489,21 @@ const MainPage: React.FC = () => {
   const handleClearHistory = () => {
     updateHistory([]);
   };
+
+  const handleToggleSearchMode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isEnabled = e.target.checked;
+    setIsOnlineSearchEnabled(isEnabled);
+    setToast({
+      message: isEnabled ? '实时搜索已开启，分析将联网获取最新信息。' : '实时搜索已关闭，分析将使用离线模型。',
+      type: isEnabled ? 'success' : 'info',
+    });
+  };
   
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
   return (
     <>
+      {toast && <Toast message={toast.message} type={toast.type} />}
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl mx-auto">
           <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
@@ -477,6 +542,11 @@ const MainPage: React.FC = () => {
               </div>
             </div>
             
+            <SearchModeToggle 
+              isEnabled={isOnlineSearchEnabled} 
+              onToggle={handleToggleSearchMode}
+            />
+
             {/* --- Tabs Content --- */}
             <div className="space-y-8">
                 {activeTab === 'stock' && (
@@ -554,7 +624,6 @@ const MainPage: React.FC = () => {
   );
 };
 
-// FIX: Added App component with routing and default export to resolve module import error.
 const App: React.FC = () => {
   return (
     <HashRouter>

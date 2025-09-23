@@ -192,11 +192,11 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <InfoCard title="宏观与政策面 (Macro & Policy)">
+          <InfoCard title="宏观与政策面">
             <TextRenderer text={report.analysis.macroPolicy} keywords={keywords} />
           </InfoCard>
           
-          <InfoCard title="市场情绪与催化剂 (Market Sentiment)">
+          <InfoCard title="市场情绪与催化剂">
             <div className="flex items-center space-x-4 mb-2">
               <span className="font-semibold">情绪评估:</span>
               <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
@@ -205,7 +205,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
           </InfoCard>
 
           <div className="md:col-span-2">
-            <InfoCard title="行业与产业链 (Industry Chain)">
+            <InfoCard title="行业与产业链">
               {typeof report.analysis.industryChain === 'string' ? (
                 <TextRenderer text={report.analysis.industryChain} keywords={keywords} />
               ) : (
@@ -215,13 +215,13 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
           </div>
 
           <div className="md:col-span-2">
-            <InfoCard title="公司基本面 (Company Fundamentals)">
+            <InfoCard title="公司基本面">
               <TextRenderer text={report.analysis.companyFundamentals} keywords={keywords} />
             </InfoCard>
           </div>
           
           <div className="md:col-span-2">
-            <InfoCard title="投资策略 (Investment Strategy)">
+            <InfoCard title="投资策略">
               <div>
                 <h4 className="text-lg font-semibold text-gray-800 mb-2">核心投资逻辑:</h4>
                 <p className="pl-4 border-l-4 border-cyan-400"><TextRenderer text={report.investmentStrategy.logic} keywords={keywords} /></p>
@@ -238,14 +238,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
           </div>
 
           <div className="md:col-span-2">
-            <InfoCard title="相关标的推荐 (Stock Recommendations)">
+            <InfoCard title="相关标的推荐">
               <StockRecommendations stocks={report.recommendedStocks} keywords={keywords} />
             </InfoCard>
           </div>
 
           {report.sources && report.sources.length > 0 && (
             <div className="md:col-span-2">
-                <InfoCard title="参考来源 (Sources)">
+                <InfoCard title="参考来源">
                     <ul className="list-disc list-inside space-y-2 text-sm">
                         {report.sources.map((source, index) => (
                             <li key={index}>

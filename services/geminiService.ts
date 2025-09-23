@@ -3,7 +3,6 @@ import type { AnalysisReport, StockAnalysisReport } from '../types';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL_NAME = 'x-ai/grok-4-fast:free';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
 const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtYzJmMjVlMjFjZTQ5ODc5MGYwYTcwMmM4OTI3MTZmYjNlZDkzYzA1YWFjMGQwODAxZmZiMDEzOWFmYmNlNDZmNw==';
 const SITE_URL = 'https://mastersgo.cc';
@@ -13,9 +12,10 @@ const SITE_NAME = '股市超级挖掘机';
  * A generic helper function to call the OpenRouter API.
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
+ * @param modelName The name of the model to use.
  * @returns The JSON-parsed response from the model.
  */
-async function callOpenRouterAI(prompt: string, systemInstruction: string): Promise<any> {
+async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
     try {
         const response = await fetch(API_BASE_URL, {
             method: 'POST',
@@ -27,7 +27,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string): Prom
                 'X-Title': encodeURIComponent(SITE_NAME),
             },
             body: JSON.stringify({
-                model: MODEL_NAME,
+                model: modelName,
                 messages: [
                     { role: 'system', content: systemInstruction },
                     { role: 'user', content: prompt }
@@ -59,7 +59,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string): Prom
 }
 
 
-export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
+export const getAnalysis = async (topic: string, isOnline: boolean): Promise<AnalysisReport> => {
+    const modelName = isOnline ? 'x-ai/grok-4-fast:free:online' : 'x-ai/grok-4-fast:free';
     const systemInstruction = `
         You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
         Ensure your analysis is timely by incorporating the latest web information and market data.
@@ -104,10 +105,11 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
         ---
     `;
 
-    return callOpenRouterAI(prompt, systemInstruction);
+    return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
-export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
+export const getStockAnalysis = async (stockQuery: string, isOnline: boolean): Promise<StockAnalysisReport> => {
+    const modelName = isOnline ? 'x-ai/grok-4-fast:free:online' : 'x-ai/grok-4-fast:free';
     const systemInstruction = `
         You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
         It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
@@ -159,5 +161,5 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
         ---
     `;
 
-    return callOpenRouterAI(prompt, systemInstruction);
+    return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
