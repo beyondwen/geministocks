@@ -85,11 +85,47 @@ interface StockRecommendationsProps {
 }
 
 const StockRecommendations: React.FC<StockRecommendationsProps> = ({ stocks, keywords }) => {
+  // Group stocks by market
+  const groupedStocks = stocks.reduce((acc, stock) => {
+    const market = stock.market || 'Other';
+    if (!acc[market]) {
+      acc[market] = [];
+    }
+    acc[market].push(stock);
+    return acc;
+  }, {} as Record<string, StockTicker[]>);
+
+  const marketOrder: (keyof typeof groupedStocks)[] = ['A-Share', 'Hong Kong', 'US', 'Other'];
+  
+  const marketConfig = {
+    'A-Share': { title: 'A 股', icon: '🇨🇳', color: 'bg-red-100 text-red-800' },
+    'Hong Kong': { title: '港股', icon: '🇭🇰', color: 'bg-purple-100 text-purple-800' },
+    'US': { title: '美股', icon: '🇺🇸', color: 'bg-blue-100 text-blue-800' },
+    'Other': { title: '其他市场', icon: '🌐', color: 'bg-gray-100 text-gray-800' },
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {stocks.map((stock, index) => (
-            <StockCard key={index} stock={stock} keywords={keywords} />
-        ))}
+    <div className="space-y-6">
+      {marketOrder.map(market => {
+        if (!groupedStocks[market] || groupedStocks[market].length === 0) {
+          return null;
+        }
+        const config = marketConfig[market as keyof typeof marketConfig];
+
+        return (
+          <div key={market}>
+            <div className={`flex items-center px-3 py-2 rounded-t-lg ${config.color}`}>
+                <span className="text-xl mr-2">{config.icon}</span>
+                <h4 className="text-lg font-bold">{config.title}</h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-b-lg border-x border-b border-gray-200">
+              {groupedStocks[market].map((stock, index) => (
+                <StockCard key={index} stock={stock} keywords={keywords} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
