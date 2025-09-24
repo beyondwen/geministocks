@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
-import type { AnalysisReport } from '../types';
-import { DownloadIcon, DocumentArrowDownIcon } from './icons/Icons';
+import type { AnalysisReport, InvestmentScore } from '../types';
+import { DownloadIcon, DocumentArrowDownIcon, SparklesIcon, CheckCircleIcon } from './icons/Icons';
 import StockRecommendations from './StockRelevanceChart';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
@@ -40,6 +40,46 @@ const InfoCard: React.FC<{ title: string; children: React.ReactNode }> = ({ titl
     <h3 className="text-2xl font-bold text-gray-800 mb-4">{title}</h3>
     <div className="text-gray-700 space-y-4">{children}</div>
   </div>
+);
+
+const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 75) return { text: 'text-green-600', bg: 'bg-green-100', border: 'border-green-500' };
+    if (score >= 50) return { text: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-500' };
+    return { text: 'text-red-600', bg: 'bg-red-100', border: 'border-red-500' };
+  };
+
+  const { score, reason } = scoreData;
+  const { text, bg, border } = getScoreColor(score);
+
+  return (
+    <div className={`p-4 rounded-lg shadow-sm border-l-4 ${border} ${bg} mb-6`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center mb-2 sm:mb-0">
+          <SparklesIcon className={`w-6 h-6 mr-2 ${text}`} />
+          <h3 className="text-lg font-bold text-gray-800">投资吸引力评分</h3>
+        </div>
+        <div className="text-center sm:text-right">
+          <p className={`text-4xl font-extrabold ${text}`}>{score}<span className="text-xl font-medium">/100</span></p>
+        </div>
+      </div>
+      <p className="text-sm text-gray-700 mt-2 pl-1"><TextRenderer text={reason} /></p>
+    </div>
+  );
+};
+
+const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => (
+    <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200 mb-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">核心摘要</h3>
+        <ul className="space-y-2">
+            {takeaways.map((item, index) => (
+                <li key={index} className="flex items-start">
+                    <CheckCircleIcon className="w-5 h-5 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700"><TextRenderer text={item} /></span>
+                </li>
+            ))}
+        </ul>
+    </div>
 );
 
 interface AnalysisResultProps {
@@ -105,46 +145,33 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
     setIsExportingPdf(true);
     setExportError(null);
 
-    toPng(exportRef.current, { cacheBust: true, pixelRatio: 2 })
-      .then((dataUrl) => {
-        const pdf = new jsPDF('p', 'px', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: 'a4',
+    });
 
-        const img = new Image();
-        img.src = dataUrl;
-        img.onload = () => {
-          const imgWidth = img.width;
-          const imgHeight = img.height;
-          const ratio = imgHeight / imgWidth;
-          const contentHeight = pdfWidth * ratio;
-
-          let position = 0;
-          let heightLeft = contentHeight;
-
-          pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, contentHeight);
-          heightLeft -= pdfHeight;
-
-          while (heightLeft > 0) {
-            position -= pdfHeight;
-            pdf.addPage();
-            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, contentHeight);
-            heightLeft -= pdfHeight;
-          }
-          
-          const date = new Date().toISOString().split('T')[0];
-          const topic = report.summary.substring(0, 30).replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-          const fileName = `投资分析报告_${topic || 'report'}_${date}.pdf`;
-          pdf.save(fileName);
-        }
-      })
-      .catch((err) => {
+    doc.html(exportRef.current, {
+        callback: function (pdf) {
+            const date = new Date().toISOString().split('T')[0];
+            const topic = report.summary.substring(0, 30).replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+            const fileName = `投资分析报告_${topic || 'report'}_${date}.pdf`;
+            pdf.save(fileName);
+            setIsExportingPdf(false);
+        },
+        html2canvas: {
+            scale: 0.5, // Adjust scale to fit content on A4 page
+            useCORS: true,
+        },
+        x: 15,
+        y: 15,
+        width: 416, // A4 width in px at 72dpi is ~446, leaving some margin
+        windowWidth: exportRef.current.scrollWidth,
+    }).catch((err) => {
         console.error('Failed to export PDF:', err);
         setExportError('导出 PDF 失败。请稍后再试。');
-      })
-      .finally(() => {
         setIsExportingPdf(false);
-      });
+    });
   }, [report]);
 
   const truncateText = (text: string, length: number): string => {
@@ -179,16 +206,25 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
 
       <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
         <div className="mb-8 pb-6 border-b border-gray-300">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">多纬度投资分析报告 💡</h2>
-          <p className="text-lg text-gray-800 font-medium italic border-l-4 border-cyan-400 pl-4 py-1 bg-cyan-50/50 rounded-r-md">
-             <TextRenderer text={report.summary} keywords={keywords} />
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">多纬度投资分析报告 💡</h2>
+          <p className="text-sm text-gray-500">
             分析来源: <span className="font-mono bg-gray-200/60 px-2 py-1 rounded text-xs">
               {truncateText(userInput, 80)}
             </span>
           </p>
         </div>
+        
+        {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
+        
+        {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} />}
+
+        <div className="mb-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">总体概述</h3>
+             <p className="text-gray-800 font-medium italic border-l-4 border-cyan-400 pl-4 py-1 bg-cyan-50/50 rounded-r-md">
+                <TextRenderer text={report.summary} keywords={keywords} />
+             </p>
+        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 

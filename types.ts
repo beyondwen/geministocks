@@ -1,4 +1,4 @@
-
+import { ChartBarIcon, DocumentTextIcon, SparklesIcon } from "./components/icons/Icons";
 
 export interface GroundingSource {
   uri: string;
@@ -29,8 +29,15 @@ export interface IndustryChain {
   downstream: IndustryChainNode[];
 }
 
+export interface InvestmentScore {
+  score: number;
+  reason: string;
+}
+
 export interface AnalysisReport {
   summary: string;
+  keyTakeaways: string[];
+  investmentScore: InvestmentScore;
   analysis: {
     macroPolicy: string;
     industryChain: IndustryChain | string;
@@ -104,6 +111,8 @@ export interface ESGRating {
 
 export interface StockAnalysisReport {
   companyProfile: CompanyProfile;
+  keyTakeaways: string[];
+  investmentScore: InvestmentScore;
   financialSummary: FinancialSummary;
   swotAnalysis: SWOT;
   investmentThesis: InvestmentThesis;
