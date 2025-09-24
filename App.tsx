@@ -10,8 +10,10 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, LockClosedIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
+import { getUserId } from './utils/user';
+import { loadStripe } from '@stripe/stripe-js';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const NEWS_SOURCE_STORAGE_KEY = 'gemini-news-source';
@@ -255,7 +257,12 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
   </button>
 );
 
-const SearchModeToggle: React.FC<{ isEnabled: boolean; onToggle: (e: React.ChangeEvent<HTMLInputElement>) => void; }> = ({ isEnabled, onToggle }) => (
+const SearchModeToggle: React.FC<{ 
+  isEnabled: boolean; 
+  onToggle: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isLocked: boolean;
+  isRedirecting: boolean;
+}> = ({ isEnabled, onToggle, isLocked, isRedirecting }) => (
   <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 p-3 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-md">
     <label htmlFor="online-search-toggle" className="flex items-center cursor-pointer">
       <div className="relative">
@@ -264,18 +271,20 @@ const SearchModeToggle: React.FC<{ isEnabled: boolean; onToggle: (e: React.Chang
           type="checkbox" 
           className="sr-only peer" 
           checked={isEnabled} 
-          onChange={onToggle} 
+          onChange={onToggle}
+          disabled={isRedirecting}
         />
         <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-cyan-500 transition-colors"></div>
         <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
       </div>
-      <div className="ml-3 text-gray-700">
+      <div className="ml-3 text-gray-700 flex items-center gap-x-1.5">
         <p className="font-medium text-sm">实时搜索</p>
+        {isLocked && <LockClosedIcon className="w-4 h-4 text-amber-500" />}
       </div>
     </label>
     <div className="hidden sm:block border-l border-gray-300 h-6 mx-2"></div>
     <p className="text-xs text-gray-600 max-w-md text-center sm:text-left mt-1 sm:mt-0">
-      开启后，AI 联网获取最新信息，分析更精准，速度略慢。
+      {isLocked ? '此为高级功能，一次性支付即可永久解锁。' : '开启后，AI 联网获取最新信息，分析更精准，速度略慢。'}
     </p>
   </div>
 );
@@ -299,9 +308,13 @@ const MainPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
   const [isOnlineSearchEnabled, setIsOnlineSearchEnabled] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
-  const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
+  
+  // Payment State
+  const [userId, setUserId] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'checking' | 'paid' | 'unpaid'>('checking');
+  const [isRedirectingToCheckout, setIsRedirectingToCheckout] = useState(false);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -312,6 +325,63 @@ const MainPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+  
+  // Initialize user ID and check payment status on load
+  useEffect(() => {
+    const id = getUserId();
+    setUserId(id);
+
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/payment-status?userId=${id}`);
+        if (!res.ok) throw new Error('Status check failed');
+        const { paid } = await res.json();
+        const newStatus = paid ? 'paid' : 'unpaid';
+        setPaymentStatus(newStatus);
+        // If user is paid, enable real-time search by default
+        if(paid) {
+            setIsOnlineSearchEnabled(true);
+        }
+      } catch (e) {
+        console.error("Could not check payment status", e);
+        setPaymentStatus('unpaid'); // Default to unpaid on error
+      }
+    };
+    checkStatus();
+  }, []);
+  
+  // Handle redirect back from Stripe
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+
+    if (query.get('payment_success')) {
+      setToast({ message: '支付成功！正在验证您的权限...', type: 'success' });
+      // Poll for status update
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/payment-status?userId=${getUserId()}`);
+          const { paid } = await res.json();
+          if (paid) {
+            setPaymentStatus('paid');
+            setIsOnlineSearchEnabled(true); // Automatically enable it
+            setToast({ message: '验证成功！实时搜索已为您开启。', type: 'success' });
+            clearInterval(interval);
+            // Clean up URL
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        } catch (e) { /* continue polling */ }
+      }, 2000);
+
+      // Timeout after 30 seconds
+      setTimeout(() => clearInterval(interval), 30000);
+    }
+    
+    if (query.get('payment_cancel')) {
+       setToast({ message: '支付已取消。', type: 'info' });
+       window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
 
   useEffect(() => {
     // Load history and settings from localStorage
@@ -333,26 +403,8 @@ const MainPage: React.FC = () => {
       console.error("Failed to load from localStorage", err);
     }
     
-    // Load global statistics
-    const fetchGlobalStats = async () => {
-      try {
-        const response = await fetch('/api/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'pageView' }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setGlobalStats({ 
-            pageViews: data.pageViews || 0, 
-            analysisCount: data.analysisCount || 0 
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch global stats", err);
-      }
-    };
-    fetchGlobalStats();
+    // Load global statistics (commented out to avoid calling old API)
+    // fetch('/api/stats', ...);
 
     // Register the service worker for PWA capabilities.
     if ('serviceWorker' in navigator) {
@@ -360,12 +412,8 @@ const MainPage: React.FC = () => {
         const swUrl = `${window.location.origin}/sw.js`;
         navigator.serviceWorker
           .register(swUrl)
-          .then(registration => {
-            console.log('Service Worker registered with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('Service Worker registration failed:', error);
-          });
+          .then(registration => console.log('SW registered:', registration.scope))
+          .catch(error => console.error('SW registration failed:', error));
       });
     }
   }, []);
@@ -408,7 +456,6 @@ const MainPage: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'analysis' }),
         });
-        if (statsResponse.ok) setGlobalStats(await statsResponse.json());
       } catch (err) {
         console.error("Failed to update global analysis count", err);
       }
@@ -509,17 +556,61 @@ const MainPage: React.FC = () => {
     updateHistory([]);
   };
 
+  const handlePayment = async () => {
+    if (!userId || isRedirectingToCheckout) return;
+    setIsRedirectingToCheckout(true);
+    setToast({ message: '正在为您创建安全的支付页面...', type: 'info' });
+
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '无法创建支付会话。');
+      }
+
+      const { sessionId } = await res.json();
+      const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+      const stripe = await stripePromise;
+      if (stripe) {
+        await stripe.redirectToCheckout({ sessionId });
+      } else {
+        throw new Error('Stripe.js 加载失败。');
+      }
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : '支付启动失败，请稍后重试。';
+      setToast({ message, type: 'info' });
+      setIsRedirectingToCheckout(false);
+    }
+  };
+
   const handleToggleSearchMode = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isEnabled = e.target.checked;
+    
+    if (isEnabled && paymentStatus !== 'paid') {
+      e.preventDefault(); // Prevent toggle from changing
+      if (window.confirm('实时搜索是高级功能，需要一次性支付解锁。是否前往支付页面？')) {
+        handlePayment();
+      }
+      return;
+    }
+    
     setIsOnlineSearchEnabled(isEnabled);
-    setToast({
-      message: isEnabled ? '来财！来财！' : '祝你好运！',
-      type: isEnabled ? 'success' : 'info',
-    });
+
+    // Keep existing toast logic for paid users
+    if (paymentStatus === 'paid') {
+      setToast({
+        message: isEnabled ? '来财！来财！' : '祝你好运！',
+        type: isEnabled ? 'success' : 'info',
+      });
+    }
   };
   
-  const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
-
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} />}
@@ -564,6 +655,8 @@ const MainPage: React.FC = () => {
             <SearchModeToggle 
               isEnabled={isOnlineSearchEnabled} 
               onToggle={handleToggleSearchMode}
+              isLocked={paymentStatus !== 'paid'}
+              isRedirecting={isRedirectingToCheckout}
             />
 
             {/* --- Tabs Content --- */}
