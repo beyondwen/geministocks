@@ -179,7 +179,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
 
       <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
         <div className="mb-8 pb-6 border-b border-gray-300">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">四维一体投资分析报告 💡</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">多纬度投资分析报告 💡</h2>
           <p className="text-lg text-gray-800 font-medium italic border-l-4 border-cyan-400 pl-4 py-1 bg-cyan-50/50 rounded-r-md">
              <TextRenderer text={report.summary} keywords={keywords} />
           </p>
