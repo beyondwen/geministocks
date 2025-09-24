@@ -11,6 +11,7 @@ declare global {
  * Renders a Google AdSense ad unit.
  */
 const AdSenseAd: React.FC = () => {
+  /*
   const adSlot = '2007848404'; // User's AdSense Slot ID
 
   useEffect(() => {
@@ -36,6 +37,8 @@ const AdSenseAd: React.FC = () => {
       </div>
     </div>
   );
+  */
+  return null;
 };
 
 export default AdSenseAd;

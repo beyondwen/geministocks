@@ -7,7 +7,7 @@ import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
 import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
-import AdSenseAd from './components/AdSenseAd';
+// import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
 import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
@@ -588,7 +588,7 @@ const MainPage: React.FC = () => {
                         )}
             
                         {stockAnalysisReport && !isStockLoading && <StockAnalysisResult report={stockAnalysisReport} />}
-                        <AdSenseAd />
+                        {/* <AdSenseAd /> */}
                     </div>
                 )}
                 
@@ -624,7 +624,7 @@ const MainPage: React.FC = () => {
                           selectedSourceId={selectedNewsSourceId}
                           onSourceChange={handleSourceChange}
                         />
-                        <AdSenseAd />
+                        {/* <AdSenseAd /> */}
                     </div>
                 )}
             </div>
