@@ -191,25 +191,44 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSou
 };
 
 const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ message, type }) => {
-  const typeIcons = {
-    success: (
-      <svg className="w-5 h-5 text-green-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
-      </svg>
-    ),
-    info: (
-      <svg className="w-5 h-5 text-blue-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-      </svg>
-    ),
+  const toastConfig = {
+    success: {
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      borderColor: 'border-green-400',
+      iconBg: 'bg-green-100',
+      iconColor: 'text-green-600',
+    },
+    info: {
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+        </svg>
+      ),
+      borderColor: 'border-blue-400',
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+    },
   };
 
+  const config = toastConfig[type];
+
   return (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 flex items-center w-full max-w-xs p-4 space-x-4 rtl:space-x-reverse text-gray-500 bg-white divide-x rtl:divide-x-reverse divide-gray-200 rounded-lg shadow-lg animate-fade-in" role="alert">
-        <div className="flex-shrink-0">
-          {typeIcons[type]}
+    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
+      <div
+        className={`flex items-center gap-x-2.5 max-w-sm px-4 py-2.5 rounded-xl border-l-4 shadow-2xl bg-white/70 backdrop-blur-lg animate-toast-in ${config.borderColor}`}
+        role="alert"
+      >
+        <div className={`flex-shrink-0 rounded-full p-1 ${config.iconBg} ${config.iconColor}`}>
+          {config.icon}
         </div>
-        <div className="ps-4 text-sm font-normal">{message}</div>
+        <div className="text-sm font-medium text-gray-800">
+          {message}
+        </div>
+      </div>
     </div>
   );
 };
@@ -278,7 +297,7 @@ const MainPage: React.FC = () => {
 
   // Common State
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
-  const [isOnlineSearchEnabled, setIsOnlineSearchEnabled] = useState<boolean>(true);
+  const [isOnlineSearchEnabled, setIsOnlineSearchEnabled] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
@@ -494,7 +513,7 @@ const MainPage: React.FC = () => {
     const isEnabled = e.target.checked;
     setIsOnlineSearchEnabled(isEnabled);
     setToast({
-      message: isEnabled ? '实时搜索已开启，分析将联网获取最新信息。' : '实时搜索已关闭，分析将使用离线模型。',
+      message: isEnabled ? '来财！来财！' : '祝你好运！',
       type: isEnabled ? 'success' : 'info',
     });
   };
