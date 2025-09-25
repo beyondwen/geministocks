@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getDailyTheme } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI } from './services/geminiService';
 import type { AnalysisReport, HistoryEntry, StockAnalysisReport } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
@@ -10,7 +10,7 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, DiamondIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -48,49 +48,6 @@ const stripHtml = (html: string) => {
 const truncateText = (text: string, length: number) => {
   return text.length > length ? text.substring(0, length) + '...' : text;
 };
-
-// --- Daily Theme Component ---
-const DailyTheme: React.FC<{
-    theme: { title: string; summary: string } | null;
-    isLoading: boolean;
-    onAnalyze: (topic: string) => void;
-}> = ({ theme, isLoading, onAnalyze }) => {
-    if (isLoading) {
-        return (
-            <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg mb-8 animate-pulse">
-                <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-full mb-4"></div>
-                <div className="h-10 bg-gray-200 rounded w-48 float-right"></div>
-            </div>
-        );
-    }
-
-    if (!theme) return null;
-
-    return (
-        <div className="bg-white/50 backdrop-blur-sm border-2 border-dashed border-cyan-400 rounded-lg p-6 shadow-lg mb-8 animate-fade-in">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center mb-2">
-                <DiamondIcon className="w-6 h-6 text-cyan-500 mr-2" />
-                今日焦点
-            </h2>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-3">{theme.title}</h3>
-            <p className="text-gray-600 italic mb-4">
-                {theme.summary}
-            </p>
-            <div className="flex justify-end">
-                <button
-                    onClick={() => onAnalyze(`${theme.title}\n\n${theme.summary}`)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all"
-                >
-                    <SparklesIcon className="w-5 h-5 mr-2" />
-                    一键深度分析此主题
-                </button>
-            </div>
-        </div>
-    );
-};
-
 
 const NewsSkeleton: React.FC = () => (
     <div className="space-y-4">
@@ -301,12 +258,10 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
 const MainPage: React.FC = () => {
   // State for Topic Analysis
   const [userInput, setUserInput] = useState<string>('');
-  const [analysisReport, setAnalysisReport] = useState<Partial<AnalysisReport> | null>(null);
+  const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [dailyTheme, setDailyTheme] = useState<{ title: string; summary: string } | null>(null);
-  const [isThemeLoading, setIsThemeLoading] = useState<boolean>(true);
   
   // State for Stock Analysis
   const [stockQuery, setStockQuery] = useState<string>('');
@@ -383,26 +338,12 @@ const MainPage: React.FC = () => {
         setHotStocks(stocks);
       } catch (err) {
         console.error("Failed to fetch hot stocks:", err);
+        // Fallback to a default list or show an error, here we just log it
       } finally {
         setIsHotStocksLoading(false);
       }
     };
     fetchHotStocks();
-
-    // Fetch daily theme
-    const fetchDailyTheme = async () => {
-        setIsThemeLoading(true);
-        try {
-            const theme = await getDailyTheme();
-            setDailyTheme(theme);
-        } catch (err) {
-            console.error("Failed to fetch daily theme:", err);
-        } finally {
-            setIsThemeLoading(false);
-        }
-    };
-    fetchDailyTheme();
-
 
     // Register the service worker for PWA capabilities.
     if ('serviceWorker' in navigator) {
@@ -473,24 +414,22 @@ const MainPage: React.FC = () => {
     setActiveTab('topic');
     setIsLoading(true);
     setError(null);
-    setAnalysisReport({}); // Reset to an empty object for streaming
-    setStockAnalysisReport(null);
+    setAnalysisReport(null);
+    setStockAnalysisReport(null); // Clear other report
     setStockError(null);
 
     try {
-      const finalReport = await getAnalysis(topic, (chunk) => {
-        setAnalysisReport(prev => ({ ...prev, ...chunk }));
-      });
-      
+      const report = await getAnalysis(topic);
+      setAnalysisReport(report);
       incrementAnalysisCount();
       incrementUserAnalysisCount();
 
       const newEntry: HistoryEntry = {
         id: Date.now(),
         topic: topic,
-        report: finalReport, // Use the final, complete report for history
+        report: report,
       };
-      const newHistory = [newEntry, ...history].slice(0, 20);
+      const newHistory = [newEntry, ...history].slice(0, 20); // Limit history to 20 items
       updateHistory(newHistory);
 
     } catch (err) {
@@ -540,12 +479,6 @@ const MainPage: React.FC = () => {
     setStockQuery(query);
     handleStockAnalyze(query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
-  const handleDailyThemeAnalyze = (topic: string) => {
-    setUserInput(topic);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    handleAnalyze(topic);
   };
 
   const handleSelectHistory = (entry: HistoryEntry) => {
@@ -645,11 +578,6 @@ const MainPage: React.FC = () => {
                 
                 {activeTab === 'topic' && (
                     <div className="space-y-8 animate-fade-in" role="tabpanel">
-                        <DailyTheme
-                            theme={dailyTheme}
-                            isLoading={isThemeLoading}
-                            onAnalyze={handleDailyThemeAnalyze}
-                        />
                         <AnalysisInput
                           userInput={userInput}
                           setUserInput={setUserInput}
@@ -657,7 +585,7 @@ const MainPage: React.FC = () => {
                           isLoading={isLoading}
                         />
             
-                        {isLoading && !analysisReport?.summary && <Loader />}
+                        {isLoading && <Loader />}
             
                         {error && (
                           <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
@@ -665,7 +593,7 @@ const MainPage: React.FC = () => {
                           </div>
                         )}
             
-                        {analysisReport && (analysisReport.summary || isLoading) && <AnalysisResult report={analysisReport} userInput={userInput} />}
+                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
                         
                         <AnalysisHistory
                           history={history}
