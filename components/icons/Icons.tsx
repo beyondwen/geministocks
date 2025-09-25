@@ -89,3 +89,10 @@ export const CheckCircleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
+
+export const SwordsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 21L3 17.25m0 0L6.75 13.5M3 17.25h18" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 3L21 6.75m0 0L17.25 10.5M21 6.75H3" />
+    </svg>
+);

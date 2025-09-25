@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI } from './services/geminiService';
-import type { AnalysisReport, HistoryEntry, StockAnalysisReport } from './types';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis } from './services/geminiService';
+import type { AnalysisReport, HistoryEntry, StockAnalysisReport, PositionalWarfareReport } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
@@ -10,8 +10,10 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
+import PositionalWarfareInput from './components/PositionalWarfareInput';
+import PositionalWarfareResult from './components/PositionalWarfareResult';
 
 const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const NEWS_SOURCE_STORAGE_KEY = 'gemini-news-source';
@@ -271,9 +273,16 @@ const MainPage: React.FC = () => {
   const [hotStocks, setHotStocks] = useState<{name: string; ticker: string}[]>([]);
   const [isHotStocksLoading, setIsHotStocksLoading] = useState<boolean>(true);
 
+  // State for Positional Warfare Analysis
+  const [leaderStockQuery, setLeaderStockQuery] = useState<string>('');
+  const [positionalWarfareReport, setPositionalWarfareReport] = useState<PositionalWarfareReport | null>(null);
+  const [isPositionalWarfareLoading, setIsPositionalWarfareLoading] = useState<boolean>(false);
+  const [positionalWarfareError, setPositionalWarfareError] = useState<string | null>(null);
+  const [positionalWarfareProgress, setPositionalWarfareProgress] = useState<string>('');
+
 
   // Common State
-  const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
+  const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
@@ -415,8 +424,8 @@ const MainPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setAnalysisReport(null);
-    setStockAnalysisReport(null); // Clear other report
-    setStockError(null);
+    setStockAnalysisReport(null);
+    setPositionalWarfareReport(null);
 
     try {
       const report = await getAnalysis(topic);
@@ -451,8 +460,8 @@ const MainPage: React.FC = () => {
     setIsStockLoading(true);
     setStockError(null);
     setStockAnalysisReport(null);
-    setAnalysisReport(null); // Clear other report
-    setError(null);
+    setAnalysisReport(null);
+    setPositionalWarfareReport(null);
 
     try {
       const report = await getStockAnalysis(stockQueryToAnalyze);
@@ -467,6 +476,34 @@ const MainPage: React.FC = () => {
       setIsStockLoading(false);
     }
   }, []);
+
+  const handlePositionalWarfareAnalyze = useCallback(async () => {
+    if (!leaderStockQuery.trim()) {
+        setPositionalWarfareError('龙头股票为必填项。');
+        return;
+    }
+
+    setActiveTab('positional');
+    setIsPositionalWarfareLoading(true);
+    setPositionalWarfareError(null);
+    setPositionalWarfareReport(null);
+    setAnalysisReport(null);
+    setStockAnalysisReport(null);
+    
+    try {
+        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress);
+        setPositionalWarfareReport(report);
+        incrementAnalysisCount();
+        incrementUserAnalysisCount();
+    } catch (err) {
+        console.error(err);
+        const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
+        setPositionalWarfareError(errorMessage);
+    } finally {
+        setIsPositionalWarfareLoading(false);
+        setPositionalWarfareProgress('');
+    }
+  }, [leaderStockQuery]);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -536,46 +573,21 @@ const MainPage: React.FC = () => {
               <div className="flex justify-center border-b border-gray-200" role="tablist" aria-label="分析模式">
                 <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                    <DocumentTextIcon className="w-5 h-5" />
-                   <span>主题投策分析</span>
+                   <span>主题挖掘</span>
                 </TabButton>
                 <TabButton isActive={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
                   <ChartBarIcon className="w-5 h-5" />
-                  <span>个股综合分析</span>
+                  <span>个股分析</span>
+                </TabButton>
+                <TabButton isActive={activeTab === 'positional'} onClick={() => setActiveTab('positional')}>
+                  <SwordsIcon className="w-5 h-5" />
+                  <span>卡位战法</span>
                 </TabButton>
               </div>
             </div>
 
             {/* --- Tabs Content --- */}
             <div className="space-y-8">
-                {activeTab === 'stock' && (
-                    <div className="space-y-8 animate-fade-in" role="tabpanel">
-                        <StockAnalysisInput
-                          stockQuery={stockQuery}
-                          setStockQuery={setStockQuery}
-                          onAnalyze={handleStockAnalyze}
-                          isLoading={isStockLoading}
-                          suggestions={hotStocks}
-                        />
-
-                        <HotStocks 
-                          onSelect={handleHotStockSelect} 
-                          stocks={hotStocks} 
-                          isLoading={isHotStocksLoading} 
-                        />
-                        
-                        {isStockLoading && <Loader />}
-            
-                        {stockError && (
-                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-                            <p>{stockError}</p>
-                          </div>
-                        )}
-            
-                        {stockAnalysisReport && !isStockLoading && <StockAnalysisResult report={stockAnalysisReport} />}
-                        {/* <AdSenseAd /> */}
-                    </div>
-                )}
-                
                 {activeTab === 'topic' && (
                     <div className="space-y-8 animate-fade-in" role="tabpanel">
                         <AnalysisInput
@@ -609,6 +621,54 @@ const MainPage: React.FC = () => {
                           onSourceChange={handleSourceChange}
                         />
                         {/* <AdSenseAd /> */}
+                    </div>
+                )}
+                {activeTab === 'stock' && (
+                    <div className="space-y-8 animate-fade-in" role="tabpanel">
+                        <StockAnalysisInput
+                          stockQuery={stockQuery}
+                          setStockQuery={setStockQuery}
+                          onAnalyze={handleStockAnalyze}
+                          isLoading={isStockLoading}
+                          suggestions={hotStocks}
+                        />
+
+                        <HotStocks 
+                          onSelect={handleHotStockSelect} 
+                          stocks={hotStocks} 
+                          isLoading={isHotStocksLoading} 
+                        />
+                        
+                        {isStockLoading && <Loader />}
+            
+                        {stockError && (
+                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
+                            <p>{stockError}</p>
+                          </div>
+                        )}
+            
+                        {stockAnalysisReport && !isStockLoading && <StockAnalysisResult report={stockAnalysisReport} />}
+                        {/* <AdSenseAd /> */}
+                    </div>
+                )}
+                {activeTab === 'positional' && (
+                    <div className="space-y-8 animate-fade-in" role="tabpanel">
+                        <PositionalWarfareInput
+                          leaderStockQuery={leaderStockQuery}
+                          setLeaderStockQuery={setLeaderStockQuery}
+                          onAnalyze={handlePositionalWarfareAnalyze}
+                          isLoading={isPositionalWarfareLoading}
+                        />
+
+                        {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}
+
+                        {positionalWarfareError && (
+                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
+                            <p>{positionalWarfareError}</p>
+                          </div>
+                        )}
+                        
+                        {positionalWarfareReport && !isPositionalWarfareLoading && <PositionalWarfareResult report={positionalWarfareReport} />}
                     </div>
                 )}
             </div>

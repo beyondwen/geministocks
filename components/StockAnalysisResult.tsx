@@ -315,7 +315,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
         
         <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
             <div className="mb-6 pb-4 border-b border-gray-300">
-                <h2 className="text-3xl font-bold text-gray-900">个股综合分析报告 📊</h2>
+                <h2 className="text-3xl font-bold text-gray-900">个股分析报告 📊</h2>
                 <p className="text-gray-600">由 AI 生成</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

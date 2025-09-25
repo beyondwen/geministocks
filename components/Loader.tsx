@@ -30,7 +30,12 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-const Loader: React.FC = () => {
+// FIX: Add `progressMessage` prop to allow custom loading messages.
+interface LoaderProps {
+  progressMessage?: string;
+}
+
+const Loader: React.FC<LoaderProps> = ({ progressMessage }) => {
     // Shuffled messages are created once via useMemo to avoid re-shuffling on re-renders
     const shuffledMessages = useMemo(() => shuffleArray(loadingMessages), []);
     
@@ -45,7 +50,7 @@ const Loader: React.FC = () => {
         return () => clearInterval(interval);
     }, [shuffledMessages.length]);
 
-    const currentMessage = shuffledMessages[messageIndex];
+    const currentMessage = progressMessage || shuffledMessages[messageIndex];
 
     return (
         <div role="status" aria-live="polite" className="text-center p-8 bg-white/50 border border-gray-200 rounded-lg shadow-lg">

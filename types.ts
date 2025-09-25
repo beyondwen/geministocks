@@ -121,3 +121,26 @@ export interface StockAnalysisReport {
   esgRating: ESGRating;
   sources?: GroundingSource[];
 }
+
+// --- New Types for Positional Warfare Analysis ---
+export interface LeaderStockProfile {
+    name: string;
+    ticker: string;
+    sector: string;
+    market: string;
+    analysis: string;
+}
+
+export interface FollowerCandidate {
+    name: string;
+    ticker: string;
+    market: string;
+    comparativeAnalysis: string;
+    investmentThesis: string;
+    risks: string;
+}
+
+export interface PositionalWarfareReport {
+    leaderStock: LeaderStockProfile;
+    followerCandidates: FollowerCandidate[];
+}

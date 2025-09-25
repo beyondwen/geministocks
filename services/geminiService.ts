@@ -1,4 +1,4 @@
-import type { AnalysisReport, StockAnalysisReport } from '../types';
+import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport } from '../types';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -200,4 +200,78 @@ export const getHotStocksFromAI = async (): Promise<{name: string; ticker: strin
     }
     // Fallback in case the AI fails to follow the schema perfectly.
     throw new Error('AI returned an invalid format for hot stocks.');
+};
+
+// --- New Service for Positional Warfare Analysis ---
+export const getPositionalWarfareAnalysis = async (
+    leaderStockQuery: string,
+    onProgress: (message: string) => void
+): Promise<PositionalWarfareReport> => {
+    const modelName = 'x-ai/grok-4-fast:free:online';
+
+    // Step 1: Identify Leader Stock
+    onProgress("正在锁定龙头标的... 🎯");
+    const step1System = `
+        You are an intelligence scout. Your only task is to identify the precise details of the provided stock query.
+        Use web search to find the official company name, ticker symbol, primary sector, and market.
+        Respond strictly in the following JSON format. All content in Simplified Chinese.
+        { "name": "string", "ticker": "string", "sector": "string", "market": "string" }
+    `;
+    const leaderProfile = await callOpenRouterAI(leaderStockQuery, step1System, modelName);
+
+    // Step 2: Analyze Leader Stock
+    onProgress("正在深度剖析龙头股... 📈");
+    const step2System = `
+        You are a lead stock analyst. Given the stock's profile, analyze its current market position.
+        Focus on: 1. Why it is considered the leader in its sector (technical edge, market share). 2. Its current valuation and recent performance (e.g., high P/E, recent significant gains).
+        Respond strictly in the following JSON format. All content in Simplified Chinese.
+        { "analysis": "string (A concise but in-depth analysis of the leader's position)" }
+    `;
+    const leaderAnalysis = await callOpenRouterAI(JSON.stringify(leaderProfile), step2System, modelName);
+
+    // Step 3: Screen for Candidates
+    onProgress("正在筛选同板块潜力股... 🔍");
+    const step3System = `
+        You are a sector screener. Given a sector, find 5-10 other publicly traded companies in the same specific sector.
+        Focus on finding companies that have a "lower position" than the leader (e.g., smaller market cap, lower valuation multiples, or have not experienced the same recent rally).
+        For each company, provide its name, ticker, and market.
+        Respond strictly in the following JSON format. All content in Simplified Chinese.
+        { "candidates": [{ "name": "string", "ticker": "string", "market": "string" }] }
+    `;
+    const screeningResult = await callOpenRouterAI(`Sector: ${leaderProfile.sector}`, step3System, modelName);
+    const candidates = screeningResult.candidates || [];
+
+    // Step 4: Final Strategic Analysis
+    onProgress("首席策略师正在制定卡位方案... ⚔️");
+    const step4System = `
+        You are a top-tier fund manager specializing in the "Positional Warfare Strategy".
+        You have been given a profile of the leading stock and a list of potential follower candidates.
+        Your task is to select the 1-3 most promising "follower" or "number two" stocks from the list.
+        For each stock you select, you must provide a detailed comparative report.
+        This report must justify WHY it has the potential to become a follower, focusing on:
+        1.  **Comparative Analysis**: How does it compare to the leader in terms of business, technology, and market position?
+        2.  **Investment Thesis**: What is the core logic for it to "catch up"? (e.g., valuation gap, upcoming catalyst, similar underlying business but overlooked).
+        3.  **Risks**: What are the key risks associated with this specific pick?
+        Respond strictly in the following JSON format. All content in Simplified Chinese.
+        {
+          "leaderStock": {
+            "name": "${leaderProfile.name}",
+            "ticker": "${leaderProfile.ticker}",
+            "sector": "${leaderProfile.sector}",
+            "market": "${leaderProfile.market}",
+            "analysis": "${leaderAnalysis.analysis}"
+          },
+          "followerCandidates": [{
+            "name": "string",
+            "ticker": "string",
+            "market": "string",
+            "comparativeAnalysis": "string",
+            "investmentThesis": "string",
+            "risks": "string"
+          }]
+        }
+    `;
+    const finalPrompt = `Leader Stock Analysis: ${leaderAnalysis.analysis}\n\nCandidate List:\n${JSON.stringify(candidates)}`;
+
+    return callOpenRouterAI(finalPrompt, step4System, modelName);
 };

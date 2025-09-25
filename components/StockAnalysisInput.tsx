@@ -65,7 +65,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
     <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
       <form onSubmit={handleSubmit}>
         <label htmlFor="stock-input" className="block text-lg font-medium text-gray-700 mb-3">
-          输入股票代码或名称进行综合分析 📈
+          输入股票代码或名称进行分析 📈
         </label>
         <p id="stock-input-description" className="text-sm text-gray-600 mb-4">
           例如: "AAPL", "苹果公司", "00700.HK", "腾讯控股"。
