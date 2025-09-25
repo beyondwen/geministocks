@@ -57,15 +57,38 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
     }
 }
 
-
-export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
+/**
+ * Gets the daily theme from the AI.
+ */
+export const getDailyTheme = async (): Promise<{ title: string; summary: string }> => {
     const modelName = 'x-ai/grok-4-fast:free:online';
     const systemInstruction = `
-        You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
-        Ensure your analysis is timely by incorporating the latest web information and market data.
-        At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
-        You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
-        All content must be in Simplified Chinese.
+        You are a top-tier chief market strategist. Your task is to analyze the current global financial news and market dynamics.
+        Identify the single most important or interesting investment theme of the day.
+        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
+        The JSON schema is as follows:
+        {
+          "title": "string (A compelling and concise headline for the theme)",
+          "summary": "string (A one-sentence summary explaining the theme's significance)"
+        }
+    `;
+    const prompt = "What is today's most crucial investment theme?";
+
+    return callOpenRouterAI(prompt, systemInstruction, modelName);
+};
+
+
+export const getAnalysis = async (
+  topic: string,
+  onProgress: (chunk: Partial<AnalysisReport>) => void
+): Promise<AnalysisReport> => {
+    const modelName = 'x-ai/grok-4-fast:free:online';
+
+    // --- Step 1: Get the high-level summary and scores quickly ---
+    const initialSystemInstruction = `
+        You are a top-tier financial analyst. Your first task is to provide a quick, high-level assessment of the given topic.
+        Incorporate the latest web information.
+        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
         The JSON schema is as follows:
         {
           "summary": "string (1-3 sentence summary)",
@@ -73,7 +96,20 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
           "investmentScore": {
             "score": "number (1-100)",
             "reason": "string (brief justification for the score)"
-          },
+          }
+        }
+    `;
+    const initialPrompt = `Provide a high-level assessment for the topic: "${topic}"`;
+    const initialReport = await callOpenRouterAI(initialPrompt, initialSystemInstruction, modelName);
+    onProgress(initialReport); // Immediately send the first part to the UI
+
+    // --- Step 2: Get the detailed, in-depth analysis ---
+    const detailSystemInstruction = `
+        You are a top-tier financial analyst continuing your previous analysis. Your task is to provide a deep dive into the provided topic using the "Four-Dimensional Integrated Analysis Method".
+        Ensure your analysis is timely by incorporating the latest web information and market data.
+        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
+        The JSON schema is as follows:
+        {
           "analysis": {
             "macroPolicy": "string",
             "industryChain": {
@@ -101,16 +137,12 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
           }]
         }
     `;
-    
-    const prompt = `
-        Please analyze the following text using the "Four-Dimensional Integrated Analysis Method" and provide a structured investment strategy report.
-        Text to analyze:
-        ---
-        ${topic}
-        ---
-    `;
+    const detailPrompt = `Now, provide the detailed analysis for the same topic: "${topic}"`;
+    const detailReport = await callOpenRouterAI(detailPrompt, detailSystemInstruction, modelName);
+    onProgress(detailReport); // Send the second part to the UI
 
-    return callOpenRouterAI(prompt, systemInstruction, modelName);
+    // Combine and return the full report
+    return { ...initialReport, ...detailReport };
 };
 
 export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
