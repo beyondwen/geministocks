@@ -56,7 +56,7 @@ const AboutPage: React.FC = () => {
             </li>
             <li>
               <strong>一键导出：</strong> 
-              轻松将完整的分析报告导出为图片或 PDF，便于分享和保存。
+              轻松将完整的分析报告导出为高保真图片或 PDF 文档，便于分享和保存。
             </li>
           </ul>
         </section>

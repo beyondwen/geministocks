@@ -1,8 +1,7 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import jsPDF from 'jspdf';
 import type { StockAnalysisReport, InvestmentScore, SWOT } from '../types';
-import { DownloadIcon, DocumentArrowDownIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon } from './icons/Icons';
+import { DownloadIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 
 // --- SVG Icons (defined locally to minimize file changes) ---
@@ -234,10 +233,10 @@ interface StockAnalysisResultProps {
 const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => {
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
-  const handleExport = useCallback(() => {
+  const handleExportImage = useCallback(() => {
     if (exportRef.current === null) return;
     setIsExporting(true);
     setExportError(null);
@@ -254,66 +253,64 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
       })
       .finally(() => setIsExporting(false));
   }, [report]);
+  
+  const handlePrint = useCallback(() => {
+    setIsPreparingPdf(true);
+    // Using a short timeout allows the state to update and the preparing message to render
+    // before the blocking print dialog opens.
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  }, []);
+  
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setIsPreparingPdf(false);
+    };
 
-  const handleExportPdf = useCallback(() => {
-    if (exportRef.current === null) {
-      return;
-    }
-    setIsExportingPdf(true);
-    setExportError(null);
-    
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'px',
-        format: 'a4',
-    });
+    window.addEventListener('afterprint', handleAfterPrint);
 
-    doc.html(exportRef.current, {
-        callback: function (pdf) {
-            const date = new Date().toISOString().split('T')[0];
-            const fileName = `个股分析报告_${report.companyProfile.name}_${date}.pdf`;
-            pdf.save(fileName);
-            setIsExportingPdf(false);
-        },
-        html2canvas: {
-            scale: 0.5, // Adjust scale to fit content on A4 page
-            useCORS: true,
-        },
-        x: 15,
-        y: 15,
-        width: 416, // A4 width in px at 72dpi is ~446, leaving some margin
-        windowWidth: exportRef.current.scrollWidth,
-    }).catch((err) => {
-        console.error('Failed to export PDF:', err);
-        setExportError('导出 PDF 失败。请稍后再试。');
-        setIsExportingPdf(false);
-    });
-
-  }, [report]);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
 
   return (
     <div className="space-y-4 animate-fade-in">
-        <div className="flex justify-end gap-x-2">
+        {isPreparingPdf && (
+            <div className="no-print fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+                <div className="bg-white rounded-lg p-8 shadow-2xl text-center">
+                    <svg className="animate-spin h-10 w-10 text-teal-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p className="text-xl font-semibold text-gray-800">正在准备导出...</p>
+                    <p className="text-sm text-gray-600 mt-1">即将打开打印预览窗口</p>
+                </div>
+            </div>
+        )}
+
+        <div className="no-print flex justify-end gap-x-2">
             <button
-              onClick={handleExport}
-              disabled={isExporting || isExportingPdf}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handlePrint}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all"
+              aria-label="导出为 PDF"
+            >
+                <DocumentArrowDownIcon className="-ml-1 mr-2 h-5 w-5" />
+                导出 PDF
+            </button>
+            <button
+              onClick={handleExportImage}
+              disabled={isExporting}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <DownloadIcon className="-ml-1 mr-2 h-5 w-5" />
               {isExporting ? '正在导出...' : '导出图片'}
             </button>
-            <button
-              onClick={handleExportPdf}
-              disabled={isExportingPdf || isExporting}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <DocumentArrowDownIcon className="-ml-1 mr-2 h-5 w-5" />
-              {isExportingPdf ? '正在导出...' : '导出 PDF'}
-            </button>
         </div>
         {exportError && <div role="alert" className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded text-center"><p>{exportError}</p></div>}
         
-        <div ref={exportRef} className="p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
+        <div ref={exportRef} className="printable-area p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
             <div className="mb-6 pb-4 border-b border-gray-300">
                 <h2 className="text-3xl font-bold text-gray-900">个股分析报告 📊</h2>
                 <p className="text-gray-600">由 AI 生成</p>

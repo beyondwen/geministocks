@@ -59,7 +59,6 @@
     "react-router": "https://aistudiocdn.com/react-router@^6.25.1",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^6.25.1",
     "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.11",
-    "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
     "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
     "crypto": "https://aistudiocdn.com/crypto@^1.0.1"
   }
@@ -105,6 +104,46 @@
       .animated-underline:hover::after {
         transform: scaleX(1);
         transform-origin: bottom left;
+      }
+      
+      /* Print-specific styles for PDF export */
+      @media print {
+        @page {
+          size: A4;
+          margin: 1.5cm;
+        }
+        body {
+          background-color: #fff !important; /* Ensure white background for PDF */
+        }
+        /* Hide everything by default when printing */
+        body * {
+          visibility: hidden;
+        }
+        /* Show only the printable area and its children */
+        .printable-area, .printable-area * {
+          visibility: visible;
+        }
+        /* Position the printable area at the top-left of the page */
+        .printable-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          border: none !important;
+          box-shadow: none !important;
+          background-color: #fff !important;
+        }
+        /* Ensure links are styled for print, preserving their destination */
+        a, a:visited {
+          text-decoration: underline;
+          color: #000 !important;
+        }
+        /* Explicitly hide elements marked with no-print */
+        .no-print, .no-print * {
+          display: none !important;
+        }
       }
     </style>
     <!-- Structured Data -->
