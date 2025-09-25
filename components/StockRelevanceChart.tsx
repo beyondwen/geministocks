@@ -114,9 +114,21 @@ const StockRecommendations: React.FC<StockRecommendationsProps> = ({ stocks, key
 
         return (
           <div key={market}>
-            <div className={`flex items-center px-3 py-2 rounded-t-lg ${config.color}`}>
-                <span className="text-xl mr-2">{config.icon}</span>
-                <h4 className="text-lg font-bold">{config.title}</h4>
+            <div className={`flex items-center justify-between px-3 py-2 rounded-t-lg ${config.color}`}>
+                <div className="flex items-center">
+                    <span className="text-xl mr-2">{config.icon}</span>
+                    <h4 className="text-lg font-bold">{config.title}</h4>
+                </div>
+                {market === 'US' && (
+                    <a
+                        href="https://mystonks.org/?code=v1B021"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-blue-700 hover:text-blue-900 hover:underline transition-colors"
+                    >
+                        链上美股开户
+                    </a>
+                )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-b-lg border-x border-b border-gray-200">
               {groupedStocks[market].map((stock, index) => (
