@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis } from './services/geminiService';
@@ -257,32 +255,6 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
   </button>
 );
 
-const SearchModeToggle: React.FC<{ isEnabled: boolean; onToggle: (e: React.ChangeEvent<HTMLInputElement>) => void; }> = ({ isEnabled, onToggle }) => (
-  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 p-3 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-md">
-    <label htmlFor="online-search-toggle" className="flex items-center cursor-pointer">
-      <div className="relative">
-        <input 
-          id="online-search-toggle" 
-          type="checkbox" 
-          className="sr-only peer" 
-          checked={isEnabled} 
-          onChange={onToggle} 
-        />
-        <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-cyan-500 transition-colors"></div>
-        <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
-      </div>
-      <div className="ml-3 text-gray-700">
-        <p className="font-medium text-sm">实时搜索</p>
-      </div>
-    </label>
-    <div className="hidden sm:block border-l border-gray-300 h-6 mx-2"></div>
-    <p className="text-xs text-gray-600 max-w-md text-center sm:text-left mt-1 sm:mt-0">
-      开启后，AI 联网获取最新信息，分析更精准，速度略慢。
-    </p>
-  </div>
-);
-
-
 const MainPage: React.FC = () => {
   // State for Topic Analysis
   const [userInput, setUserInput] = useState<string>('');
@@ -299,7 +271,6 @@ const MainPage: React.FC = () => {
 
   // Common State
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
-  const [isOnlineSearchEnabled, setIsOnlineSearchEnabled] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
@@ -430,7 +401,7 @@ const MainPage: React.FC = () => {
     setStockError(null);
 
     try {
-      const report = await getAnalysis(topic, isOnlineSearchEnabled);
+      const report = await getAnalysis(topic);
       setAnalysisReport(report);
       incrementAnalysisCount();
       incrementUserAnalysisCount();
@@ -450,7 +421,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [history, isOnlineSearchEnabled]);
+  }, [history]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) {
@@ -466,7 +437,7 @@ const MainPage: React.FC = () => {
     setError(null);
 
     try {
-      const report = await getStockAnalysis(stockQueryToAnalyze, isOnlineSearchEnabled);
+      const report = await getStockAnalysis(stockQueryToAnalyze);
       setStockAnalysisReport(report);
       incrementAnalysisCount();
       incrementUserAnalysisCount();
@@ -477,7 +448,7 @@ const MainPage: React.FC = () => {
     } finally {
       setIsStockLoading(false);
     }
-  }, [isOnlineSearchEnabled]);
+  }, []);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -509,15 +480,6 @@ const MainPage: React.FC = () => {
 
   const handleClearHistory = () => {
     updateHistory([]);
-  };
-
-  const handleToggleSearchMode = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const isEnabled = e.target.checked;
-    setIsOnlineSearchEnabled(isEnabled);
-    setToast({
-      message: isEnabled ? '来财！来财！' : '祝你好运！',
-      type: isEnabled ? 'success' : 'info',
-    });
   };
   
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
@@ -564,11 +526,6 @@ const MainPage: React.FC = () => {
                 </TabButton>
               </div>
             </div>
-            
-            <SearchModeToggle 
-              isEnabled={isOnlineSearchEnabled} 
-              onToggle={handleToggleSearchMode}
-            />
 
             {/* --- Tabs Content --- */}
             <div className="space-y-8">

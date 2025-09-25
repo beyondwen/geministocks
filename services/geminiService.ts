@@ -59,8 +59,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 }
 
 
-export const getAnalysis = async (topic: string, isOnline: boolean): Promise<AnalysisReport> => {
-    const modelName = isOnline ? 'x-ai/grok-4-fast:free:online' : 'x-ai/grok-4-fast:free';
+export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
+    const modelName = 'x-ai/grok-4-fast:free:online';
     const systemInstruction = `
         You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
         Ensure your analysis is timely by incorporating the latest web information and market data.
@@ -114,8 +114,8 @@ export const getAnalysis = async (topic: string, isOnline: boolean): Promise<Ana
     return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
-export const getStockAnalysis = async (stockQuery: string, isOnline: boolean): Promise<StockAnalysisReport> => {
-    const modelName = isOnline ? 'x-ai/grok-4-fast:free:online' : 'x-ai/grok-4-fast:free';
+export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
+    const modelName = 'x-ai/grok-4-fast:free:online';
     const systemInstruction = `
         You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
         It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
