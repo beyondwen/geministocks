@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis } from './services/geminiService';
@@ -540,9 +542,11 @@ const MainPage: React.FC = () => {
                     累计分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
                   </p>
                 </div>
-                <Link to="/about" className="text-sm text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">
-                  使用说明
-                </Link>
+                <div className="flex items-center gap-x-3 text-sm">
+                    <a href="https://ihezu.cool/TBw2Q8" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-700 transition-colors animated-underline">
+                      合租
+                    </a>
+                </div>
             </div>
           </header>
 
@@ -631,6 +635,11 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
+            <div className="mb-4">
+              <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 hover:underline transition-colors">
+                使用说明
+              </Link>
+            </div>
             <p className="text-sm text-gray-500">
               由僧僧独立开发，欢迎关注“小声读书”公众号
               <br />

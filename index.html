@@ -85,6 +85,27 @@
       .animate-toast-in {
         animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
       }
+      /* New Underline Animation for Links */
+      .animated-underline {
+        position: relative;
+        text-decoration: none;
+      }
+      .animated-underline::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        transform: scaleX(0);
+        height: 2px;
+        bottom: -3px;
+        left: 0;
+        background-color: #0891b2; /* A nice cyan color */
+        transform-origin: bottom right;
+        transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      .animated-underline:hover::after {
+        transform: scaleX(1);
+        transform-origin: bottom left;
+      }
     </style>
     <!-- Structured Data -->
     <script type="application/ld+json">
