@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
-import { getAnalysis, getStockAnalysis } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI } from './services/geminiService';
 import type { AnalysisReport, HistoryEntry, StockAnalysisReport } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
@@ -268,6 +268,9 @@ const MainPage: React.FC = () => {
   const [stockAnalysisReport, setStockAnalysisReport] = useState<StockAnalysisReport | null>(null);
   const [isStockLoading, setIsStockLoading] = useState<boolean>(false);
   const [stockError, setStockError] = useState<string | null>(null);
+  const [hotStocks, setHotStocks] = useState<{name: string; ticker: string}[]>([]);
+  const [isHotStocksLoading, setIsHotStocksLoading] = useState<boolean>(true);
+
 
   // Common State
   const [activeTab, setActiveTab] = useState<'stock' | 'topic'>('topic');
@@ -326,6 +329,21 @@ const MainPage: React.FC = () => {
       }
     };
     fetchGlobalStats();
+
+    // Fetch dynamic hot stocks on initial load
+    const fetchHotStocks = async () => {
+      setIsHotStocksLoading(true);
+      try {
+        const stocks = await getHotStocksFromAI();
+        setHotStocks(stocks);
+      } catch (err) {
+        console.error("Failed to fetch hot stocks:", err);
+        // Fallback to a default list or show an error, here we just log it
+      } finally {
+        setIsHotStocksLoading(false);
+      }
+    };
+    fetchHotStocks();
 
     // Register the service worker for PWA capabilities.
     if ('serviceWorker' in navigator) {
@@ -536,9 +554,14 @@ const MainPage: React.FC = () => {
                           setStockQuery={setStockQuery}
                           onAnalyze={handleStockAnalyze}
                           isLoading={isStockLoading}
+                          suggestions={hotStocks}
                         />
 
-                        <HotStocks onSelect={handleHotStockSelect} />
+                        <HotStocks 
+                          onSelect={handleHotStockSelect} 
+                          stocks={hotStocks} 
+                          isLoading={isHotStocksLoading} 
+                        />
                         
                         {isStockLoading && <Loader />}
             

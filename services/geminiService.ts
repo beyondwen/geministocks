@@ -1,4 +1,3 @@
-// services/geminiService.ts
 import type { AnalysisReport, StockAnalysisReport } from '../types';
 
 // --- OpenRouter Configuration ---
@@ -174,4 +173,31 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
     `;
 
     return callOpenRouterAI(prompt, systemInstruction, modelName);
+};
+
+export const getHotStocksFromAI = async (): Promise<{name: string; ticker: string}[]> => {
+    const modelName = 'x-ai/grok-4-fast:free:online';
+    const systemInstruction = `
+        You are a market analyst AI. Your task is to identify the 10 most discussed and trending stocks on the global market (including US, Hong Kong, and A-shares) within the last 24 hours based on current web data.
+        You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
+        All content must be in Simplified Chinese.
+        The JSON schema is as follows:
+        {
+          "stocks": [
+            {
+              "name": "string (company name)",
+              "ticker": "string (stock ticker symbol)"
+            }
+          ]
+        }
+    `;
+    const prompt = "Please provide the list of the 10 hottest stocks in the last 24 hours.";
+
+    const response = await callOpenRouterAI(prompt, systemInstruction, modelName);
+    // The AI is instructed to return an object with a "stocks" key. We extract the array.
+    if (response && Array.isArray(response.stocks)) {
+      return response.stocks;
+    }
+    // Fallback in case the AI fails to follow the schema perfectly.
+    throw new Error('AI returned an invalid format for hot stocks.');
 };

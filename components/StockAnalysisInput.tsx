@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HOT_STOCKS } from './HotStocks'; // Import the hot stocks list
+
+interface Stock {
+  name: string;
+  ticker: string;
+}
 
 interface StockAnalysisInputProps {
   stockQuery: string;
   setStockQuery: (query: string) => void;
   onAnalyze: (stockQuery: string) => void;
   isLoading: boolean;
+  suggestions: Stock[];
 }
 
-const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading }) => {
-  const [suggestions, setSuggestions] = useState<{name: string; ticker: string}[]>([]);
+const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions }) => {
+  const [filteredSuggestions, setFilteredSuggestions] = useState<Stock[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
 
@@ -24,13 +29,13 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
     setStockQuery(query);
 
     if (query.trim().length > 0) {
-      const filteredSuggestions = HOT_STOCKS.filter(
+      const filtered = initialSuggestions.filter(
         stock =>
           stock.name.toLowerCase().includes(query.toLowerCase()) ||
           stock.ticker.toLowerCase().includes(query.toLowerCase())
       );
-      setSuggestions(filteredSuggestions);
-      setShowSuggestions(filteredSuggestions.length > 0);
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
     } else {
       setShowSuggestions(false);
     }
@@ -82,13 +87,13 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
               aria-expanded={showSuggestions}
               aria-haspopup="listbox"
             />
-            {showSuggestions && suggestions.length > 0 && (
+            {showSuggestions && filteredSuggestions.length > 0 && (
               <ul
                 id="stock-suggestions"
                 role="listbox"
                 className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto animate-fade-in"
               >
-                {suggestions.map((stock) => (
+                {filteredSuggestions.map((stock) => (
                   <li
                     key={stock.ticker}
                     role="option"
