@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import type { HistoryEntry } from '../types';
 import { ClockIcon, TrashIcon } from './icons/Icons';
 
+interface DisplayHistoryItem {
+  id: number;
+  text: string;
+}
+
 interface AnalysisHistoryProps {
-  history: HistoryEntry[];
-  onSelect: (entry: HistoryEntry) => void;
+  history: DisplayHistoryItem[];
+  onSelect: (id: number) => void;
   onDelete: (id: number) => void;
   onClear: () => void;
 }
@@ -53,11 +57,11 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
               {history.map((entry) => (
                 <li
                   key={entry.id}
-                  onClick={() => onSelect(entry)}
+                  onClick={() => onSelect(entry.id)}
                   className="group flex justify-between items-center p-3 rounded-md cursor-pointer hover:bg-gray-200/70 transition-colors"
                 >
                   <p className="truncate text-sm text-gray-700">
-                    {entry.topic}
+                    {entry.text}
                   </p>
                   <button
                     onClick={(e) => handleDelete(e, entry.id)}

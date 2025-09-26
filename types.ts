@@ -53,7 +53,7 @@ export interface AnalysisReport {
   sources?: GroundingSource[];
 }
 
-export interface HistoryEntry {
+export interface TopicHistoryEntry {
   id: number;
   topic: string;
   report: AnalysisReport;
@@ -122,6 +122,12 @@ export interface StockAnalysisReport {
   sources?: GroundingSource[];
 }
 
+export interface StockHistoryEntry {
+  id: number;
+  query: string;
+  report: StockAnalysisReport;
+}
+
 // --- New Types for Positional Warfare Analysis ---
 export interface LeaderStockProfile {
     name: string;
@@ -144,3 +150,13 @@ export interface PositionalWarfareReport {
     leaderStock: LeaderStockProfile;
     followerCandidates: FollowerCandidate[];
 }
+
+export interface PositionalWarfareHistoryEntry {
+  id: number;
+  leaderStockQuery: string;
+  report: PositionalWarfareReport;
+}
+
+// --- Deprecated Types (Kept for reference, can be removed later) ---
+/** @deprecated Use TopicHistoryEntry instead */
+export type HistoryEntry = TopicHistoryEntry;

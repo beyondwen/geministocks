@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis } from './services/geminiService';
-import type { AnalysisReport, HistoryEntry, StockAnalysisReport, PositionalWarfareReport } from './types';
+import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
@@ -15,7 +15,9 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 
-const HISTORY_STORAGE_KEY = 'gemini-analysis-history';
+const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
+const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
+const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const NEWS_SOURCE_STORAGE_KEY = 'gemini-news-source';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 
@@ -263,7 +265,7 @@ const MainPage: React.FC = () => {
   const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [topicHistory, setTopicHistory] = useState<TopicHistoryEntry[]>([]);
   
   // State for Stock Analysis
   const [stockQuery, setStockQuery] = useState<string>('');
@@ -272,6 +274,7 @@ const MainPage: React.FC = () => {
   const [stockError, setStockError] = useState<string | null>(null);
   const [hotStocks, setHotStocks] = useState<{name: string; ticker: string}[]>([]);
   const [isHotStocksLoading, setIsHotStocksLoading] = useState<boolean>(true);
+  const [stockHistory, setStockHistory] = useState<StockHistoryEntry[]>([]);
 
   // State for Positional Warfare Analysis
   const [leaderStockQuery, setLeaderStockQuery] = useState<string>('');
@@ -279,6 +282,7 @@ const MainPage: React.FC = () => {
   const [isPositionalWarfareLoading, setIsPositionalWarfareLoading] = useState<boolean>(false);
   const [positionalWarfareError, setPositionalWarfareError] = useState<string | null>(null);
   const [positionalWarfareProgress, setPositionalWarfareProgress] = useState<string>('');
+  const [positionalWarfareHistory, setPositionalWarfareHistory] = useState<PositionalWarfareHistoryEntry[]>([]);
 
 
   // Common State
@@ -301,8 +305,14 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     // Load history and settings from localStorage
     try {
-      const storedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
-      if (storedHistory) setHistory(JSON.parse(storedHistory));
+      const storedTopicHistory = localStorage.getItem(TOPIC_HISTORY_STORAGE_KEY);
+      if (storedTopicHistory) setTopicHistory(JSON.parse(storedTopicHistory));
+
+      const storedStockHistory = localStorage.getItem(STOCK_HISTORY_STORAGE_KEY);
+      if (storedStockHistory) setStockHistory(JSON.parse(storedStockHistory));
+
+      const storedPositionalWarfareHistory = localStorage.getItem(POSITIONAL_WARFARE_HISTORY_STORAGE_KEY);
+      if (storedPositionalWarfareHistory) setPositionalWarfareHistory(JSON.parse(storedPositionalWarfareHistory));
 
       const storedSourceId = localStorage.getItem(NEWS_SOURCE_STORAGE_KEY);
       if (storedSourceId && NEWS_SOURCES.some(s => s.id === storedSourceId)) {
@@ -383,9 +393,19 @@ const MainPage: React.FC = () => {
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
   }, []);
 
-  const updateHistory = (newHistory: HistoryEntry[]) => {
-    setHistory(newHistory);
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
+  const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
+    setTopicHistory(newHistory);
+    localStorage.setItem(TOPIC_HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
+  };
+  
+  const updateStockHistory = (newHistory: StockHistoryEntry[]) => {
+    setStockHistory(newHistory);
+    localStorage.setItem(STOCK_HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
+  };
+
+  const updatePositionalWarfareHistory = (newHistory: PositionalWarfareHistoryEntry[]) => {
+    setPositionalWarfareHistory(newHistory);
+    localStorage.setItem(POSITIONAL_WARFARE_HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
   };
   
   const handleSourceChange = (sourceId: string) => {
@@ -433,13 +453,13 @@ const MainPage: React.FC = () => {
       incrementAnalysisCount();
       incrementUserAnalysisCount();
 
-      const newEntry: HistoryEntry = {
+      const newEntry: TopicHistoryEntry = {
         id: Date.now(),
         topic: topic,
         report: report,
       };
-      const newHistory = [newEntry, ...history].slice(0, 20); // Limit history to 20 items
-      updateHistory(newHistory);
+      const newHistory = [newEntry, ...topicHistory].slice(0, 20); // Limit history to 20 items
+      updateTopicHistory(newHistory);
 
     } catch (err) {
       console.error(err);
@@ -448,7 +468,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [history]);
+  }, [topicHistory]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) {
@@ -468,6 +488,15 @@ const MainPage: React.FC = () => {
       setStockAnalysisReport(report);
       incrementAnalysisCount();
       incrementUserAnalysisCount();
+
+      const newEntry: StockHistoryEntry = {
+        id: Date.now(),
+        query: stockQueryToAnalyze,
+        report: report,
+      };
+      const newHistory = [newEntry, ...stockHistory].slice(0, 20);
+      updateStockHistory(newHistory);
+
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
@@ -475,7 +504,7 @@ const MainPage: React.FC = () => {
     } finally {
       setIsStockLoading(false);
     }
-  }, []);
+  }, [stockHistory]);
 
   const handlePositionalWarfareAnalyze = useCallback(async () => {
     if (!leaderStockQuery.trim()) {
@@ -495,6 +524,15 @@ const MainPage: React.FC = () => {
         setPositionalWarfareReport(report);
         incrementAnalysisCount();
         incrementUserAnalysisCount();
+
+        const newEntry: PositionalWarfareHistoryEntry = {
+          id: Date.now(),
+          leaderStockQuery: leaderStockQuery,
+          report: report,
+        };
+        const newHistory = [newEntry, ...positionalWarfareHistory].slice(0, 20);
+        updatePositionalWarfareHistory(newHistory);
+
     } catch (err) {
         console.error(err);
         const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
@@ -503,7 +541,7 @@ const MainPage: React.FC = () => {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [leaderStockQuery]);
+  }, [leaderStockQuery, positionalWarfareHistory]);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -518,23 +556,75 @@ const MainPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSelectHistory = (entry: HistoryEntry) => {
+  // --- History Handlers ---
+
+  const handleSelectTopicHistory = (id: number) => {
+    const entry = topicHistory.find((e) => e.id === id);
+    if (!entry) return;
     setUserInput(entry.topic);
     setAnalysisReport(entry.report);
     setStockAnalysisReport(null);
+    setPositionalWarfareReport(null);
     setError(null);
     setStockError(null);
+    setPositionalWarfareError(null);
     setActiveTab('topic');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteHistory = (id: number) => {
-    const newHistory = history.filter((entry) => entry.id !== id);
-    updateHistory(newHistory);
+  const handleDeleteTopicHistory = (id: number) => {
+    const newHistory = topicHistory.filter((entry) => entry.id !== id);
+    updateTopicHistory(newHistory);
   };
 
-  const handleClearHistory = () => {
-    updateHistory([]);
+  const handleClearTopicHistory = () => {
+    updateTopicHistory([]);
+  };
+
+  const handleSelectStockHistory = (id: number) => {
+    const entry = stockHistory.find((e) => e.id === id);
+    if (!entry) return;
+    setStockQuery(entry.query);
+    setStockAnalysisReport(entry.report);
+    setAnalysisReport(null);
+    setPositionalWarfareReport(null);
+    setError(null);
+    setStockError(null);
+    setPositionalWarfareError(null);
+    setActiveTab('stock');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteStockHistory = (id: number) => {
+    const newHistory = stockHistory.filter((entry) => entry.id !== id);
+    updateStockHistory(newHistory);
+  };
+
+  const handleClearStockHistory = () => {
+    updateStockHistory([]);
+  };
+
+  const handleSelectPositionalWarfareHistory = (id: number) => {
+    const entry = positionalWarfareHistory.find((e) => e.id === id);
+    if (!entry) return;
+    setLeaderStockQuery(entry.leaderStockQuery);
+    setPositionalWarfareReport(entry.report);
+    setAnalysisReport(null);
+    setStockAnalysisReport(null);
+    setError(null);
+    setStockError(null);
+    setPositionalWarfareError(null);
+    setActiveTab('positional');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeletePositionalWarfareHistory = (id: number) => {
+    const newHistory = positionalWarfareHistory.filter((entry) => entry.id !== id);
+    updatePositionalWarfareHistory(newHistory);
+  };
+
+  const handleClearPositionalWarfareHistory = () => {
+    updatePositionalWarfareHistory([]);
   };
   
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
@@ -608,10 +698,10 @@ const MainPage: React.FC = () => {
                         {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
                         
                         <AnalysisHistory
-                          history={history}
-                          onSelect={handleSelectHistory}
-                          onDelete={handleDeleteHistory}
-                          onClear={handleClearHistory}
+                          history={topicHistory.map(h => ({ id: h.id, text: h.topic }))}
+                          onSelect={handleSelectTopicHistory}
+                          onDelete={handleDeleteTopicHistory}
+                          onClear={handleClearTopicHistory}
                         />
 
                         <LatestNews 
@@ -648,6 +738,14 @@ const MainPage: React.FC = () => {
                         )}
             
                         {stockAnalysisReport && !isStockLoading && <StockAnalysisResult report={stockAnalysisReport} />}
+                        
+                        <AnalysisHistory
+                          history={stockHistory.map(h => ({ id: h.id, text: h.query }))}
+                          onSelect={handleSelectStockHistory}
+                          onDelete={handleDeleteStockHistory}
+                          onClear={handleClearStockHistory}
+                        />
+
                         {/* <AdSenseAd /> */}
                     </div>
                 )}
@@ -669,6 +767,13 @@ const MainPage: React.FC = () => {
                         )}
                         
                         {positionalWarfareReport && !isPositionalWarfareLoading && <PositionalWarfareResult report={positionalWarfareReport} />}
+
+                        <AnalysisHistory
+                          history={positionalWarfareHistory.map(h => ({ id: h.id, text: h.leaderStockQuery }))}
+                          onSelect={handleSelectPositionalWarfareHistory}
+                          onDelete={handleDeletePositionalWarfareHistory}
+                          onClear={handleClearPositionalWarfareHistory}
+                        />
                     </div>
                 )}
             </div>

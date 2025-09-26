@@ -245,7 +245,9 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
         const link = document.createElement('a');
         link.download = `个股分析报告_${report.companyProfile.name}.png`;
         link.href = dataUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
       })
       .catch((err) => {
         console.error('Failed to export image:', err);
