@@ -40,6 +40,7 @@ const NEWS_SOURCES: NewsSource[] = [
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'bloomberg', name: '彭博社', url: 'https://feeds.bloomberg.com/technology/news.rss' },
   { id: 'shilian', name: '彭博挖宝', url: 'https://bloombergnew.buzzing.cc/feed.json', type: 'json' },
+  { id: 'hackernews', name: 'Hacker News', url: 'https://www.supertechfans.com/cn/index.xml' },
 ];
 
 // --- Helper Components ---
