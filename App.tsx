@@ -41,6 +41,7 @@ const NEWS_SOURCES: NewsSource[] = [
   { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'hackernews', name: 'Hacker News', url: 'https://www.supertechfans.com/cn/index.xml' },
+  { id: 'maobidao', name: '猫笔刀', url: 'https://wechat2rss.xlab.app/feed/33d986064f59be5263de2ca822fb3e0bdd59eb81.xml' },
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
@@ -48,6 +49,7 @@ const SOURCE_COLORS: { [key: string]: string } = {
   '奇客 Solidot': 'bg-gray-100 text-gray-800',
   '36氪': 'bg-cyan-100 text-cyan-800',
   'Hacker News': 'bg-orange-100 text-orange-800',
+  '猫笔刀': 'bg-purple-100 text-purple-800',
 };
 
 
@@ -255,13 +257,6 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
   >
     {children}
   </button>
-);
-
-const Disclaimer: React.FC = () => (
-    <div className="text-center text-xs text-gray-500 mb-6 px-4 py-2 bg-gray-200/60 rounded-lg" role="alert">
-      <p className="font-semibold">股市有风险，入市须谨慎。</p>
-      <p>分析结果不构成任何投资建议。</p>
-    </div>
 );
 
 const MainPage: React.FC = () => {
@@ -643,11 +638,6 @@ const MainPage: React.FC = () => {
                     累计分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
                   </p>
                 </div>
-                <div className="flex items-center gap-x-3 text-sm">
-                    <a href="https://mystonks.org/?code=v1B021" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-700 transition-colors animated-underline">
-                      链上美股
-                    </a>
-                </div>
             </div>
           </header>
 
@@ -669,8 +659,6 @@ const MainPage: React.FC = () => {
                 </TabButton>
               </div>
             </div>
-
-            <Disclaimer />
 
             {/* --- Tabs Content --- */}
             <div className="space-y-8">
