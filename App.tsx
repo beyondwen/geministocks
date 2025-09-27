@@ -18,7 +18,6 @@ import PositionalWarfareResult from './components/PositionalWarfareResult';
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
-const NEWS_SOURCE_STORAGE_KEY = 'gemini-news-source';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 
 // --- Data & Types ---
@@ -26,6 +25,8 @@ interface NewsArticle {
   title: string;
   link: string;
   description: string;
+  pubDate: string;
+  sourceName: string;
 }
 
 interface NewsSource {
@@ -36,12 +37,19 @@ interface NewsSource {
 }
 
 const NEWS_SOURCES: NewsSource[] = [
+  { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
   { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
-  { id: 'bloomberg', name: '彭博社', url: 'https://feeds.bloomberg.com/technology/news.rss' },
-  { id: 'shilian', name: '彭博挖宝', url: 'https://bloombergnew.buzzing.cc/feed.json', type: 'json' },
   { id: 'hackernews', name: 'Hacker News', url: 'https://www.supertechfans.com/cn/index.xml' },
 ];
+
+const SOURCE_COLORS: { [key: string]: string } = {
+  '雪球': 'bg-blue-100 text-blue-800',
+  '奇客 Solidot': 'bg-gray-100 text-gray-800',
+  '36氪': 'bg-cyan-100 text-cyan-800',
+  'Hacker News': 'bg-orange-100 text-orange-800',
+};
+
 
 // --- Helper Components ---
 
@@ -56,7 +64,7 @@ const truncateText = (text: string, length: number) => {
 
 const NewsSkeleton: React.FC = () => (
     <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
+      {[...Array(5)].map((_, i) => (
         <div key={i} className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-3 py-1">
             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -74,108 +82,97 @@ const NewsSkeleton: React.FC = () => (
 interface LatestNewsProps {
   onAnalyze: (topic: string) => void;
   sources: NewsSource[];
-  selectedSourceId: string;
-  onSourceChange: (sourceId: string) => void;
 }
 
-const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources, selectedSourceId, onSourceChange }) => {
+const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchNews = async () => {
-      const source = sources.find(s => s.id === selectedSourceId);
-      if (!source) {
-        setError("无效的新闻源。");
-        setIsLoading(false);
-        return;
-      }
-
+    const fetchAllNews = async () => {
       setIsLoading(true);
       setError(null);
-      setArticles([]);
+
+      const fetchPromises = sources.map(async (source) => {
+        try {
+          let fetchedArticles: Omit<NewsArticle, 'sourceName'>[] = [];
+          if (source.type === 'json') {
+            const response = await fetch(source.url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${source.name}`);
+            const data = await response.json();
+            if (!data.items) throw new Error(`Invalid JSON feed format for ${source.name}.`);
+            
+            fetchedArticles = data.items.map((item: any) => ({
+              title: item.title,
+              link: item.url,
+              description: item.summary || item.content_html || '',
+              pubDate: item.date_published || new Date().toISOString(),
+            }));
+          } else {
+            const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${source.name}`);
+            const data = await response.json();
+            if (data.status !== 'ok') throw new Error(`Failed to fetch news feed via rss2json for ${source.name}.`);
+            
+            fetchedArticles = data.items.map((item: any) => ({
+              title: item.title,
+              link: item.link,
+              description: item.description,
+              pubDate: item.pubDate,
+            }));
+          }
+          return fetchedArticles.map(article => ({ ...article, sourceName: source.name }));
+        } catch (err) {
+          console.error(`Failed to fetch from ${source.name}:`, err);
+          return []; // Return empty array on failure for this source
+        }
+      });
 
       try {
-        let fetchedArticles: NewsArticle[] = [];
+        const results = await Promise.all(fetchPromises);
+        const allArticles = results.flat();
 
-        if (source.type === 'json') {
-          // Handle direct JSON feed
-          const response = await fetch(source.url);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          if (!data.items) throw new Error('Invalid JSON feed format.');
-          
-          fetchedArticles = data.items.slice(0, 3).map((item: any) => ({
-            title: item.title,
-            link: item.url,
-            description: item.summary || item.content_html || '',
-          }));
-        } else {
-          // Default to RSS via rss2json proxy
-          const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
-          const response = await fetch(API_URL);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          if (data.status !== 'ok') throw new Error('Failed to fetch news feed via rss2json.');
-          
-          fetchedArticles = data.items.slice(0, 3).map((item: any) => ({
-            title: item.title,
-            link: item.link,
-            description: item.description,
-          }));
-        }
-        
-        setArticles(fetchedArticles);
+        allArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
+        setArticles(allArticles.slice(0, 10));
       } catch (err) {
-        console.error("Failed to fetch news:", err);
-        setError("无法加载最新消息。");
+         console.error("Failed to process news feeds:", err);
+         setError("无法加载最新消息。部分新闻源可能暂时不可用。");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchNews();
-  }, [selectedSourceId, sources]);
+    fetchAllNews();
+  }, [sources]);
 
   return (
     <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-                <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
-                    <NewspaperIcon className="h-6 w-6"/>
-                </span>
-                <h2 className="text-xl font-semibold text-gray-800">最新动态</h2>
-            </div>
-            <div className="relative">
-                <select
-                    id="news-source-select"
-                    value={selectedSourceId}
-                    onChange={(e) => onSourceChange(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full pl-3 pr-8 py-2 appearance-none transition"
-                    aria-label="选择新闻源"
-                >
-                    {sources.map(source => (
-                        <option key={source.id} value={source.id}>{source.name}</option>
-                    ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
-            </div>
-        </div>
+      <div className="flex items-center mb-4">
+          <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
+              <NewspaperIcon className="h-6 w-6"/>
+          </span>
+          <h2 className="text-xl font-semibold text-gray-800">最新动态</h2>
+      </div>
       {isLoading ? (
         <NewsSkeleton />
       ) : error ? (
         <p className="text-red-600">{error}</p>
       ) : (
         <ul className="space-y-4">
-          {articles.map((article) => (
-            <li key={article.link} className="group border-b border-gray-200 pb-4 last:border-b-0">
-              <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-800 hover:text-cyan-600 transition-colors">
-                {article.title}
-              </a>
+          {articles.map((article, index) => (
+            <li key={`${article.link}-${index}`} className="group border-b border-gray-200 pb-4 last:border-b-0">
+              <div className="flex items-center gap-x-2 mb-1 flex-wrap">
+                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-800 hover:text-cyan-600 transition-colors">
+                    {article.title}
+                  </a>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-gray-100 text-gray-800'}`}>
+                    {article.sourceName}
+                  </span>
+              </div>
+              
               <p className="text-sm text-gray-600 mt-1">
                 {truncateText(stripHtml(article.description), 140)}
               </p>
@@ -291,7 +288,6 @@ const MainPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
-  const [selectedNewsSourceId, setSelectedNewsSourceId] = useState<string>(NEWS_SOURCES[0].id);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -314,11 +310,6 @@ const MainPage: React.FC = () => {
 
       const storedPositionalWarfareHistory = localStorage.getItem(POSITIONAL_WARFARE_HISTORY_STORAGE_KEY);
       if (storedPositionalWarfareHistory) setPositionalWarfareHistory(JSON.parse(storedPositionalWarfareHistory));
-
-      const storedSourceId = localStorage.getItem(NEWS_SOURCE_STORAGE_KEY);
-      if (storedSourceId && NEWS_SOURCES.some(s => s.id === storedSourceId)) {
-        setSelectedNewsSourceId(storedSourceId);
-      }
       
       const storedUserCount = localStorage.getItem(USER_ANALYSIS_COUNT_KEY);
       if (storedUserCount) {
@@ -407,11 +398,6 @@ const MainPage: React.FC = () => {
   const updatePositionalWarfareHistory = (newHistory: PositionalWarfareHistoryEntry[]) => {
     setPositionalWarfareHistory(newHistory);
     localStorage.setItem(POSITIONAL_WARFARE_HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
-  };
-  
-  const handleSourceChange = (sourceId: string) => {
-    setSelectedNewsSourceId(sourceId);
-    localStorage.setItem(NEWS_SOURCE_STORAGE_KEY, sourceId);
   };
   
   const incrementUserAnalysisCount = () => {
@@ -708,8 +694,6 @@ const MainPage: React.FC = () => {
                         <LatestNews 
                           onAnalyze={handleNewsSelect} 
                           sources={NEWS_SOURCES}
-                          selectedSourceId={selectedNewsSourceId}
-                          onSourceChange={handleSourceChange}
                         />
                         {/* <AdSenseAd /> */}
                     </div>
