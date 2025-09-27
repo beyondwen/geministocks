@@ -257,6 +257,13 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
   </button>
 );
 
+const Disclaimer: React.FC = () => (
+    <div className="text-center text-xs text-gray-500 mb-6 px-4 py-2 bg-gray-200/60 rounded-lg" role="alert">
+      <p className="font-semibold">股市有风险，入市须谨慎。</p>
+      <p>分析结果不构成任何投资建议。</p>
+    </div>
+);
+
 const MainPage: React.FC = () => {
   // State for Topic Analysis
   const [userInput, setUserInput] = useState<string>('');
@@ -662,6 +669,8 @@ const MainPage: React.FC = () => {
                 </TabButton>
               </div>
             </div>
+
+            <Disclaimer />
 
             {/* --- Tabs Content --- */}
             <div className="space-y-8">

@@ -350,6 +350,9 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                 )}
             </div>
             <footer className="text-center mt-8 pt-4 border-t border-gray-200">
+                 <p className="text-xs text-gray-500 font-bold mb-1">
+                    免责声明：本报告仅为 AI 模型基于公开信息生成的分析，不构成任何投资建议。股市有风险，入市须谨慎。
+                </p>
                 <p className="text-xs text-gray-500">
                     本报告使用股市超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
                 </p>
