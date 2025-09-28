@@ -15,6 +15,8 @@ const generateStockLink = (stock: StockTicker): string => {
         return `https://www.google.com/finance/quote/${ticker}`;
       case 'Crypto':
         return `https://www.google.com/finance/quote/${ticker}-USD`;
+      case 'Futures':
+        return `https://www.google.com/finance/quote/${ticker}`;
       case 'Other':
       default:
         return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
@@ -97,13 +99,14 @@ const StockRecommendations: React.FC<StockRecommendationsProps> = ({ stocks, key
     return acc;
   }, {} as Record<string, StockTicker[]>);
 
-  const marketOrder: (keyof typeof groupedStocks)[] = ['A-Share', 'Hong Kong', 'US', 'Crypto', 'Other'];
+  const marketOrder: (keyof typeof groupedStocks)[] = ['A-Share', 'Hong Kong', 'US', 'Crypto', 'Futures', 'Other'];
   
   const marketConfig = {
     'A-Share': { title: 'A 股', icon: '🇨🇳', color: 'bg-red-100 text-red-800' },
     'Hong Kong': { title: '港股', icon: '🇭🇰', color: 'bg-purple-100 text-purple-800' },
     'US': { title: '美股', icon: '🇺🇸', color: 'bg-blue-100 text-blue-800' },
     'Crypto': { title: '数字货币', icon: '🪙', color: 'bg-orange-100 text-orange-800' },
+    'Futures': { title: '商品期货', icon: '🏭', color: 'bg-amber-100 text-amber-800' },
     'Other': { title: '其他市场', icon: '🌐', color: 'bg-gray-100 text-gray-800' },
   };
 

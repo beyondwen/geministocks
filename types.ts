@@ -8,7 +8,7 @@ export interface GroundingSource {
 export interface StockTicker {
   name: string;
   ticker: string;
-  market: 'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Other';
+  market: 'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other';
   reason: string;
   relevance: 'High' | 'Medium' | 'Low';
 }
