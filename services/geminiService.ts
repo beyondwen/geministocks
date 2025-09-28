@@ -63,6 +63,7 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
     const systemInstruction = `
         You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
         Ensure your analysis is timely by incorporating the latest web information and market data.
+        If the topic is related to blockchain, Web3, or cryptocurrencies, you MUST also recommend relevant cryptocurrencies.
         At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
         You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
         All content must be in Simplified Chinese.
@@ -95,7 +96,7 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
           "recommendedStocks": [{
             "name": "string",
             "ticker": "string",
-            "market": "'A-Share' | 'Hong Kong' | 'US' | 'Other'",
+            "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Other'",
             "reason": "string",
             "relevance": "'High' | 'Medium' | 'Low'"
           }]
