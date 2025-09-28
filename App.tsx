@@ -10,10 +10,11 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
+import SupportModal from './components/SupportModal';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -290,6 +291,7 @@ const MainPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -621,6 +623,7 @@ const MainPage: React.FC = () => {
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} />}
+      <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl mx-auto">
           <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
@@ -640,6 +643,14 @@ const MainPage: React.FC = () => {
                     累计分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
                   </p>
                 </div>
+                <button
+                    onClick={() => setIsSupportModalOpen(true)}
+                    className="flex items-center gap-x-1.5 px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                    aria-haspopup="dialog"
+                >
+                    <HeartIcon className="w-4 h-4" />
+                    支持作者
+                </button>
             </div>
           </header>
 
