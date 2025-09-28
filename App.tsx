@@ -630,6 +630,8 @@ const MainPage: React.FC = () => {
               </h1>
               <p className="text-gray-600 mt-2">
                 利用 AI 模型进行多维度投资分析 🚀
+                <br />
+                支持美股、A 股、港股、数字货币和实物期货市场
               </p>
             </div>
             <div className="order-1 sm:order-2 flex items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
