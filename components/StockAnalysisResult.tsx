@@ -351,7 +351,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
             </div>
             <footer className="text-center mt-8 pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500">
-                    本报告使用股市超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
+                    本报告使用超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
                 </p>
             </footer>
         </div>

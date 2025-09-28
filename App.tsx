@@ -376,8 +376,8 @@ const MainPage: React.FC = () => {
 
   // SEO: Set meta tags for the main page
   useEffect(() => {
-    const title = "股市超级挖掘机 | AI驱动的智能投研与股票分析利器";
-    const description = "利用Google Gemini AI，股市超级挖掘机能将任何财经新闻或主题一键转化为深度投资分析报告。覆盖宏观、产业链、基本面与市场情绪，助您精准挖掘A股、港股、美股的投资机会。";
+    const title = "超级挖掘机 | AI驱动的智能投研与股票分析利器";
+    const description = "利用Google Gemini AI，超级挖掘机能将任何财经新闻或主题一键转化为深度投资分析报告。覆盖宏观、产业链、基本面与市场情绪，助您精准挖掘A股、港股、美股的投资机会。";
     
     document.title = title;
     document.querySelector('meta[name="description"]')?.setAttribute('content', description);
@@ -626,7 +626,7 @@ const MainPage: React.FC = () => {
           <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
             <div className="order-2 sm:order-1 text-center sm:text-left">
               <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-                股市超级挖掘机
+                超级挖掘机
               </h1>
               <p className="text-gray-600 mt-2">
                 利用 AI 模型进行多维度投资分析 🚀

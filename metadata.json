@@ -1,5 +1,5 @@
 {
-  "name": "股市超级挖掘机（分支）",
+  "name": "超级挖掘机（分支）",
   "description": "一款智能投研工具，利用 Gemini Pro 模型将财经新闻或主题转化为结构化、多维度的投资策略分析报告。",
   "requestFramePermissions": []
 }

@@ -4,8 +4,8 @@ import { SparklesIcon } from './icons/Icons';
 
 const AboutPage: React.FC = () => {
   useEffect(() => {
-    const title = "使用说明 - 股市超级挖掘机";
-    const description = "了解“股市超级挖掘机”如何利用 AI 进行四维一体分析，快速上手这款强大的智能投研工具。";
+    const title = "使用说明 - 超级挖掘机";
+    const description = "了解“超级挖掘机”如何利用 AI 进行四维一体分析，快速上手这款强大的智能投研工具。";
 
     document.title = title;
     document.querySelector('meta[name="description"]')?.setAttribute('content', description);
@@ -31,7 +31,7 @@ const AboutPage: React.FC = () => {
         <section aria-labelledby="app-purpose">
           <h2 id="app-purpose" className="text-2xl font-bold text-gray-800 mb-4">应用宗旨</h2>
           <p className="text-gray-700 leading-relaxed">
-            “股市超级挖掘机”是一款智能投研工具，旨在利用尖端的 AI 技术将复杂、非结构化的财经新闻、研究报告或市场主题，转化为结构清晰、多维度的投资策略分析报告。我们的目标是帮助投资者节省时间，快速抓住信息重点，发现潜在的投资机会，并理解其中的风险。
+            “超级挖掘机”是一款智能投研工具，旨在利用尖端的 AI 技术将复杂、非结构化的财经新闻、研究报告或市场主题，转化为结构清晰、多维度的投资策略分析报告。我们的目标是帮助投资者节省时间，快速抓住信息重点，发现潜在的投资机会，并理解其中的风险。
           </p>
         </section>
 

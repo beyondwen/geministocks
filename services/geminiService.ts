@@ -5,7 +5,7 @@ const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
 const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtYzJmMjVlMjFjZTQ5ODc5MGYwYTcwMmM4OTI3MTZmYjNlZDkzYzA1YWFjMGQwODAxZmZiMDEzOWFmYmNlNDZmNw==';
 const SITE_URL = 'https://mastersgo.cc';
-const SITE_NAME = '股市超级挖掘机';
+const SITE_NAME = '超级挖掘机';
 
 /**
  * A generic helper function to call the OpenRouter API.
