@@ -286,29 +286,3 @@ export const getPositionalWarfareAnalysis = async (
 
     return callOpenRouterAI(finalPrompt, step4System, modelName);
 };
-
-// --- New Service for Buffett Indicator ---
-export const getBuffettIndicator = async (): Promise<{ indicatorValue: number }> => {
-    const modelName = 'x-ai/grok-4-fast:free:online';
-    const systemInstruction = `
-        You are an expert data extraction AI. Your task is to visit the provided URL, find a specific value, and return it in a precise JSON format.
-        Do not add any explanations, introductory text, or anything outside of the JSON structure.
-        The response must be in Simplified Chinese.
-        The JSON schema is as follows:
-        {
-          "indicatorValue": "number (The numerical percentage value of the Buffett Indicator)"
-        }
-    `;
-    const prompt = `
-        请访问以下 URL：https://legulegu.com/stockdata/marketcap-gdp
-        在该页面中找到最新的“巴菲特指标”数值。
-        提取这个百分比数值（例如，如果页面显示 150.2%，则提取 150.2）。
-        将此数值以 JSON 格式返回。
-    `;
-
-    const response = await callOpenRouterAI(prompt, systemInstruction, modelName);
-    if (response && typeof response.indicatorValue === 'number') {
-        return response;
-    }
-    throw new Error('AI returned an invalid format for the Buffett Indicator.');
-};
