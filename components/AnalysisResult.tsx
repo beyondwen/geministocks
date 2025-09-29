@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react'
 import { toPng } from 'html-to-image';
 import type { AnalysisReport, InvestmentScore } from '../types';
 import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon } from './icons/Icons';
-import StockRecommendations from './StockRelevanceChart';
+import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
 
@@ -95,14 +95,17 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
   const keywords = useMemo(() => {
     if (!report || !userInput) return [];
 
-    const stockKeywords = report.recommendedStocks.flatMap(stock => [stock.name, stock.ticker]);
-    // Split user input into potential keywords
+    const stockKeywords = [
+        ...(report.tieredSuggestions?.coreHoldings || []),
+        ...(report.tieredSuggestions?.strategicSatellites || []),
+        ...(report.tieredSuggestions?.watchlist || []),
+    ].flatMap(stock => [stock.name, stock.ticker]);
+
     const inputKeywords = userInput
       .toLowerCase()
-      .split(/[\s,.;:!?()"“”—-]+/) // More comprehensive delimiters
-      .filter(word => word.length > 2); // Filter out short/common words
+      .split(/[\s,.;:!?()"“”—-]+/) 
+      .filter(word => word.length > 2);
 
-    // Combine, make unique, filter empty strings, and sort by length to match longer phrases first
     return [...new Set([...stockKeywords, ...inputKeywords])]
       .filter(Boolean)
       .sort((a, b) => b.length - a.length);
@@ -252,6 +255,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
             </InfoCard>
           </div>
           
+          {report.marketSizeAndOutlook && (
+            <div className="md:col-span-2">
+                <InfoCard title="市场规模与应用前景预测">
+                    <TextRenderer text={report.marketSizeAndOutlook} keywords={keywords} />
+                </InfoCard>
+            </div>
+          )}
+
           <div className="md:col-span-2">
             <InfoCard title="投资策略">
               <div>
@@ -268,10 +279,18 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
               </div>
             </InfoCard>
           </div>
+          
+          {report.allocationCadenceAndOutlook && (
+            <div className="md:col-span-2">
+                <InfoCard title="配置节奏与展望">
+                    <TextRenderer text={report.allocationCadenceAndOutlook} keywords={keywords} />
+                </InfoCard>
+            </div>
+          )}
 
           <div className="md:col-span-2">
-            <InfoCard title="相关标的推荐">
-              <StockRecommendations stocks={report.recommendedStocks} keywords={keywords} />
+            <InfoCard title="分层投资建议">
+              <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} />
             </InfoCard>
           </div>
 

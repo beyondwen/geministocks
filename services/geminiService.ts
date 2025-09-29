@@ -89,18 +89,27 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
               "description": "string"
             }
           },
+          "marketSizeAndOutlook": "string (Provide a forward-looking analysis of the market size and application prospects. Include quantitative data if possible, e.g., market value, CAGR, and describe future growth drivers and potential new application scenarios.)",
           "investmentStrategy": {
             "logic": "string",
             "suggestion": "string",
             "risks": "string"
           },
-          "recommendedStocks": [{
-            "name": "string",
-            "ticker": "string",
-            "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-            "reason": "string",
-            "relevance": "'High' | 'Medium' | 'Low'"
-          }]
+          "allocationCadenceAndOutlook": "string (Provide guidance on investment timing, position building pace, and long-term outlook. e.g., 'Suggest building a position gradually over 1-2 months, targeting a 12-month hold. Key catalysts to watch are Q3 earnings and upcoming industry policy.')",
+          "tieredSuggestions": {
+            "coreHoldings": [{
+              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
+              "reason": "string (Reason for being a high-conviction core holding)", "relevance": "'High'"
+            }],
+            "strategicSatellites": [{
+              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
+              "reason": "string (Reason for being a satellite holding with higher growth potential or representing a different sub-sector)", "relevance": "'Medium'"
+            }],
+            "watchlist": [{
+              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
+              "reason": "string (Reason for being on the watchlist, e.g., waiting for a better entry point or more information)", "relevance": "'Low'"
+            }]
+          }
         }
     `;
     

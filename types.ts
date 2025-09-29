@@ -34,6 +34,12 @@ export interface InvestmentScore {
   reason: string;
 }
 
+export interface TieredSuggestions {
+  coreHoldings: StockTicker[];
+  strategicSatellites: StockTicker[];
+  watchlist: StockTicker[];
+}
+
 export interface AnalysisReport {
   summary: string;
   keyTakeaways: string[];
@@ -44,12 +50,14 @@ export interface AnalysisReport {
     companyFundamentals: string;
     marketSentiment: MarketSentiment;
   };
+  marketSizeAndOutlook: string;
   investmentStrategy: {
     logic: string;
     suggestion: string;
     risks: string;
   };
-  recommendedStocks: StockTicker[];
+  allocationCadenceAndOutlook: string;
+  tieredSuggestions: TieredSuggestions;
   sources?: GroundingSource[];
 }
 
