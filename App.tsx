@@ -778,6 +778,10 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
+            <div className="mb-4 text-xs text-gray-500">
+              <p>投资有风险，入市需谨慎</p>
+              <p>本工具产生的分析报告不构成任何投资建议</p>
+            </div>
             <div className="mb-4">
               <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 hover:underline transition-colors">
                 使用说明
