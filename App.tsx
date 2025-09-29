@@ -15,6 +15,7 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import SupportModal from './components/SupportModal';
+import BuffettIndicator from './components/BuffettIndicator';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -653,6 +654,8 @@ const MainPage: React.FC = () => {
                 </button>
             </div>
           </header>
+
+          <BuffettIndicator />
 
           <main>
             {/* --- Tabs Navigation --- */}
