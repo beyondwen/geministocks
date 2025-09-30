@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import type { StockAnalysisReport, InvestmentScore, SWOT } from '../types';
-import { DownloadIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon } from './icons/Icons';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, RecentNewsItem, FinancialTrend } from '../types';
+import { DownloadIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, SpeakerWaveIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 
 // --- SVG Icons (defined locally to minimize file changes) ---
@@ -126,20 +127,118 @@ const ProfileSection: React.FC<{ profile: StockAnalysisReport['companyProfile'] 
     </div>
 );
 
-const FinancialsSection: React.FC<{ summary: StockAnalysisReport['financialSummary'] }> = ({ summary }) => (
-    <Card title={`财务摘要 (${summary.period})`} icon={<ChartBarIcon className="w-6 h-6" />}>
-        <ul className="space-y-3">
-            {summary.highlights.map((item, index) => (
-                <li key={index} className="flex flex-col sm:flex-row justify-between sm:items-center p-2 rounded-md hover:bg-gray-100">
-                    <div>
-                        <p className="font-semibold text-gray-900"><TextRenderer text={item.metric} />: <span className="font-mono">{item.value}</span></p>
-                        <p className="text-xs text-gray-600"><TextRenderer text={item.comment} /></p>
-                    </div>
-                </li>
-            ))}
-        </ul>
-    </Card>
+const FinancialTrendChart: React.FC<{ data: FinancialTrend[] }> = ({ data }) => {
+    const yAxisFormatter = (value: number) => new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value);
+  
+    return (
+      <div style={{ width: '100%', height: 300 }}>
+        <ResponsiveContainer>
+          <LineChart data={data} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+            <XAxis dataKey="year" stroke="#6b7280" />
+            <YAxis tickFormatter={yAxisFormatter} stroke="#6b7280" />
+            <Tooltip
+              formatter={(value: number) => yAxisFormatter(value)}
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(5px)',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.5rem',
+              }}
+            />
+            <Legend />
+            <Line type="monotone" dataKey="revenue" name="营收" stroke="#38bdf8" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+            <Line type="monotone" dataKey="netIncome" name="净利润" stroke="#34d399" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+};
+
+const ValuationSection: React.FC<{ valuation: ValuationAnalysis }> = ({ valuation }) => {
+    const judgmentConfig = {
+      undervalued: { label: '低估', color: 'bg-green-100 text-green-800 border-green-400' },
+      'fairly valued': { label: '合理', color: 'bg-yellow-100 text-yellow-800 border-yellow-400' },
+      overvalued: { label: '高估', color: 'bg-red-100 text-red-800 border-red-400' },
+    };
+    const config = judgmentConfig[valuation.judgment] || judgmentConfig['fairly valued'];
+  
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">估值判断:</span>
+            <span className={`px-3 py-1 text-sm font-bold rounded-full border ${config.color}`}>{config.label}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">目标价区间:</span>
+            <span className="px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md">{valuation.targetPriceRange}</span>
+          </div>
+        </div>
+        <div>
+          <h4 className="font-semibold text-gray-900 text-sm mb-1">分析方法:</h4>
+          <p className="text-sm pl-4 border-l-2 border-gray-300"><TextRenderer text={valuation.methodology} /></p>
+        </div>
+        <div>
+          <h4 className="font-semibold text-gray-900 text-sm mb-1">判断依据:</h4>
+          <p className="text-sm pl-4 border-l-2 border-cyan-400"><TextRenderer text={valuation.reasoning} /></p>
+        </div>
+      </div>
+    );
+};
+  
+const PeerComparisonSection: React.FC<{ peers: PeerCompetitor[] }> = ({ peers }) => (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left text-gray-700">
+        <thead className="text-xs text-gray-800 uppercase bg-gray-200/60">
+          <tr>
+            <th scope="col" className="px-4 py-3">公司</th>
+            <th scope="col" className="px-4 py-3">市值</th>
+            <th scope="col" className="px-4 py-3">市盈率 (PE)</th>
+            <th scope="col" className="px-4 py-3">营收增长</th>
+            <th scope="col" className="px-4 py-3">毛利率</th>
+          </tr>
+        </thead>
+        <tbody>
+          {peers.map((peer, index) => (
+            <tr key={index} className="bg-white/50 border-b border-gray-200 hover:bg-gray-100/70">
+              <th scope="row" className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                {peer.name} <span className="font-mono text-gray-500">{peer.ticker}</span>
+              </th>
+              <td className="px-4 py-3">{peer.marketCap}</td>
+              <td className="px-4 py-3">{peer.peRatio}</td>
+              <td className="px-4 py-3">{peer.revenueGrowth}</td>
+              <td className="px-4 py-3">{peer.grossMargin}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
 );
+
+const RecentNewsSection: React.FC<{ news: RecentNewsItem[] }> = ({ news }) => {
+    const impactConfig = {
+      Positive: { label: '正面', color: 'bg-green-100 text-green-800' },
+      Neutral: { label: '中性', color: 'bg-yellow-100 text-yellow-800' },
+      Negative: { label: '负面', color: 'bg-red-100 text-red-800' },
+    };
+  
+    return (
+      <ul className="space-y-4">
+        {news.map((item, index) => (
+          <li key={index} className="border-b border-gray-200 pb-3 last:border-b-0">
+            <div className="flex justify-between items-start mb-1">
+              <h4 className="font-semibold text-gray-900">{item.title}</h4>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${impactConfig[item.impact]?.color || impactConfig.Neutral.color}`}>
+                {impactConfig[item.impact]?.label || '中性'}
+              </span>
+            </div>
+            <p className="text-sm"><TextRenderer text={item.summary} /></p>
+          </li>
+        ))}
+      </ul>
+    );
+};
 
 const SWOTSection: React.FC<{ swot: SWOT }> = ({ swot }) => (
     <div className="col-span-1 md:col-span-2">
@@ -321,12 +420,49 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                 {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
                 {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} />}
                 <ProfileSection profile={report.companyProfile} />
-                <FinancialsSection summary={report.financialSummary} />
-                <ThesisSection thesis={report.investmentThesis} />
+                
+                {report.financialTrends && report.financialTrends.length > 0 && (
+                    <div className="col-span-1 md:col-span-2">
+                        <Card title="财务趋势 (近3年)" icon={<ChartBarIcon className="w-6 h-6" />}>
+                            <FinancialTrendChart data={report.financialTrends} />
+                        </Card>
+                    </div>
+                )}
+                
+                {report.valuationAnalysis && (
+                    <div className="col-span-1 md:col-span-2">
+                        <Card title="估值分析" icon={<TagIcon className="w-6 h-6" />}>
+                            <ValuationSection valuation={report.valuationAnalysis} />
+                        </Card>
+                    </div>
+                )}
+                
+                {report.peerComparison && report.peerComparison.length > 0 && (
+                     <div className="col-span-1 md:col-span-2">
+                        <Card title="同行对比" icon={<UsersIcon className="w-6 h-6" />}>
+                            <PeerComparisonSection peers={report.peerComparison} />
+                        </Card>
+                    </div>
+                )}
+
+                <div className="col-span-1 md:col-span-2">
+                    <ThesisSection thesis={report.investmentThesis} />
+                </div>
+                
                 <SWOTSection swot={report.swotAnalysis} />
+
+                {report.recentNews && report.recentNews.length > 0 && (
+                    <div className="col-span-1 md:col-span-2">
+                       <Card title="近期动态" icon={<SpeakerWaveIcon className="w-6 h-6" />}>
+                           <RecentNewsSection news={report.recentNews} />
+                       </Card>
+                   </div>
+                )}
+
                 <GovernanceSection governance={report.corporateGovernance} />
                 <ESGSection esg={report.esgRating} />
                 <RiskSection risk={report.riskAnalysis} />
+
                 {report.sources && report.sources.length > 0 && (
                     <div className="col-span-1 md:col-span-2">
                         <Card title="参考来源" icon={<BookmarkSquareIcon className="w-6 h-6" />}>

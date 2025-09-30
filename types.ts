@@ -78,17 +78,6 @@ export interface CompanyProfile {
   summary: string;
 }
 
-export interface FinancialMetric {
-  metric: string;
-  value: string;
-  comment: string;
-}
-
-export interface FinancialSummary {
-  period: string;
-  highlights: FinancialMetric[];
-}
-
 export interface SWOT {
   strengths: string[];
   weaknesses: string[];
@@ -117,11 +106,44 @@ export interface ESGRating {
     summary: string;
 }
 
+// --- New Types for Stock Analysis Enhancement ---
+
+export interface FinancialTrend {
+  year: string;
+  revenue: number; // in millions of the reporting currency
+  netIncome: number; // in millions of the reporting currency
+}
+
+export interface ValuationAnalysis {
+  judgment: 'undervalued' | 'fairly valued' | 'overvalued';
+  methodology: string;
+  targetPriceRange: string;
+  reasoning: string;
+}
+
+export interface PeerCompetitor {
+  name: string;
+  ticker: string;
+  marketCap: string;
+  peRatio: string;
+  revenueGrowth: string;
+  grossMargin: string;
+}
+
+export interface RecentNewsItem {
+  title: string;
+  summary: string;
+  impact: 'Positive' | 'Neutral' | 'Negative';
+}
+
 export interface StockAnalysisReport {
   companyProfile: CompanyProfile;
   keyTakeaways: string[];
   investmentScore: InvestmentScore;
-  financialSummary: FinancialSummary;
+  financialTrends: FinancialTrend[];
+  valuationAnalysis: ValuationAnalysis;
+  peerComparison: PeerCompetitor[];
+  recentNews: RecentNewsItem[];
   swotAnalysis: SWOT;
   investmentThesis: InvestmentThesis;
   riskAnalysis: RiskAnalysis;

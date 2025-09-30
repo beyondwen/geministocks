@@ -146,10 +146,32 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
             "score": "number (1-100)",
             "reason": "string (brief justification for the score)"
           },
-          "financialSummary": {
-            "period": "string",
-            "highlights": [{"metric": "string", "value": "string", "comment": "string"}]
+          "financialTrends": [
+            { "year": "string (e.g., '2023')", "revenue": "number (in millions of the reporting currency, e.g., 150000)", "netIncome": "number (in millions of the reporting currency, e.g., 30000)" }
+          ],
+          "valuationAnalysis": {
+            "judgment": "'undervalued' | 'fairly valued' | 'overvalued'",
+            "methodology": "string (Briefly explain the method, e.g., 'Compared P/E ratio with industry peers and historical average.')",
+            "targetPriceRange": "string (e.g., '$180 - $200')",
+            "reasoning": "string (Provide a concise justification for the valuation judgment and target price.)"
           },
+          "peerComparison": [
+            {
+              "name": "string (Competitor's name)",
+              "ticker": "string (Competitor's ticker)",
+              "marketCap": "string (e.g., '2.5T USD')",
+              "peRatio": "string (e.g., '28.5x')",
+              "revenueGrowth": "string (e.g., '15.2% YoY')",
+              "grossMargin": "string (e.g., '45.1%')"
+            }
+          ],
+          "recentNews": [
+            {
+              "title": "string (Title of the recent news/event)",
+              "summary": "string (A brief summary of the news)",
+              "impact": "'Positive' | 'Neutral' | 'Negative'"
+            }
+          ],
           "swotAnalysis": {
             "strengths": ["string"],
             "weaknesses": ["string"],
@@ -181,6 +203,7 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
         ---
         ${stockQuery}
         ---
+        For the "financialTrends" section, please provide data for the last 3 completed fiscal years. For "peerComparison", identify 2-3 main competitors. For "recentNews", summarize 1-3 most important recent news items.
     `;
 
     return callOpenRouterAI(prompt, systemInstruction, modelName);
