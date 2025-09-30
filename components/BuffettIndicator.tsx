@@ -2,7 +2,7 @@ import React from 'react';
 import Tooltip from './Tooltip';
 
 const BuffettIndicator: React.FC = () => {
-    const indicatorValue = 88.04;
+    const indicatorValue = 88.47;
     const isHigh = indicatorValue >= 80;
     const colorClass = isHigh ? 'text-red-600' : 'text-green-600';
     const bgClass = isHigh ? 'bg-red-100 border-red-300' : 'bg-green-100 border-green-300';

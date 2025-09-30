@@ -16,11 +16,13 @@ import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import SupportModal from './components/SupportModal';
 import BuffettIndicator from './components/BuffettIndicator';
+import InvestmentRiskModal from './components/InvestmentRiskModal';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
+const RISK_WARNING_ACCEPTED_KEY = 'gemini-risk-warning-accepted';
 
 // --- Data & Types ---
 interface NewsArticle {
@@ -293,6 +295,7 @@ const MainPage: React.FC = () => {
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -305,6 +308,12 @@ const MainPage: React.FC = () => {
   }, [toast]);
 
   useEffect(() => {
+    // Check if risk warning has been accepted
+    const hasAcceptedRisk = localStorage.getItem(RISK_WARNING_ACCEPTED_KEY);
+    if (hasAcceptedRisk !== 'true') {
+        setIsRiskModalOpen(true);
+    }
+
     // Load history and settings from localStorage
     try {
       const storedTopicHistory = localStorage.getItem(TOPIC_HISTORY_STORAGE_KEY);
@@ -618,11 +627,21 @@ const MainPage: React.FC = () => {
   const handleClearPositionalWarfareHistory = () => {
     updatePositionalWarfareHistory([]);
   };
+
+  const handleAcceptRisk = () => {
+    setIsRiskModalOpen(false);
+    try {
+        localStorage.setItem(RISK_WARNING_ACCEPTED_KEY, 'true');
+    } catch (err) {
+        console.error("Failed to save to localStorage", err);
+    }
+  };
   
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
   return (
     <>
+      {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
       {toast && <Toast message={toast.message} type={toast.type} />}
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
