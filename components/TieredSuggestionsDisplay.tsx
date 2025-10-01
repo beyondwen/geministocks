@@ -66,7 +66,19 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
           <TextRenderer text={stock.reason} keywords={keywords} />
         </p>
       </div>
-      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end">
+      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end gap-x-4">
+        {stock.market === 'US' && (
+            <a
+                href="https://mystonks.org/?code=v1B021"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-xs font-semibold text-purple-600 hover:text-purple-700 transition-colors"
+                aria-label={`查看 ${stock.name} 的链上美股`}
+            >
+                链上美股
+                <ExternalLinkIcon className="h-3.5 w-3.5 ml-1" />
+            </a>
+        )}
         <a 
           href={link} 
           target="_blank" 
