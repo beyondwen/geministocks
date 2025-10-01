@@ -1,4 +1,4 @@
-import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport } from '../types';
+import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile } from '../types';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -236,76 +236,127 @@ export const getHotStocksFromAI = async (): Promise<{name: string; ticker: strin
     throw new Error('AI returned an invalid format for hot stocks.');
 };
 
-// --- New Service for Positional Warfare Analysis ---
+// --- Enhanced Service for Positional Warfare Analysis ---
 export const getPositionalWarfareAnalysis = async (
     leaderStockQuery: string,
     onProgress: (message: string) => void
 ): Promise<PositionalWarfareReport> => {
     const modelName = 'x-ai/grok-4-fast:free:online';
 
-    // Step 1: Identify Leader Stock
-    onProgress("正在锁定龙头标的... 🎯");
+    // Step 1: Deep Profile on the Leader Stock
+    onProgress("正在锁定并深度剖析龙头... 🎯");
     const step1System = `
-        You are an intelligence scout. Your only task is to identify the precise details of the provided stock query.
-        Use web search to find the official company name, ticker symbol, primary sector, and market.
+        You are a top-tier financial analyst. Your task is to identify the precise details of the provided stock query and provide a brief analysis of its market leadership.
+        Use web search for the latest data. If a metric is not applicable (e.g., P/E for a non-profitable company), use "N/A".
         Respond strictly in the following JSON format. All content in Simplified Chinese.
-        { "name": "string", "ticker": "string", "sector": "string", "market": "string" }
+        {
+          "name": "string",
+          "ticker": "string",
+          "sector": "string",
+          "market": "string",
+          "analysis": "string (A concise analysis of why this stock is considered a leader in its sector, its current valuation, and recent performance trends.)",
+          "metrics": {
+            "marketCap": "string (e.g., '1.2T USD')",
+            "peRatio": "string (e.g., '25.x' or 'N/A')",
+            "revenueGrowth": "string (e.g., '15% YoY')",
+            "recentPerformance": "string (e.g., '+30% in last 3 months')"
+          }
+        }
     `;
-    const leaderProfile = await callOpenRouterAI(leaderStockQuery, step1System, modelName);
+    const leaderProfile: LeaderStockProfile = await callOpenRouterAI(leaderStockQuery, step1System, modelName);
 
-    // Step 2: Analyze Leader Stock
-    onProgress("正在深度剖析龙头股... 📈");
+    // Step 2: Screen for Follower Candidates
+    onProgress("正在海选同板块潜力股... 🔍");
     const step2System = `
-        You are a lead stock analyst. Given the stock's profile, analyze its current market position.
-        Focus on: 1. Why it is considered the leader in its sector (technical edge, market share). 2. Its current valuation and recent performance (e.g., high P/E, recent significant gains).
-        Respond strictly in the following JSON format. All content in Simplified Chinese.
-        { "analysis": "string (A concise but in-depth analysis of the leader's position)" }
-    `;
-    const leaderAnalysis = await callOpenRouterAI(JSON.stringify(leaderProfile), step2System, modelName);
-
-    // Step 3: Screen for Candidates
-    onProgress("正在筛选同板块潜力股... 🔍");
-    const step3System = `
-        You are a sector screener. Given a sector, find 5-10 other publicly traded companies in the same specific sector.
-        Focus on finding companies that have a "lower position" than the leader (e.g., smaller market cap, lower valuation multiples, or have not experienced the same recent rally).
+        You are a sector screener AI. Given a leading stock's profile, find 3 to 5 other publicly traded companies in the same specific sector that could be potential "follower" candidates.
+        Focus on companies that have a "lower position" (e.g., significantly smaller market cap) but operate in a similar business area.
         For each company, provide its name, ticker, and market.
         Respond strictly in the following JSON format. All content in Simplified Chinese.
         { "candidates": [{ "name": "string", "ticker": "string", "market": "string" }] }
     `;
-    const screeningResult = await callOpenRouterAI(`Sector: ${leaderProfile.sector}`, step3System, modelName);
+    const screeningResult = await callOpenRouterAI(`Leader Stock Profile: ${JSON.stringify(leaderProfile)}`, step2System, modelName);
     const candidates = screeningResult.candidates || [];
+    if (candidates.length === 0) throw new Error("未能找到合适的潜力补涨股。");
 
-    // Step 4: Final Strategic Analysis
-    onProgress("首席策略师正在制定卡位方案... ⚔️");
-    const step4System = `
-        You are a top-tier fund manager specializing in the "Positional Warfare Strategy".
-        You have been given a profile of the leading stock and a list of potential follower candidates.
-        Your task is to select the 1-3 most promising "follower" or "number two" stocks from the list.
-        For each stock you select, you must provide a detailed comparative report.
-        This report must justify WHY it has the potential to become a follower, focusing on:
-        1.  **Comparative Analysis**: How does it compare to the leader in terms of business, technology, and market position?
-        2.  **Investment Thesis**: What is the core logic for it to "catch up"? (e.g., valuation gap, upcoming catalyst, similar underlying business but overlooked).
-        3.  **Risks**: What are the key risks associated with this specific pick?
+    // Step 3: Get Financial Metrics for all Candidates in a Batch
+    onProgress("正在分析候选股财务指标... 📊");
+    const step3System = `
+        You are a financial data retrieval AI. For the given list of companies, fetch their latest key financial metrics using web search.
+        Provide the market cap, P/E ratio, recent revenue growth (YoY), and recent stock performance (last 3 months).
+        If a metric is not applicable (e.g., P/E for a non-profitable company), use "N/A".
         Respond strictly in the following JSON format. All content in Simplified Chinese.
         {
-          "leaderStock": {
-            "name": "${leaderProfile.name}",
-            "ticker": "${leaderProfile.ticker}",
-            "sector": "${leaderProfile.sector}",
-            "market": "${leaderProfile.market}",
-            "analysis": "${leaderAnalysis.analysis}"
-          },
-          "followerCandidates": [{
-            "name": "string",
-            "ticker": "string",
-            "market": "string",
-            "comparativeAnalysis": "string",
-            "investmentThesis": "string",
-            "risks": "string"
-          }]
+          "detailedCandidates": [
+            {
+              "name": "string",
+              "ticker": "string",
+              "market": "string",
+              "metrics": {
+                "marketCap": "string (e.g., '1.2T USD')",
+                "peRatio": "string (e.g., '25.x' or 'N/A')",
+                "revenueGrowth": "string (e.g., '15% YoY')",
+                "recentPerformance": "string (e.g., '+30% in last 3 months')"
+              }
+            }
+          ]
         }
     `;
-    const finalPrompt = `Leader Stock Analysis: ${leaderAnalysis.analysis}\n\nCandidate List:\n${JSON.stringify(candidates)}`;
+    const metricsResult = await callOpenRouterAI(`Companies List: ${JSON.stringify(candidates)}`, step3System, modelName);
+    const detailedCandidates = metricsResult.detailedCandidates || [];
 
-    return callOpenRouterAI(finalPrompt, step4System, modelName);
+    // Step 4: Final Strategic Synthesis
+    onProgress("正在生成核心观点总结... ⚔️");
+    const step4System = `
+        You are a top-tier fund manager specializing in the "Positional Warfare Strategy".
+        You have been given a profile of the leading stock and a list of potential follower candidates with their financial metrics.
+        Your task is to generate a comprehensive strategic report.
+        The report must include:
+        1.  A concise "strategistSummary" (2-3 sentences) at the very top, highlighting the best opportunity and the core logic.
+        2.  For EACH of the follower candidates, provide a detailed analysis including:
+            - "comparativeAnalysis": How does it compare to the leader in terms of business model, technology, and market position? Is it a direct competitor or a niche player?
+            - "investmentThesis": What is the core logic for it to "catch up" or "fill the gap"? (e.g., valuation gap, upcoming catalyst, similar underlying business but overlooked).
+            - "potentialCatalysts": A list of 2-3 specific, potential future events that could drive the stock price up.
+            - "risks": A list of 2-3 key risks associated with this specific pick.
+            - "positioningScore": An object containing a "score" (from 1 to 10, where 10 is the highest potential) and a "reasoning" for that score.
+
+        You MUST respond strictly in the following JSON format. All content in Simplified Chinese. The candidate profiles are provided for context; you only need to generate the "strategistSummary" and the analysis fields for each follower.
+
+        JSON Schema for your response:
+        {
+          "strategistSummary": "string",
+          "followerAnalysis": [
+            {
+              "ticker": "string (Must match one of the candidate tickers)",
+              "comparativeAnalysis": "string",
+              "investmentThesis": "string",
+              "potentialCatalysts": ["string"],
+              "risks": ["string"],
+              "positioningScore": {
+                "score": "number (1-10)",
+                "reasoning": "string"
+              }
+            }
+          ]
+        }
+    `;
+    const finalPrompt = `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
+    const finalAnalysis = await callOpenRouterAI(finalPrompt, step4System, modelName);
+    
+    // Merge the final analysis with the detailed candidate data
+    const finalFollowers = detailedCandidates.map((candidate: any) => {
+        const analysisData = finalAnalysis.followerAnalysis.find((a: any) => a.ticker === candidate.ticker);
+        if (!analysisData) return null;
+        return {
+            ...candidate,
+            ...analysisData,
+        };
+    }).filter(Boolean); // Filter out any candidates for whom analysis wasn't returned
+
+    const finalReport: PositionalWarfareReport = {
+        strategistSummary: finalAnalysis.strategistSummary,
+        leaderStock: leaderProfile,
+        followerCandidates: finalFollowers as any[], // Casting as we've built the object to match the type
+    };
+
+    return finalReport;
 };

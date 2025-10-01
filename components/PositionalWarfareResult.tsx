@@ -1,43 +1,121 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import type { PositionalWarfareReport } from '../types';
+import type { PositionalWarfareReport, LeaderStockProfile, FollowerCandidate, StockFinancialMetrics } from '../types';
 import TextRenderer from './TextRenderer';
-import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon } from './icons/Icons';
+import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon } from './icons/Icons';
 
 const generateStockLink = (ticker: string, market: string): string => {
-    if (market.toLowerCase().includes('a-share') || market.toLowerCase().includes('a股')) {
+    if (!market) return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
+    const lowerMarket = market.toLowerCase();
+    if (lowerMarket.includes('a-share') || lowerMarket.includes('a股')) {
         const prefix = ticker.startsWith('6') ? 'sh' : 'sz';
         return `https://quote.eastmoney.com/${prefix}${ticker}.html`;
     }
-    if (market.toLowerCase().includes('hong kong') || market.toLowerCase().includes('港股')) {
+    if (lowerMarket.includes('hong kong') || lowerMarket.includes('港股')) {
         return `https://www.google.com/finance/quote/${ticker}:HKG`;
     }
-    if (market.toLowerCase().includes('us') || market.toLowerCase().includes('美股')) {
+    if (lowerMarket.includes('us') || lowerMarket.includes('美股')) {
         return `https://www.google.com/finance/quote/${ticker}`;
     }
     return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
 };
 
-const LeaderStockCard: React.FC<{ leader: PositionalWarfareReport['leaderStock'] }> = ({ leader }) => (
+const StrategistSummaryCard: React.FC<{ summary: string }> = ({ summary }) => (
+    <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-lg shadow-xl border border-gray-600 text-white">
+        <h3 className="text-2xl font-bold mb-3 flex items-center">
+            <span className="text-3xl mr-3">✍️</span>
+            核心观点总结
+        </h3>
+        <p className="text-gray-200 leading-relaxed italic"><TextRenderer text={summary} /></p>
+    </div>
+);
+
+const LeaderStockCard: React.FC<{ leader: LeaderStockProfile }> = ({ leader }) => (
     <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200">
         <div className="flex justify-between items-start">
             <div>
-                <h3 className="text-2xl font-bold text-gray-800">龙头股基准</h3>
-                <p className="text-gray-500 text-sm">作为我们寻找“补涨龙”的参照物</p>
+                <h3 className="text-2xl font-bold text-gray-800">龙头股档案</h3>
+                <p className="text-gray-500 text-sm">作为我们寻找“补涨龙”的参照基准</p>
             </div>
-            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
+            <span className="text-sm font-semibold px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
                 龙头 👑
             </span>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-200">
             <h4 className="text-xl font-semibold">{leader.name} <span className="text-gray-500 font-mono text-base">{leader.ticker}</span></h4>
-            <p className="text-sm text-gray-600 mb-2">{leader.sector} | {leader.market}</p>
-            <p className="text-gray-700 leading-relaxed"><TextRenderer text={leader.analysis} /></p>
+            <p className="text-sm text-gray-600 mb-3">{leader.sector} | {leader.market}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4 bg-gray-100 p-3 rounded-md">
+                <div>
+                    <p className="font-bold text-lg text-gray-800">{leader.metrics.marketCap}</p>
+                    <p className="text-xs text-gray-500">市值</p>
+                </div>
+                <div>
+                    <p className="font-bold text-lg text-gray-800">{leader.metrics.peRatio}</p>
+                    <p className="text-xs text-gray-500">市盈率 (PE)</p>
+                </div>
+                <div>
+                    <p className="font-bold text-lg text-gray-800">{leader.metrics.revenueGrowth}</p>
+                    <p className="text-xs text-gray-500">营收增长</p>
+                </div>
+                <div>
+                    <p className="font-bold text-lg text-gray-800">{leader.metrics.recentPerformance}</p>
+                    <p className="text-xs text-gray-500">近期表现</p>
+                </div>
+            </div>
+            <p className="text-gray-700 leading-relaxed text-sm"><TextRenderer text={leader.analysis} /></p>
         </div>
     </div>
 );
 
-const FollowerCandidateCard: React.FC<{ candidate: PositionalWarfareReport['followerCandidates'][0], index: number }> = ({ candidate, index }) => {
+const ComparisonTable: React.FC<{ leaderMetrics: StockFinancialMetrics, followerMetrics: StockFinancialMetrics }> = ({ leaderMetrics, followerMetrics }) => (
+    <div className="overflow-x-auto my-4">
+        <table className="w-full text-sm text-left">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-200/60">
+                <tr>
+                    <th scope="col" className="px-3 py-2">指标</th>
+                    <th scope="col" className="px-3 py-2">龙头 👑</th>
+                    <th scope="col" className="px-3 py-2">补涨龙 🐲</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr className="bg-white/50 border-b border-gray-200">
+                    <th scope="row" className="px-3 py-2 font-medium text-gray-900">市值</th>
+                    <td className="px-3 py-2 text-gray-600">{leaderMetrics.marketCap}</td>
+                    <td className="px-3 py-2 font-semibold text-gray-800">{followerMetrics.marketCap}</td>
+                </tr>
+                <tr className="bg-white/50 border-b border-gray-200">
+                    <th scope="row" className="px-3 py-2 font-medium text-gray-900">市盈率</th>
+                    <td className="px-3 py-2 text-gray-600">{leaderMetrics.peRatio}</td>
+                    <td className="px-3 py-2 font-semibold text-gray-800">{followerMetrics.peRatio}</td>
+                </tr>
+                <tr className="bg-white/50 border-b border-gray-200">
+                    <th scope="row" className="px-3 py-2 font-medium text-gray-900">营收增长</th>
+                    <td className="px-3 py-2 text-gray-600">{leaderMetrics.revenueGrowth}</td>
+                    <td className="px-3 py-2 font-semibold text-gray-800">{followerMetrics.revenueGrowth}</td>
+                </tr>
+                <tr className="bg-white/50">
+                    <th scope="row" className="px-3 py-2 font-medium text-gray-900">近期表现</th>
+                    <td className="px-3 py-2 text-gray-600">{leaderMetrics.recentPerformance}</td>
+                    <td className="px-3 py-2 font-semibold text-gray-800">{followerMetrics.recentPerformance}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+);
+
+const PositioningScore: React.FC<{ score: number, reasoning: string }> = ({ score, reasoning }) => {
+    const scoreColor = score >= 8 ? 'text-green-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600';
+    return (
+        <div className="text-center p-3 bg-cyan-50/50 rounded-lg border border-cyan-200">
+            <p className="text-sm font-semibold text-cyan-800 mb-1">卡位潜力分</p>
+            <p className={`text-5xl font-extrabold ${scoreColor}`}>{score}<span className="text-2xl text-gray-500">/10</span></p>
+            <p className="text-xs text-gray-600 mt-1 italic">"{reasoning}"</p>
+        </div>
+    );
+};
+
+
+const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetrics: StockFinancialMetrics, index: number }> = ({ candidate, leaderMetrics, index }) => {
     const link = generateStockLink(candidate.ticker, candidate.market);
     return (
         <div className="bg-white/60 p-6 rounded-lg shadow-md border-l-4 border-cyan-500 transition-shadow hover:shadow-xl">
@@ -59,18 +137,41 @@ const FollowerCandidateCard: React.FC<{ candidate: PositionalWarfareReport['foll
                 </a>
             </div>
             
-            <div className="space-y-4 text-sm">
+            <div className="space-y-6 text-sm">
+                <PositioningScore score={candidate.positioningScore.score} reasoning={candidate.positioningScore.reasoning} />
                 <div>
-                    <h5 className="font-semibold text-gray-800 mb-1">对比分析 (vs 龙头):</h5>
+                    <h5 className="font-semibold text-gray-800 mb-2 text-base">数据 PK 面板:</h5>
+                    <ComparisonTable leaderMetrics={leaderMetrics} followerMetrics={candidate.metrics} />
+                </div>
+                <div>
+                    <h5 className="font-semibold text-gray-800 mb-1 text-base">对比分析 (vs 龙头):</h5>
                     <p className="pl-4 border-l-2 border-gray-300 text-gray-700 leading-relaxed"><TextRenderer text={candidate.comparativeAnalysis} /></p>
                 </div>
                 <div>
-                    <h5 className="font-semibold text-green-700 mb-1">投资论点 (卡位逻辑):</h5>
+                    <h5 className="font-semibold text-gray-800 mb-1 text-base">投资论点 (卡位逻辑):</h5>
                     <p className="pl-4 border-l-2 border-green-400 text-gray-700 leading-relaxed"><TextRenderer text={candidate.investmentThesis} /></p>
                 </div>
                 <div>
-                    <h5 className="font-semibold text-red-700 mb-1">核心风险:</h5>
-                    <p className="pl-4 border-l-2 border-red-400 text-gray-700 leading-relaxed"><TextRenderer text={candidate.risks} /></p>
+                    <h5 className="font-semibold text-gray-800 mb-2 text-base">潜在催化剂:</h5>
+                    <ul className="space-y-1.5">
+                        {candidate.potentialCatalysts.map((item, i) => (
+                           <li key={i} className="flex items-start">
+                                <CheckCircleIcon className="w-4 h-4 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-700"><TextRenderer text={item} /></span>
+                           </li>
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <h5 className="font-semibold text-gray-800 mb-2 text-base">核心风险:</h5>
+                     <ul className="space-y-1.5">
+                        {candidate.risks.map((item, i) => (
+                           <li key={i} className="flex items-start">
+                               <XCircleIcon className="w-4 h-4 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+                               <span className="text-gray-700"><TextRenderer text={item} /></span>
+                           </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         </div>
@@ -174,14 +275,20 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
 
         <div ref={exportRef} className="printable-area p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
             <div className="mb-8 pb-6 border-b border-gray-300">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">卡位战法分析报告 ⚔️</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">卡位战法・深度分析报告 ⚔️</h2>
                 <p className="text-gray-600">寻找板块中的下一个机会</p>
             </div>
             <div className="space-y-8">
+                {report.strategistSummary && <StrategistSummaryCard summary={report.strategistSummary} />}
                 <LeaderStockCard leader={report.leaderStock} />
                 
                 {report.followerCandidates.map((candidate, index) => (
-                    <FollowerCandidateCard key={candidate.ticker} candidate={candidate} index={index} />
+                    <FollowerCandidateCard 
+                        key={candidate.ticker} 
+                        candidate={candidate} 
+                        leaderMetrics={report.leaderStock.metrics} 
+                        index={index} 
+                    />
                 ))}
             </div>
             <footer className="text-center mt-8 pt-4 border-t border-gray-200">

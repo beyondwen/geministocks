@@ -158,25 +158,40 @@ export interface StockHistoryEntry {
   report: StockAnalysisReport;
 }
 
-// --- New Types for Positional Warfare Analysis ---
+// --- Enhanced Types for Positional Warfare Analysis ---
+export interface StockFinancialMetrics {
+    marketCap: string;        // e.g., "1.2T USD"
+    peRatio: string;          // e.g., "25.x"
+    revenueGrowth: string;    // e.g., "15% YoY"
+    recentPerformance: string; // e.g., "+30% in last 3 months"
+}
+
 export interface LeaderStockProfile {
     name: string;
     ticker: string;
     sector: string;
     market: string;
-    analysis: string;
+    analysis: string; // The qualitative reason it's a leader
+    metrics: StockFinancialMetrics;
 }
 
 export interface FollowerCandidate {
     name: string;
     ticker: string;
     market: string;
-    comparativeAnalysis: string;
-    investmentThesis: string;
-    risks: string;
+    metrics: StockFinancialMetrics;
+    comparativeAnalysis: string; // How it compares to the leader
+    investmentThesis: string;    // The core logic for it to "catch up"
+    potentialCatalysts: string[];
+    risks: string[];
+    positioningScore: {
+        score: number; // 1-10
+        reasoning: string;
+    };
 }
 
 export interface PositionalWarfareReport {
+    strategistSummary: string; // The final takeaway at the top
     leaderStock: LeaderStockProfile;
     followerCandidates: FollowerCandidate[];
 }

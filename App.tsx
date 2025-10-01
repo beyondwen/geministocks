@@ -185,7 +185,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
 
               <button
                 onClick={() => onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`)}
-                className="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all opacity-80 group-hover:opacity-100"
+                className="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform-gpu transition-all duration-200 opacity-80 group-hover:opacity-100 group-hover:shadow-md hover:scale-110 active:scale-100"
               >
                 <SparklesIcon className="w-4 h-4 mr-1.5" />
                 一键分析
@@ -797,10 +797,6 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
-            <div className="mb-4 text-xs text-gray-500">
-              <p>投资有风险，入市需谨慎</p>
-              <p>本工具产生的分析报告不构成任何投资建议</p>
-            </div>
             <div className="mb-4">
               <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 hover:underline transition-colors">
                 使用说明
@@ -809,7 +805,7 @@ const MainPage: React.FC = () => {
             <p className="text-sm text-gray-500">
               由僧僧独立开发，欢迎关注“小声读书”公众号
               <br />
-              联系邮箱: <a href="mailto:codes@z.org" className="text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">codes@z.org</a>
+              <a href="https://t.me/lover_links" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">在 TG 上关注我</a>
             </p>
           </footer>
         </div>
