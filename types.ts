@@ -130,6 +130,20 @@ export interface PeerCompetitor {
   grossMargin: string;
 }
 
+export interface ResearchReportSummary {
+  title: string;
+  source: string;
+  publishDate: string;
+  rating: string;
+  summary: string;
+}
+
+export interface ResearchAnalysis {
+  consensusRating: string;
+  targetPriceSummary: string;
+  recentReports: ResearchReportSummary[];
+}
+
 export interface RecentNewsItem {
   title: string;
   summary: string;
@@ -143,6 +157,7 @@ export interface StockAnalysisReport {
   financialTrends: FinancialTrend[];
   valuationAnalysis: ValuationAnalysis;
   peerComparison: PeerCompetitor[];
+  researchAnalysis: ResearchAnalysis;
   recentNews: RecentNewsItem[];
   swotAnalysis: SWOT;
   investmentThesis: InvestmentThesis;

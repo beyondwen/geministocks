@@ -139,6 +139,7 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
     const systemInstruction = `
         You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
         It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
+        Specifically, you MUST search for institutional research reports on 'data.eastmoney.com/report' from the last 3 months to create the 'researchAnalysis' section.
         At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
         You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
         The JSON schema is as follows:
@@ -175,6 +176,19 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
               "grossMargin": "string (e.g., '45.1%')"
             }
           ],
+          "researchAnalysis": {
+            "consensusRating": "string (e.g., '买入', '增持', '中性', based on reports from the last 3 months)",
+            "targetPriceSummary": "string (e.g., '综合目标价 ¥180 - ¥200', based on reports from the last 3 months)",
+            "recentReports": [
+              {
+                "title": "string (Title of the research report)",
+                "source": "string (Name of the institution, e.g., '中信证券')",
+                "publishDate": "string (e.g., 'YYYY-MM-DD')",
+                "rating": "string (e.g., '买入', '增持')",
+                "summary": "string (A brief summary of the report's key points)"
+              }
+            ]
+          },
           "recentNews": [
             {
               "title": "string (Title of the recent news/event)",
@@ -213,7 +227,7 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
         ---
         ${stockQuery}
         ---
-        For the "financialTrends" section, please provide data for the last 3 completed fiscal years. For "peerComparison", identify 2-3 main competitors. For "recentNews", summarize 1-3 most important recent news items.
+        For the "financialTrends" section, please provide data for the last 3 completed fiscal years. For "peerComparison", identify 2-3 main competitors. For "recentNews", summarize 1-3 most important recent news items. For "researchAnalysis", provide a consensus based on the last 3 months of reports and summarize the 3 most recent reports.
     `;
 
     return callOpenRouterAI(prompt, systemInstruction, modelName);

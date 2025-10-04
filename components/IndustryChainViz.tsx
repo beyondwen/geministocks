@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { IndustryChain, IndustryChainNode } from '../types';
 import { XIcon } from './icons/Icons';
+import TextRenderer from './TextRenderer';
 
 const NodeCard: React.FC<{ 
     node: IndustryChainNode; 
@@ -123,7 +124,7 @@ const IndustryChainViz: React.FC<IndustryChainVizProps> = ({ chain }) => {
                         <XIcon className="w-5 h-5" />
                     </button>
                 </div>
-                <p className="text-sm text-gray-700 mt-2">{selectedNode.description}</p>
+                <p className="text-sm text-gray-700 mt-2"><TextRenderer text={selectedNode.description} /></p>
             </div>
         )}
     </div>

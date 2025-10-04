@@ -1,8 +1,8 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, RecentNewsItem, FinancialTrend } from '../types';
-import { DownloadIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, SpeakerWaveIcon } from './icons/Icons';
+import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, RecentNewsItem, FinancialTrend, ResearchAnalysis } from '../types';
+import { DownloadIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, SpeakerWaveIcon, AcademicCapIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 
 // --- SVG Icons (defined locally to minimize file changes) ---
@@ -59,7 +59,7 @@ const RiskIndicator: React.FC<{ level: 'High' | 'Medium' | 'Low' }> = ({ level }
     return <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full border ${config.color}`}><TextRenderer text={config.label} /></span>;
 };
 
-const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) => {
+const ScoreDisplay: React.FC<{ scoreData: InvestmentScore, keywords: string[] }> = ({ scoreData, keywords }) => {
   const getScoreColor = (score: number) => {
     if (score >= 75) return { text: 'text-green-600', bg: 'bg-green-100', border: 'border-green-500' };
     if (score >= 50) return { text: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-500' };
@@ -80,19 +80,19 @@ const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) =
           <p className={`text-4xl font-extrabold ${text}`}>{score}<span className="text-xl font-medium">/100</span></p>
         </div>
       </div>
-      <p className="text-sm text-gray-700 mt-2 pl-1"><TextRenderer text={reason} /></p>
+      <p className="text-sm text-gray-700 mt-2 pl-1"><TextRenderer text={reason} keywords={keywords} /></p>
     </div>
   );
 };
 
-const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => (
+const KeyTakeaways: React.FC<{ takeaways: string[], keywords: string[] }> = ({ takeaways, keywords }) => (
     <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200 mb-6 col-span-1 md:col-span-2">
         <h3 className="text-xl font-bold text-gray-800 mb-4">核心摘要</h3>
         <ul className="space-y-2">
             {takeaways.map((item, index) => (
                 <li key={index} className="flex items-start">
                     <CheckCircleIcon className="w-5 h-5 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><TextRenderer text={item} /></span>
+                    <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
                 </li>
             ))}
         </ul>
@@ -101,7 +101,7 @@ const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => (
 
 
 // --- Main Display Sections ---
-const ProfileSection: React.FC<{ profile: StockAnalysisReport['companyProfile'] }> = ({ profile }) => (
+const ProfileSection: React.FC<{ profile: StockAnalysisReport['companyProfile'], keywords: string[] }> = ({ profile, keywords }) => (
     <div className="col-span-1 md:col-span-2">
         <Card title="公司概况" icon={<BuildingOfficeIcon className="w-6 h-6" />}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -118,11 +118,11 @@ const ProfileSection: React.FC<{ profile: StockAnalysisReport['companyProfile'] 
                     <p className="text-gray-600">交易所</p>
                 </div>
                 <div>
-                    <p className="font-semibold text-gray-900"><TextRenderer text={profile.sector} /></p>
+                    <p className="font-semibold text-gray-900"><TextRenderer text={profile.sector} keywords={keywords} /></p>
                     <p className="text-gray-600">行业板块</p>
                 </div>
             </div>
-            <p className="text-sm leading-relaxed mt-4 pt-4 border-t border-gray-200"><TextRenderer text={profile.summary} /></p>
+            <p className="text-sm leading-relaxed mt-4 pt-4 border-t border-gray-200"><TextRenderer text={profile.summary} keywords={keywords} /></p>
         </Card>
     </div>
 );
@@ -155,7 +155,7 @@ const FinancialTrendChart: React.FC<{ data: FinancialTrend[] }> = ({ data }) => 
     );
 };
 
-const ValuationSection: React.FC<{ valuation: ValuationAnalysis }> = ({ valuation }) => {
+const ValuationSection: React.FC<{ valuation: ValuationAnalysis, keywords: string[] }> = ({ valuation, keywords }) => {
     const judgmentConfig = {
       undervalued: { label: '低估', color: 'bg-green-100 text-green-800 border-green-400' },
       'fairly valued': { label: '合理', color: 'bg-yellow-100 text-yellow-800 border-yellow-400' },
@@ -177,11 +177,11 @@ const ValuationSection: React.FC<{ valuation: ValuationAnalysis }> = ({ valuatio
         </div>
         <div>
           <h4 className="font-semibold text-gray-900 text-sm mb-1">分析方法:</h4>
-          <p className="text-sm pl-4 border-l-2 border-gray-300"><TextRenderer text={valuation.methodology} /></p>
+          <p className="text-sm pl-4 border-l-2 border-gray-300"><TextRenderer text={valuation.methodology} keywords={keywords} /></p>
         </div>
         <div>
           <h4 className="font-semibold text-gray-900 text-sm mb-1">判断依据:</h4>
-          <p className="text-sm pl-4 border-l-2 border-cyan-400"><TextRenderer text={valuation.reasoning} /></p>
+          <p className="text-sm pl-4 border-l-2 border-cyan-400"><TextRenderer text={valuation.reasoning} keywords={keywords} /></p>
         </div>
       </div>
     );
@@ -216,7 +216,56 @@ const PeerComparisonSection: React.FC<{ peers: PeerCompetitor[] }> = ({ peers })
     </div>
 );
 
-const RecentNewsSection: React.FC<{ news: RecentNewsItem[] }> = ({ news }) => {
+const ResearchAnalysisSection: React.FC<{ analysis: ResearchAnalysis, keywords: string[] }> = ({ analysis, keywords }) => {
+    if (!analysis || !analysis.recentReports || analysis.recentReports.length === 0) {
+        return <p className="text-sm text-gray-500">最近3个月暂无机构研报。</p>;
+    }
+
+    const { consensusRating, targetPriceSummary, recentReports } = analysis;
+
+    return (
+        <div className="space-y-6">
+            {(consensusRating || targetPriceSummary) && (
+                <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
+                    <h4 className="text-lg font-bold text-gray-800 mb-2">机构观点汇总 (近3个月)</h4>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                        {consensusRating && (
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold text-gray-900">综合评级:</span>
+                                <span className="px-3 py-1 font-bold bg-blue-100 text-blue-800 rounded-full">{consensusRating}</span>
+                            </div>
+                        )}
+                        {targetPriceSummary && (
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold text-gray-900">目标价:</span>
+                                <span className="font-medium text-gray-800">{targetPriceSummary}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+            
+            <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-3">最新研报摘要</h4>
+                <div className="space-y-4">
+                    {recentReports.map((report, index) => (
+                        <div key={index} className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
+                            <h5 className="font-bold text-gray-900 mb-1"><TextRenderer text={report.title} keywords={keywords} /></h5>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
+                                <span><strong>机构:</strong> {report.source}</span>
+                                <span><strong>日期:</strong> {report.publishDate}</span>
+                                <span className="font-semibold text-gray-700"><strong>评级:</strong> <span className="text-orange-600">{report.rating}</span></span>
+                            </div>
+                            <p className="text-sm text-gray-700 leading-relaxed"><TextRenderer text={report.summary} keywords={keywords} /></p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const RecentNewsSection: React.FC<{ news: RecentNewsItem[], keywords: string[] }> = ({ news, keywords }) => {
     const impactConfig = {
       Positive: { label: '正面', color: 'bg-green-100 text-green-800' },
       Neutral: { label: '中性', color: 'bg-yellow-100 text-yellow-800' },
@@ -233,39 +282,39 @@ const RecentNewsSection: React.FC<{ news: RecentNewsItem[] }> = ({ news }) => {
                 {impactConfig[item.impact]?.label || '中性'}
               </span>
             </div>
-            <p className="text-sm"><TextRenderer text={item.summary} /></p>
+            <p className="text-sm"><TextRenderer text={item.summary} keywords={keywords} /></p>
           </li>
         ))}
       </ul>
     );
 };
 
-const SWOTSection: React.FC<{ swot: SWOT }> = ({ swot }) => (
+const SWOTSection: React.FC<{ swot: SWOT, keywords: string[] }> = ({ swot, keywords }) => (
     <div className="col-span-1 md:col-span-2">
         <Card title="SWOT 分析" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                     <h4 className="font-bold text-green-800 mb-2">优势 (S)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.strengths.map((s, i) => <li key={i}><TextRenderer text={s} /></li>)}
+                        {swot.strengths.map((s, i) => <li key={i}><TextRenderer text={s} keywords={keywords} /></li>)}
                     </ul>
                 </div>
                 <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                     <h4 className="font-bold text-red-800 mb-2">劣势 (W)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.weaknesses.map((w, i) => <li key={i}><TextRenderer text={w} /></li>)}
+                        {swot.weaknesses.map((w, i) => <li key={i}><TextRenderer text={w} keywords={keywords} /></li>)}
                     </ul>
                 </div>
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                     <h4 className="font-bold text-blue-800 mb-2">机会 (O)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.opportunities.map((o, i) => <li key={i}><TextRenderer text={o} /></li>)}
+                        {swot.opportunities.map((o, i) => <li key={i}><TextRenderer text={o} keywords={keywords} /></li>)}
                     </ul>
                 </div>
                 <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                     <h4 className="font-bold text-yellow-800 mb-2">威胁 (T)</h4>
                     <ul className="list-disc list-inside space-y-1">
-                        {swot.threats.map((t, i) => <li key={i}><TextRenderer text={t} /></li>)}
+                        {swot.threats.map((t, i) => <li key={i}><TextRenderer text={t} keywords={keywords} /></li>)}
                     </ul>
                 </div>
             </div>
@@ -273,54 +322,54 @@ const SWOTSection: React.FC<{ swot: SWOT }> = ({ swot }) => (
     </div>
 );
 
-const ThesisSection: React.FC<{ thesis: StockAnalysisReport['investmentThesis'] }> = ({ thesis }) => (
+const ThesisSection: React.FC<{ thesis: StockAnalysisReport['investmentThesis'], keywords: string[] }> = ({ thesis, keywords }) => (
     <Card title="投资论点" icon={<LightBulbIcon className="w-6 h-6" />}>
         <div>
             <h4 className="font-bold text-gray-800 mb-1">看涨理由 (Bull) 👍</h4>
-            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bull} /></p>
+            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bull} keywords={keywords} /></p>
         </div>
         <div className="mt-3">
             <h4 className="font-bold text-gray-800 mb-1">看跌理由 (Bear) 👎</h4>
-            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bear} /></p>
+            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bear} keywords={keywords} /></p>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-200">
             <h4 className="font-bold text-gray-800 mb-1">综合结论 🎯</h4>
-            <p className="text-sm font-semibold leading-relaxed"><TextRenderer text={thesis.conclusion} /></p>
+            <p className="text-sm font-semibold leading-relaxed"><TextRenderer text={thesis.conclusion} keywords={keywords} /></p>
         </div>
     </Card>
 );
 
-const RiskSection: React.FC<{ risk: StockAnalysisReport['riskAnalysis'] }> = ({ risk }) => (
+const RiskSection: React.FC<{ risk: StockAnalysisReport['riskAnalysis'], keywords: string[] }> = ({ risk, keywords }) => (
     <div className="col-span-1 md:col-span-2">
         <Card title="风险分析" icon={<ShieldExclamationIcon className="w-6 h-6" />}>
             <div className="flex items-center gap-x-4 mb-3">
                 <h4 className="font-bold text-gray-800">综合风险评级:</h4>
                 <RiskIndicator level={risk.level} />
             </div>
-            <p className="text-sm mb-3"><TextRenderer text={risk.description} /></p>
+            <p className="text-sm mb-3"><TextRenderer text={risk.description} keywords={keywords} /></p>
             <div>
                 <h4 className="font-bold text-gray-800 mb-2">主要风险因素:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                    {risk.factors.map((factor, i) => <li key={i}><TextRenderer text={factor} /></li>)}
+                    {risk.factors.map((factor, i) => <li key={i}><TextRenderer text={factor} keywords={keywords} /></li>)}
                 </ul>
             </div>
         </Card>
     </div>
 );
 
-const GovernanceSection: React.FC<{ governance: StockAnalysisReport['corporateGovernance'] }> = ({ governance }) => (
+const GovernanceSection: React.FC<{ governance: StockAnalysisReport['corporateGovernance'], keywords: string[] }> = ({ governance, keywords }) => (
     <Card title="公司治理" icon={<UsersIcon className="w-6 h-6" />}>
-        <p className="text-sm leading-relaxed"><TextRenderer text={governance.summary} /></p>
+        <p className="text-sm leading-relaxed"><TextRenderer text={governance.summary} keywords={keywords} /></p>
     </Card>
 );
 
-const ESGSection: React.FC<{ esg: StockAnalysisReport['esgRating'] }> = ({ esg }) => (
+const ESGSection: React.FC<{ esg: StockAnalysisReport['esgRating'], keywords: string[] }> = ({ esg, keywords }) => (
     <Card title="ESG 评级" icon={<GlobeAltIcon className="w-6 h-6" />}>
         <div className="flex items-center gap-x-4 mb-3">
             <h4 className="font-bold text-gray-800">综合评级:</h4>
-            <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md"><TextRenderer text={esg.rating} /></span>
+            <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md"><TextRenderer text={esg.rating} keywords={keywords} /></span>
         </div>
-        <p className="text-sm leading-relaxed"><TextRenderer text={esg.summary} /></p>
+        <p className="text-sm leading-relaxed"><TextRenderer text={esg.summary} keywords={keywords} /></p>
     </Card>
 );
 
@@ -334,6 +383,14 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
+
+  const keywords = useMemo(() => {
+    if (!report?.companyProfile) return [];
+    const { name, ticker } = report.companyProfile;
+    // Split name into potential keywords, e.g., "Apple Inc." -> ["Apple", "Inc."]
+    const nameParts = name.split(/\s+/);
+    return [...new Set([name, ticker, ...nameParts])].filter(Boolean);
+  }, [report]);
 
   const handleExportImage = useCallback(() => {
     if (exportRef.current === null) return;
@@ -417,9 +474,9 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                 <p className="text-gray-600">由 AI 生成</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
-                {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} />}
-                <ProfileSection profile={report.companyProfile} />
+                {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} keywords={keywords} />}
+                {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} keywords={keywords} />}
+                <ProfileSection profile={report.companyProfile} keywords={keywords} />
                 
                 {report.financialTrends && report.financialTrends.length > 0 && (
                     <div className="col-span-1 md:col-span-2">
@@ -432,7 +489,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                 {report.valuationAnalysis && (
                     <div className="col-span-1 md:col-span-2">
                         <Card title="估值分析" icon={<TagIcon className="w-6 h-6" />}>
-                            <ValuationSection valuation={report.valuationAnalysis} />
+                            <ValuationSection valuation={report.valuationAnalysis} keywords={keywords} />
                         </Card>
                     </div>
                 )}
@@ -444,24 +501,32 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                         </Card>
                     </div>
                 )}
+                
+                {report.researchAnalysis && (
+                     <div className="col-span-1 md:col-span-2">
+                        <Card title="机构研报分析" icon={<AcademicCapIcon className="w-6 h-6" />}>
+                            <ResearchAnalysisSection analysis={report.researchAnalysis} keywords={keywords} />
+                        </Card>
+                    </div>
+                )}
 
                 <div className="col-span-1 md:col-span-2">
-                    <ThesisSection thesis={report.investmentThesis} />
+                    <ThesisSection thesis={report.investmentThesis} keywords={keywords} />
                 </div>
                 
-                <SWOTSection swot={report.swotAnalysis} />
+                <SWOTSection swot={report.swotAnalysis} keywords={keywords} />
 
                 {report.recentNews && report.recentNews.length > 0 && (
                     <div className="col-span-1 md:col-span-2">
                        <Card title="近期动态" icon={<SpeakerWaveIcon className="w-6 h-6" />}>
-                           <RecentNewsSection news={report.recentNews} />
+                           <RecentNewsSection news={report.recentNews} keywords={keywords} />
                        </Card>
                    </div>
                 )}
 
-                <GovernanceSection governance={report.corporateGovernance} />
-                <ESGSection esg={report.esgRating} />
-                <RiskSection risk={report.riskAnalysis} />
+                <GovernanceSection governance={report.corporateGovernance} keywords={keywords} />
+                <ESGSection esg={report.esgRating} keywords={keywords} />
+                <RiskSection risk={report.riskAnalysis} keywords={keywords} />
 
                 {report.sources && report.sources.length > 0 && (
                     <div className="col-span-1 md:col-span-2">

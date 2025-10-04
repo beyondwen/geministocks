@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import type { PositionalWarfareReport, LeaderStockProfile, FollowerCandidate, StockFinancialMetrics } from '../types';
 import TextRenderer from './TextRenderer';
@@ -20,17 +20,17 @@ const generateStockLink = (ticker: string, market: string): string => {
     return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
 };
 
-const StrategistSummaryCard: React.FC<{ summary: string }> = ({ summary }) => (
+const StrategistSummaryCard: React.FC<{ summary: string, keywords: string[] }> = ({ summary, keywords }) => (
     <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-lg shadow-xl border border-gray-600 text-white">
         <h3 className="text-2xl font-bold mb-3 flex items-center">
             <span className="text-3xl mr-3">✍️</span>
             核心观点总结
         </h3>
-        <p className="text-gray-200 leading-relaxed italic"><TextRenderer text={summary} /></p>
+        <p className="text-gray-200 leading-relaxed italic"><TextRenderer text={summary} keywords={keywords} /></p>
     </div>
 );
 
-const LeaderStockCard: React.FC<{ leader: LeaderStockProfile }> = ({ leader }) => (
+const LeaderStockCard: React.FC<{ leader: LeaderStockProfile, keywords: string[] }> = ({ leader, keywords }) => (
     <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200">
         <div className="flex justify-between items-start">
             <div>
@@ -62,7 +62,7 @@ const LeaderStockCard: React.FC<{ leader: LeaderStockProfile }> = ({ leader }) =
                     <p className="text-xs text-gray-500">近期表现</p>
                 </div>
             </div>
-            <p className="text-gray-700 leading-relaxed text-sm"><TextRenderer text={leader.analysis} /></p>
+            <p className="text-gray-700 leading-relaxed text-sm"><TextRenderer text={leader.analysis} keywords={keywords} /></p>
         </div>
     </div>
 );
@@ -103,19 +103,19 @@ const ComparisonTable: React.FC<{ leaderMetrics: StockFinancialMetrics, follower
     </div>
 );
 
-const PositioningScore: React.FC<{ score: number, reasoning: string }> = ({ score, reasoning }) => {
+const PositioningScore: React.FC<{ score: number, reasoning: string, keywords: string[] }> = ({ score, reasoning, keywords }) => {
     const scoreColor = score >= 8 ? 'text-green-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600';
     return (
         <div className="text-center p-3 bg-cyan-50/50 rounded-lg border border-cyan-200">
             <p className="text-sm font-semibold text-cyan-800 mb-1">卡位潜力分</p>
             <p className={`text-5xl font-extrabold ${scoreColor}`}>{score}<span className="text-2xl text-gray-500">/10</span></p>
-            <p className="text-xs text-gray-600 mt-1 italic">"{reasoning}"</p>
+            <p className="text-xs text-gray-600 mt-1 italic">"<TextRenderer text={reasoning} keywords={keywords} />"</p>
         </div>
     );
 };
 
 
-const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetrics: StockFinancialMetrics, index: number }> = ({ candidate, leaderMetrics, index }) => {
+const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetrics: StockFinancialMetrics, index: number, keywords: string[] }> = ({ candidate, leaderMetrics, index, keywords }) => {
     const link = generateStockLink(candidate.ticker, candidate.market);
     return (
         <div className="bg-white/60 p-6 rounded-lg shadow-md border-l-4 border-cyan-500 transition-shadow hover:shadow-xl">
@@ -138,18 +138,18 @@ const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetr
             </div>
             
             <div className="space-y-6 text-sm">
-                <PositioningScore score={candidate.positioningScore.score} reasoning={candidate.positioningScore.reasoning} />
+                <PositioningScore score={candidate.positioningScore.score} reasoning={candidate.positioningScore.reasoning} keywords={keywords} />
                 <div>
                     <h5 className="font-semibold text-gray-800 mb-2 text-base">数据 PK 面板:</h5>
                     <ComparisonTable leaderMetrics={leaderMetrics} followerMetrics={candidate.metrics} />
                 </div>
                 <div>
                     <h5 className="font-semibold text-gray-800 mb-1 text-base">对比分析 (vs 龙头):</h5>
-                    <p className="pl-4 border-l-2 border-gray-300 text-gray-700 leading-relaxed"><TextRenderer text={candidate.comparativeAnalysis} /></p>
+                    <p className="pl-4 border-l-2 border-gray-300 text-gray-700 leading-relaxed"><TextRenderer text={candidate.comparativeAnalysis} keywords={keywords} /></p>
                 </div>
                 <div>
                     <h5 className="font-semibold text-gray-800 mb-1 text-base">投资论点 (卡位逻辑):</h5>
-                    <p className="pl-4 border-l-2 border-green-400 text-gray-700 leading-relaxed"><TextRenderer text={candidate.investmentThesis} /></p>
+                    <p className="pl-4 border-l-2 border-green-400 text-gray-700 leading-relaxed"><TextRenderer text={candidate.investmentThesis} keywords={keywords} /></p>
                 </div>
                 <div>
                     <h5 className="font-semibold text-gray-800 mb-2 text-base">潜在催化剂:</h5>
@@ -157,7 +157,7 @@ const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetr
                         {candidate.potentialCatalysts.map((item, i) => (
                            <li key={i} className="flex items-start">
                                 <CheckCircleIcon className="w-4 h-4 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
-                                <span className="text-gray-700"><TextRenderer text={item} /></span>
+                                <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
                            </li>
                         ))}
                     </ul>
@@ -168,7 +168,7 @@ const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetr
                         {candidate.risks.map((item, i) => (
                            <li key={i} className="flex items-start">
                                <XCircleIcon className="w-4 h-4 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
-                               <span className="text-gray-700"><TextRenderer text={item} /></span>
+                               <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
                            </li>
                         ))}
                     </ul>
@@ -187,6 +187,13 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
+
+  const keywords = useMemo(() => {
+    if (!report) return [];
+    const leaderKeywords = [report.leaderStock.name, report.leaderStock.ticker];
+    const followerKeywords = report.followerCandidates.flatMap(f => [f.name, f.ticker]);
+    return [...new Set([...leaderKeywords, ...followerKeywords])].filter(Boolean);
+  }, [report]);
 
   const handleExportImage = useCallback(() => {
     if (exportRef.current === null) {
@@ -279,8 +286,8 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
                 <p className="text-gray-600">寻找板块中的下一个机会</p>
             </div>
             <div className="space-y-8">
-                {report.strategistSummary && <StrategistSummaryCard summary={report.strategistSummary} />}
-                <LeaderStockCard leader={report.leaderStock} />
+                {report.strategistSummary && <StrategistSummaryCard summary={report.strategistSummary} keywords={keywords} />}
+                <LeaderStockCard leader={report.leaderStock} keywords={keywords} />
                 
                 {report.followerCandidates.map((candidate, index) => (
                     <FollowerCandidateCard 
@@ -288,6 +295,7 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
                         candidate={candidate} 
                         leaderMetrics={report.leaderStock.metrics} 
                         index={index} 
+                        keywords={keywords}
                     />
                 ))}
             </div>
