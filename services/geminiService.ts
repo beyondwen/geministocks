@@ -69,7 +69,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 
 
 export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
-    const modelName = 'deepseek/deepseek-v3.2-exp';
+    const modelName = 'deepseek/deepseek-v3.2-exp:online';
     const systemInstruction = `
         You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
         Ensure your analysis is timely by incorporating the latest web information and market data.
@@ -135,7 +135,7 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
 };
 
 export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
-    const modelName = 'deepseek/deepseek-v3.2-exp';
+    const modelName = 'deepseek/deepseek-v3.2-exp:online';
     const systemInstruction = `
         You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
         It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
@@ -234,7 +234,7 @@ export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysi
 };
 
 export const getHotStocksFromAI = async (): Promise<{name: string; ticker: string}[]> => {
-    const modelName = 'deepseek/deepseek-v3.2-exp';
+    const modelName = 'deepseek/deepseek-v3.2-exp:online';
     const systemInstruction = `
         You are a market analyst AI. Your task is to identify the 10 most discussed and trending stocks on the global market (including US, Hong Kong, and A-shares) within the last 24 hours based on current web data.
         You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
@@ -265,7 +265,7 @@ export const getPositionalWarfareAnalysis = async (
     leaderStockQuery: string,
     onProgress: (message: string) => void
 ): Promise<PositionalWarfareReport> => {
-    const modelName = 'deepseek/deepseek-v3.2-exp';
+    const modelName = 'deepseek/deepseek-v3.2-exp:online';
 
     // Step 1: Deep Profile on the Leader Stock
     onProgress("正在锁定并深度剖析龙头... 🎯");
