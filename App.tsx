@@ -10,7 +10,7 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
@@ -241,6 +241,43 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
   );
 };
 
+const ImageModal: React.FC<{ imageUrl: string; onClose: () => void; title: string }> = ({ imageUrl, onClose, title }) => (
+  <div
+    className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
+    onClick={onClose}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="image-modal-title"
+  >
+    <div
+      className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center relative transform transition-all scale-95 opacity-0"
+      onClick={(e) => e.stopPropagation()}
+      style={{ animation: 'scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+    >
+      <style>{`
+        @keyframes scale-in {
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+        aria-label="关闭"
+      >
+        <XIcon className="w-6 h-6" />
+      </button>
+      <h2 id="image-modal-title" className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
+      <div className="p-2 border-4 border-gray-100 rounded-lg inline-block">
+        <img
+          src={imageUrl}
+          alt="公众号二维码"
+          className="w-64 h-64 object-contain rounded-md"
+        />
+      </div>
+    </div>
+  </div>
+);
+
 
 type TabButtonProps = {
   isActive: boolean;
@@ -296,6 +333,7 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -643,6 +681,13 @@ const MainPage: React.FC = () => {
     <>
       {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
       {toast && <Toast message={toast.message} type={toast.type} />}
+      {isImageModalOpen && (
+          <ImageModal
+              imageUrl="https://youke1.picui.cn/s1/2025/10/02/68de9d3a88ef4.jpg"
+              onClose={() => setIsImageModalOpen(false)}
+              title="欢迎关注“小声读书”"
+          />
+      )}
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
       <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl mx-auto">
@@ -798,14 +843,28 @@ const MainPage: React.FC = () => {
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
             <div className="mb-4">
-              <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 hover:underline transition-colors">
+              <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 animated-underline transition-colors">
                 使用说明
               </Link>
             </div>
             <p className="text-sm text-gray-500">
-              由僧僧独立开发，欢迎关注“小声读书”公众号
-              <br />
-              <a href="https://t.me/lover_links" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline hover:text-cyan-700 transition-colors">在 TG 上关注我</a>
+              由
+              <a
+                href="https://t.me/lover_links"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-cyan-600 hover:text-cyan-700 animated-underline transition-colors"
+              >
+                僧僧
+              </a>
+              独立开发，欢迎关注“
+              <button
+                onClick={() => setIsImageModalOpen(true)}
+                className="font-medium text-cyan-600 hover:text-cyan-700 animated-underline transition-colors"
+              >
+                小声读书
+              </button>
+              ”公众号
             </p>
           </footer>
         </div>
