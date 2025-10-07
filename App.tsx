@@ -142,7 +142,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
 
         allArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
-        setArticles(allArticles.slice(0, 10));
+        setArticles(allArticles.slice(0, 20));
       } catch (err) {
          console.error("Failed to process news feeds:", err);
          setError("无法加载最新消息。部分新闻源可能暂时不可用。");
