@@ -790,15 +790,15 @@ const MainPage: React.FC = () => {
               <div className="flex justify-center border-b border-gray-200" role="tablist" aria-label="分析模式">
                 <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                    <DocumentTextIcon className="w-5 h-5" />
-                   <span>主题挖掘</span>
+                   <span>挖掘</span>
                 </TabButton>
                 <TabButton isActive={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
                   <ChartBarIcon className="w-5 h-5" />
-                  <span>个股分析</span>
+                  <span>个股</span>
                 </TabButton>
                 <TabButton isActive={activeTab === 'positional'} onClick={() => setActiveTab('positional')}>
                   <SwordsIcon className="w-5 h-5" />
-                  <span>卡位战法</span>
+                  <span>卡位</span>
                 </TabButton>
               </div>
             </div>
