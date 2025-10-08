@@ -17,6 +17,7 @@ import PositionalWarfareResult from './components/PositionalWarfareResult';
 import SupportModal from './components/SupportModal';
 import BuffettIndicator from './components/BuffettIndicator';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
+import FloatingActionButton from './components/FloatingActionButton';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -337,6 +338,7 @@ const MainPage: React.FC = () => {
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [fabClickCount, setFabClickCount] = useState(0);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -732,6 +734,10 @@ const MainPage: React.FC = () => {
     }
   };
   
+  const handleFabClick = () => {
+    setFabClickCount(prev => prev + 1);
+  };
+
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
   return (
@@ -926,6 +932,7 @@ const MainPage: React.FC = () => {
           </footer>
         </div>
       </div>
+      <FloatingActionButton onClick={handleFabClick} />
     </>
   );
 };

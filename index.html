@@ -145,6 +145,20 @@
           display: none !important;
         }
       }
+      /* New Floating Action Button Animation */
+      @keyframes plus-one {
+        from {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
+        to {
+          transform: translateY(-60px) scale(1.5);
+          opacity: 0;
+        }
+      }
+      .animate-plus-one {
+        animation: plus-one 0.8s ease-out forwards;
+      }
     </style>
     <!-- Structured Data -->
     <script type="application/ld+json">
