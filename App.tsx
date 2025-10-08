@@ -23,6 +23,9 @@ const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 const RISK_WARNING_ACCEPTED_KEY = 'gemini-risk-warning-accepted';
+const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
+const MAX_ANALYSES_PER_HOUR = 12;
+const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 // --- Data & Types ---
 interface NewsArticle {
@@ -345,6 +348,42 @@ const MainPage: React.FC = () => {
     }
   }, [toast]);
 
+  // --- Rate Limiting Functions ---
+  const checkRateLimit = (): boolean => {
+    try {
+        const storedTimestamps = localStorage.getItem(ANALYSIS_TIMESTAMPS_KEY);
+        if (!storedTimestamps) return false;
+
+        const timestamps: number[] = JSON.parse(storedTimestamps);
+        const now = Date.now();
+        
+        const recentTimestamps = timestamps.filter(ts => now - ts < ONE_HOUR_IN_MS);
+        
+        localStorage.setItem(ANALYSIS_TIMESTAMPS_KEY, JSON.stringify(recentTimestamps));
+        
+        return recentTimestamps.length >= MAX_ANALYSES_PER_HOUR;
+    } catch (err) {
+        console.error("Failed to check rate limit from localStorage", err);
+        return false; // Fail open
+    }
+  };
+
+  const recordAnalysisTimestamp = () => {
+    try {
+        const storedTimestamps = localStorage.getItem(ANALYSIS_TIMESTAMPS_KEY);
+        const timestamps: number[] = storedTimestamps ? JSON.parse(storedTimestamps) : [];
+        const now = Date.now();
+        
+        timestamps.push(now);
+        
+        const recentTimestamps = timestamps.filter(ts => now - ts < ONE_HOUR_IN_MS);
+        
+        localStorage.setItem(ANALYSIS_TIMESTAMPS_KEY, JSON.stringify(recentTimestamps));
+    } catch (err) {
+        console.error("Failed to record analysis timestamp to localStorage", err);
+    }
+  };
+
   useEffect(() => {
     // Check if risk warning has been accepted
     const hasAcceptedRisk = localStorage.getItem(RISK_WARNING_ACCEPTED_KEY);
@@ -478,6 +517,11 @@ const MainPage: React.FC = () => {
       setError('分析主题为必填项。');
       return;
     }
+
+    if (checkRateLimit()) {
+      setError('您在过去一小时内的使用次数已达上限 (12次)。请稍后再试。');
+      return;
+    }
     
     setActiveTab('topic');
     setIsLoading(true);
@@ -489,6 +533,7 @@ const MainPage: React.FC = () => {
     try {
       const report = await getAnalysis(topic);
       setAnalysisReport(report);
+      recordAnalysisTimestamp();
       incrementAnalysisCount();
       incrementUserAnalysisCount();
 
@@ -515,6 +560,11 @@ const MainPage: React.FC = () => {
       return;
     }
 
+    if (checkRateLimit()) {
+        setStockError('您在过去一小时内的使用次数已达上限 (12次)。请稍后再试。');
+        return;
+    }
+
     setActiveTab('stock');
     setIsStockLoading(true);
     setStockError(null);
@@ -525,6 +575,7 @@ const MainPage: React.FC = () => {
     try {
       const report = await getStockAnalysis(stockQueryToAnalyze);
       setStockAnalysisReport(report);
+      recordAnalysisTimestamp();
       incrementAnalysisCount();
       incrementUserAnalysisCount();
 
@@ -551,6 +602,11 @@ const MainPage: React.FC = () => {
         return;
     }
 
+    if (checkRateLimit()) {
+        setPositionalWarfareError('您在过去一小时内的使用次数已达上限 (12次)。请稍后再试。');
+        return;
+    }
+
     setActiveTab('positional');
     setIsPositionalWarfareLoading(true);
     setPositionalWarfareError(null);
@@ -561,6 +617,7 @@ const MainPage: React.FC = () => {
     try {
         const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress);
         setPositionalWarfareReport(report);
+        recordAnalysisTimestamp();
         incrementAnalysisCount();
         incrementUserAnalysisCount();
 

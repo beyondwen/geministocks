@@ -186,6 +186,37 @@ const ValuationSection: React.FC<{ valuation: ValuationAnalysis, keywords: strin
       </div>
     );
 };
+
+const AnalystRatingsSection: React.FC<{ analysis: ResearchAnalysis }> = ({ analysis }) => {
+  const { consensusRating, targetPriceSummary } = analysis;
+
+  if (!consensusRating && !targetPriceSummary) {
+    return null;
+  }
+
+  return (
+    <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-cyan-50 to-blue-100 p-6 rounded-lg shadow-md border border-cyan-200">
+        <div className="flex items-center mb-4">
+            <span className="p-2 bg-white rounded-full mr-3 text-cyan-700 shadow-sm"><AcademicCapIcon className="w-6 h-6" /></span>
+            <h3 className="text-xl font-bold text-gray-800">分析师评级 (近3个月)</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+            {consensusRating && (
+                <div className="bg-white/70 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold">综合评级</p>
+                    <p className="text-2xl font-extrabold text-cyan-700 mt-1">{consensusRating}</p>
+                </div>
+            )}
+            {targetPriceSummary && (
+                <div className="bg-white/70 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold">综合目标价</p>
+                    <p className="text-2xl font-extrabold text-cyan-700 mt-1">{targetPriceSummary}</p>
+                </div>
+            )}
+        </div>
+    </div>
+  );
+};
   
 const PeerComparisonSection: React.FC<{ peers: PeerCompetitor[] }> = ({ peers }) => (
     <div className="overflow-x-auto">
@@ -221,45 +252,23 @@ const ResearchAnalysisSection: React.FC<{ analysis: ResearchAnalysis, keywords: 
         return <p className="text-sm text-gray-500">最近3个月暂无机构研报。</p>;
     }
 
-    const { consensusRating, targetPriceSummary, recentReports } = analysis;
+    const { recentReports } = analysis;
 
     return (
-        <div className="space-y-6">
-            {(consensusRating || targetPriceSummary) && (
-                <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
-                    <h4 className="text-lg font-bold text-gray-800 mb-2">机构观点汇总 (近3个月)</h4>
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                        {consensusRating && (
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold text-gray-900">综合评级:</span>
-                                <span className="px-3 py-1 font-bold bg-blue-100 text-blue-800 rounded-full">{consensusRating}</span>
-                            </div>
-                        )}
-                        {targetPriceSummary && (
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold text-gray-900">目标价:</span>
-                                <span className="font-medium text-gray-800">{targetPriceSummary}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-            
-            <div>
-                <h4 className="text-lg font-bold text-gray-800 mb-3">最新研报摘要</h4>
-                <div className="space-y-4">
-                    {recentReports.map((report, index) => (
-                        <div key={index} className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
-                            <h5 className="font-bold text-gray-900 mb-1"><TextRenderer text={report.title} keywords={keywords} /></h5>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
-                                <span><strong>机构:</strong> {report.source}</span>
-                                <span><strong>日期:</strong> {report.publishDate}</span>
-                                <span className="font-semibold text-gray-700"><strong>评级:</strong> <span className="text-orange-600">{report.rating}</span></span>
-                            </div>
-                            <p className="text-sm text-gray-700 leading-relaxed"><TextRenderer text={report.summary} keywords={keywords} /></p>
+        <div className="space-y-4">
+            <h4 className="text-lg font-bold text-gray-800">最新研报摘要</h4>
+            <div className="space-y-4">
+                {recentReports.map((report, index) => (
+                    <div key={index} className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
+                        <h5 className="font-bold text-gray-900 mb-1"><TextRenderer text={report.title} keywords={keywords} /></h5>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
+                            <span><strong>机构:</strong> {report.source}</span>
+                            <span><strong>日期:</strong> {report.publishDate}</span>
+                            <span className="font-semibold text-gray-700"><strong>评级:</strong> <span className="text-orange-600">{report.rating}</span></span>
                         </div>
-                    ))}
-                </div>
+                        <p className="text-sm text-gray-700 leading-relaxed"><TextRenderer text={report.summary} keywords={keywords} /></p>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -494,6 +503,8 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                     </div>
                 )}
                 
+                {report.researchAnalysis && <AnalystRatingsSection analysis={report.researchAnalysis} />}
+
                 {report.peerComparison && report.peerComparison.length > 0 && (
                      <div className="col-span-1 md:col-span-2">
                         <Card title="同行对比" icon={<UsersIcon className="w-6 h-6" />}>
