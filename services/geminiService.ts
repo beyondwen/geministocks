@@ -3,7 +3,7 @@ import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, Lead
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
-const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtYzJmMjVlMjFjZTQ5ODc5MGYwYTcwMmM4OTI3MTZmYjNlZDkzYzA1YWFjMGQwODAxZmZiMDEzOWFmYmNlNDZmNw==';
+const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtM2QyNWM4NzRjOWM4ODJhZjVmYTM3ZDA0MmMxMmY0ZjEyZGYxYzIyZWNjMzE5ZTUyMzdkM2E4ZjdmYjE2NTgxNg==';
 const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
