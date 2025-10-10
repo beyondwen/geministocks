@@ -10,7 +10,7 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
@@ -778,20 +778,31 @@ const MainPage: React.FC = () => {
                 支持美股、A 股、港股、数字货币和实物期货市场
               </p>
             </div>
-            <div className="order-1 sm:order-2 flex items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
-                <div className="text-right">
+            <div className="order-1 sm:order-2 flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
+                <div className="text-right mb-2 sm:mb-0">
                   <p className="text-sm text-gray-600 whitespace-nowrap">
                     累计分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
                   </p>
                 </div>
-                <button
-                    onClick={() => setIsSupportModalOpen(true)}
-                    className="flex items-center gap-x-1.5 px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
-                    aria-haspopup="dialog"
-                >
-                    <HeartIcon className="w-4 h-4" />
-                    支持作者
-                </button>
+                <div className="flex items-center gap-x-3">
+                  <a
+                    href="https://pplx.ai/mastergo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-x-1.5 px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all"
+                  >
+                    <AcademicCapIcon className="w-4 h-4" />
+                    领取 Perplexity 会员
+                  </a>
+                  <button
+                      onClick={() => setIsSupportModalOpen(true)}
+                      className="flex items-center gap-x-1.5 px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                      aria-haspopup="dialog"
+                  >
+                      <HeartIcon className="w-4 h-4" />
+                      支持作者
+                  </button>
+                </div>
             </div>
           </header>
 
@@ -941,7 +952,7 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
-            <div className="mb-4">
+            <div className="mb-4 flex justify-center items-center gap-x-4">
               <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 animated-underline transition-colors">
                 使用说明
               </Link>
