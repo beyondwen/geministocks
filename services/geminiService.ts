@@ -118,6 +118,17 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
               "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
               "reason": "string (Reason for being on the watchlist, e.g., waiting for a better entry point or more information)", "relevance": "'Low'"
             }]
+          },
+          "associationAnalysis": {
+            "relatedStocks": [{
+              "name": "string (e.g., 'NVIDIA Corp')",
+              "ticker": "string (The stock ticker, e.g., 'NVDA')",
+              "reason": "string (Concise reason for relevance, e.g., 'Key supplier of AI chips mentioned in the topic.')"
+            }],
+            "relatedTopics": [{
+              "name": "string (e.g., 'AI Chip Manufacturing')",
+              "reason": "string (Concise reason for relevance, e.g., 'A direct sub-theme of the main topic.')"
+            }]
           }
         }
     `;

@@ -127,3 +127,17 @@ export const AcademicCapIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.2658.814m-15.482 0l-3.232 8.12A50.57 50.57 0 0112 20.904a50.57 50.57 0 017.45-3.636l-3.232-8.12" />
     </svg>
 );
+
+export const LinkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    </svg>
+);
+
+export const BuildingStorefrontIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5A2.25 2.25 0 0115.75 11.25h.51c.48 0 .94.197 1.274.54l.893.893a.375.375 0 01-.266.643H6.75a.375.375 0 01-.266-.643l.893-.893a1.875 1.875 0 011.274-.54h.51A2.25 2.25 0 0110.5 13.5v7.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v1.5H3.75V6zM3 15.75l2.25-2.25a1.125 1.125 0 011.59 0l2.25 2.25a1.125 1.125 0 010 1.59l-2.25 2.25a1.125 1.125 0 01-1.59 0L3 17.34a1.125 1.125 0 010-1.59z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.75l-2.25-2.25a1.125 1.125 0 00-1.59 0l-2.25 2.25a1.125 1.125 0 000 1.59l2.25 2.25a1.125 1.125 0 001.59 0l2.25-2.25a1.125 1.125 0 000-1.59z" />
+    </svg>
+);

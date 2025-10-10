@@ -5,6 +5,7 @@ import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon } fr
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
+import AssociationAnalysisGraph from './AssociationAnalysisGraph';
 
 const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negative' }> = ({ sentiment }) => {
     const sentimentConfig = {
@@ -285,6 +286,17 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
                 <InfoCard title="配置节奏与展望">
                     <TextRenderer text={report.allocationCadenceAndOutlook} keywords={keywords} />
                 </InfoCard>
+            </div>
+          )}
+
+          {report.associationAnalysis && (
+            <div className="md:col-span-2">
+              <InfoCard title="关联分析图谱">
+                <AssociationAnalysisGraph 
+                  analysis={report.associationAnalysis}
+                  originalTopic={userInput}
+                />
+              </InfoCard>
             </div>
           )}
 

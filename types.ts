@@ -40,6 +40,23 @@ export interface TieredSuggestions {
   watchlist: StockTicker[];
 }
 
+// --- New Types for Association Analysis ---
+export interface AssociationStockNode {
+  name: string;
+  ticker: string;
+  reason: string;
+}
+
+export interface AssociationTopicNode {
+  name: string;
+  reason: string;
+}
+
+export interface AssociationAnalysis {
+  relatedStocks: AssociationStockNode[];
+  relatedTopics: AssociationTopicNode[];
+}
+
 export interface AnalysisReport {
   summary: string;
   keyTakeaways: string[];
@@ -58,6 +75,7 @@ export interface AnalysisReport {
   };
   allocationCadenceAndOutlook: string;
   tieredSuggestions: TieredSuggestions;
+  associationAnalysis?: AssociationAnalysis;
   sources?: GroundingSource[];
 }
 
