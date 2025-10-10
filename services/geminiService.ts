@@ -67,8 +67,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 }
 
 
-export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
-    const modelName = 'x-ai/grok-4-fast';
+export const getAnalysis = async (topic: string, isRealtime: boolean): Promise<AnalysisReport> => {
+    const modelName = isRealtime ? 'x-ai/grok-4-fast:online' : 'x-ai/grok-4-fast';
     const systemInstruction = `
         You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
         Ensure your analysis is timely by incorporating the latest web information and market data.
@@ -144,8 +144,8 @@ export const getAnalysis = async (topic: string): Promise<AnalysisReport> => {
     return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
-export const getStockAnalysis = async (stockQuery: string): Promise<StockAnalysisReport> => {
-    const modelName = 'x-ai/grok-4-fast';
+export const getStockAnalysis = async (stockQuery: string, isRealtime: boolean): Promise<StockAnalysisReport> => {
+    const modelName = isRealtime ? 'x-ai/grok-4-fast:online' : 'x-ai/grok-4-fast';
     const systemInstruction = `
         You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
         It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
@@ -273,9 +273,10 @@ export const getHotStocksFromAI = async (): Promise<{name: string; ticker: strin
 // --- Enhanced Service for Positional Warfare Analysis ---
 export const getPositionalWarfareAnalysis = async (
     leaderStockQuery: string,
-    onProgress: (message: string) => void
+    onProgress: (message: string) => void,
+    isRealtime: boolean
 ): Promise<PositionalWarfareReport> => {
-    const modelName = 'x-ai/grok-4-fast';
+    const modelName = isRealtime ? 'x-ai/grok-4-fast:online' : 'x-ai/grok-4-fast';
 
     // Step 1: Deep Profile on the Leader Stock
     onProgress("正在锁定并深度剖析龙头... 🎯");

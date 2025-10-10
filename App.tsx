@@ -339,6 +339,7 @@ const MainPage: React.FC = () => {
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [fabClickCount, setFabClickCount] = useState(0);
+  const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -533,7 +534,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getAnalysis(topic);
+      const report = await getAnalysis(topic, isRealtimeSearchEnabled);
       setAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -554,7 +555,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory]);
+  }, [topicHistory, isRealtimeSearchEnabled]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) {
@@ -575,7 +576,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getStockAnalysis(stockQueryToAnalyze);
+      const report = await getStockAnalysis(stockQueryToAnalyze, isRealtimeSearchEnabled);
       setStockAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -596,7 +597,7 @@ const MainPage: React.FC = () => {
     } finally {
       setIsStockLoading(false);
     }
-  }, [stockHistory]);
+  }, [stockHistory, isRealtimeSearchEnabled]);
 
   const handlePositionalWarfareAnalyze = useCallback(async () => {
     if (!leaderStockQuery.trim()) {
@@ -617,7 +618,7 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress);
+        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress, isRealtimeSearchEnabled);
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
         incrementAnalysisCount();
@@ -639,7 +640,7 @@ const MainPage: React.FC = () => {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [leaderStockQuery, positionalWarfareHistory]);
+  }, [leaderStockQuery, positionalWarfareHistory, isRealtimeSearchEnabled]);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -738,6 +739,18 @@ const MainPage: React.FC = () => {
     setFabClickCount(prev => prev + 1);
   };
 
+  const handleRealtimeSearchToggle = () => {
+    setIsRealtimeSearchEnabled(prev => {
+      const newState = !prev;
+      if (newState) {
+        setToast({ message: '实时搜索略贵，欢迎打赏支持', type: 'info' });
+      } else {
+        setToast({ message: '恭喜发财', type: 'success' });
+      }
+      return newState;
+    });
+  };
+
   const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
   return (
@@ -785,6 +798,29 @@ const MainPage: React.FC = () => {
           <BuffettIndicator />
 
           <main>
+            {/* --- Realtime Search Toggle --- */}
+            <div className="mb-4 flex justify-center items-center gap-x-3">
+              <label htmlFor="realtime-search-toggle" className="text-sm font-medium text-gray-700">
+                实时搜索
+              </label>
+              <button
+                id="realtime-search-toggle"
+                onClick={handleRealtimeSearchToggle}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
+                  isRealtimeSearchEnabled ? 'bg-cyan-600' : 'bg-gray-200'
+                }`}
+                role="switch"
+                aria-checked={isRealtimeSearchEnabled}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    isRealtimeSearchEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+            
             {/* --- Tabs Navigation --- */}
             <div className="mb-6 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-2">
               <div className="flex justify-center border-b border-gray-200" role="tablist" aria-label="分析模式">
