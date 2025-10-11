@@ -835,8 +835,6 @@ const MainPage: React.FC = () => {
             </div>
           </header>
 
-          <BuffettIndicator />
-
           <main>
             {/* --- Realtime Search Toggle --- */}
             <div className="mb-4 flex justify-center items-center gap-x-3">
@@ -981,6 +979,7 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-12 py-6 border-t border-gray-200">
+            <BuffettIndicator />
             <div className="mb-4 flex justify-center items-center gap-x-4">
               <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 animated-underline transition-colors">
                 使用说明
