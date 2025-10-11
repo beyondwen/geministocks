@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { toPng } from 'html-to-image';
 import type { PositionalWarfareReport, LeaderStockProfile, FollowerCandidate, StockFinancialMetrics } from '../types';
 import TextRenderer from './TextRenderer';
-import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon } from './icons/Icons';
+import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, XIcon } from './icons/Icons';
 
 const generateStockLink = (ticker: string, market: string): string => {
     if (!market) return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
@@ -114,17 +114,72 @@ const PositioningScore: React.FC<{ score: number, reasoning: string, keywords: s
     );
 };
 
-
-const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetrics: StockFinancialMetrics, index: number, keywords: string[] }> = ({ candidate, leaderMetrics, index, keywords }) => {
+const FollowerCandidateCard: React.FC<{ 
+    candidate: FollowerCandidate; 
+    leaderMetrics: StockFinancialMetrics; 
+    index: number; 
+    keywords: string[];
+    onCompare: (candidate: FollowerCandidate) => void;
+}> = ({ candidate, leaderMetrics, index, keywords, onCompare }) => {
     const link = generateStockLink(candidate.ticker, candidate.market);
     return (
-        <div className="bg-white/60 p-6 rounded-lg shadow-md border-l-4 border-cyan-500 transition-shadow hover:shadow-xl">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h3 className="text-xl font-bold text-gray-800">潜力补涨龙 #{index + 1}</h3>
-                    <h4 className="text-lg font-semibold">{candidate.name} <span className="text-gray-500 font-mono text-base">{candidate.ticker}</span></h4>
-                    <p className="text-sm text-gray-600">{candidate.market}</p>
+        <div className="bg-white/60 p-6 rounded-lg shadow-md border-l-4 border-cyan-500 transition-shadow hover:shadow-xl flex flex-col h-full">
+            <div className="flex-grow">
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800">潜力补涨龙 #{index + 1}</h3>
+                        <h4 className="text-lg font-semibold">{candidate.name} <span className="text-gray-500 font-mono text-base">{candidate.ticker}</span></h4>
+                        <p className="text-sm text-gray-600">{candidate.market}</p>
+                    </div>
                 </div>
+                
+                <div className="space-y-6 text-sm">
+                    <PositioningScore score={candidate.positioningScore.score} reasoning={candidate.positioningScore.reasoning} keywords={keywords} />
+                    <div>
+                        <h5 className="font-semibold text-gray-800 mb-2 text-base">数据 PK 面板:</h5>
+                        <ComparisonTable leaderMetrics={leaderMetrics} followerMetrics={candidate.metrics} />
+                    </div>
+                    <div>
+                        <h5 className="font-semibold text-gray-800 mb-1 text-base">对比分析 (vs 龙头):</h5>
+                        <p className="pl-4 border-l-2 border-gray-300 text-gray-700 leading-relaxed"><TextRenderer text={candidate.comparativeAnalysis} keywords={keywords} /></p>
+                    </div>
+                    <div>
+                        <h5 className="font-semibold text-gray-800 mb-1 text-base">投资论点 (卡位逻辑):</h5>
+                        <p className="pl-4 border-l-2 border-green-400 text-gray-700 leading-relaxed"><TextRenderer text={candidate.investmentThesis} keywords={keywords} /></p>
+                    </div>
+                    <div>
+                        <h5 className="font-semibold text-gray-800 mb-2 text-base">潜在催化剂:</h5>
+                        <ul className="space-y-1.5">
+                            {candidate.potentialCatalysts.map((item, i) => (
+                               <li key={i} className="flex items-start">
+                                    <CheckCircleIcon className="w-4 h-4 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
+                               </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 className="font-semibold text-gray-800 mb-2 text-base">核心风险:</h5>
+                         <ul className="space-y-1.5">
+                            {candidate.risks.map((item, i) => (
+                               <li key={i} className="flex items-start">
+                                   <XCircleIcon className="w-4 h-4 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+                                   <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
+                               </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-6 pt-4 border-t border-gray-200 flex items-center justify-end gap-x-4">
+                <button
+                    onClick={() => onCompare(candidate)}
+                    className="inline-flex items-center text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+                    aria-label={`对比 ${candidate.name} 与龙头股`}
+                >
+                    <ChartBarIcon className="h-4 w-4 mr-1.5" />
+                    指标对比
+                </button>
                 <a 
                   href={link} 
                   target="_blank" 
@@ -136,47 +191,94 @@ const FollowerCandidateCard: React.FC<{ candidate: FollowerCandidate; leaderMetr
                   <ExternalLinkIcon className="h-3.5 w-3.5 ml-1" />
                 </a>
             </div>
-            
-            <div className="space-y-6 text-sm">
-                <PositioningScore score={candidate.positioningScore.score} reasoning={candidate.positioningScore.reasoning} keywords={keywords} />
-                <div>
-                    <h5 className="font-semibold text-gray-800 mb-2 text-base">数据 PK 面板:</h5>
-                    <ComparisonTable leaderMetrics={leaderMetrics} followerMetrics={candidate.metrics} />
-                </div>
-                <div>
-                    <h5 className="font-semibold text-gray-800 mb-1 text-base">对比分析 (vs 龙头):</h5>
-                    <p className="pl-4 border-l-2 border-gray-300 text-gray-700 leading-relaxed"><TextRenderer text={candidate.comparativeAnalysis} keywords={keywords} /></p>
-                </div>
-                <div>
-                    <h5 className="font-semibold text-gray-800 mb-1 text-base">投资论点 (卡位逻辑):</h5>
-                    <p className="pl-4 border-l-2 border-green-400 text-gray-700 leading-relaxed"><TextRenderer text={candidate.investmentThesis} keywords={keywords} /></p>
-                </div>
-                <div>
-                    <h5 className="font-semibold text-gray-800 mb-2 text-base">潜在催化剂:</h5>
-                    <ul className="space-y-1.5">
-                        {candidate.potentialCatalysts.map((item, i) => (
-                           <li key={i} className="flex items-start">
-                                <CheckCircleIcon className="w-4 h-4 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
-                                <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
-                           </li>
-                        ))}
-                    </ul>
-                </div>
-                <div>
-                    <h5 className="font-semibold text-gray-800 mb-2 text-base">核心风险:</h5>
-                     <ul className="space-y-1.5">
-                        {candidate.risks.map((item, i) => (
-                           <li key={i} className="flex items-start">
-                               <XCircleIcon className="w-4 h-4 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
-                               <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
-                           </li>
-                        ))}
-                    </ul>
+        </div>
+    );
+};
+
+// --- New Comparison Modal Component ---
+interface ComparisonModalProps {
+    leader: LeaderStockProfile;
+    follower: FollowerCandidate;
+    onClose: () => void;
+}
+
+const ComparisonModal: React.FC<ComparisonModalProps> = ({ leader, follower, onClose }) => {
+    useEffect(() => {
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [onClose]);
+
+    const metrics = [
+        { name: '市值', leader: leader.metrics.marketCap, follower: follower.metrics.marketCap },
+        { name: '市盈率 (PE)', leader: leader.metrics.peRatio, follower: follower.metrics.peRatio },
+        { name: '营收增长', leader: leader.metrics.revenueGrowth, follower: follower.metrics.revenueGrowth },
+        { name: '近期表现', leader: leader.metrics.recentPerformance, follower: follower.metrics.recentPerformance },
+    ];
+
+    return (
+        <div
+            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="comparison-modal-title"
+        >
+            <div
+                className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-2xl w-full mx-4 relative transform transition-all scale-95 opacity-0"
+                onClick={(e) => e.stopPropagation()}
+                style={{ animation: 'scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+            >
+                <style>{`
+                    @keyframes scale-in { to { opacity: 1; transform: scale(1); } }
+                `}</style>
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+                    aria-label="关闭对比"
+                >
+                    <XIcon className="w-6 h-6" />
+                </button>
+
+                <h2 id="comparison-modal-title" className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                    指标对比
+                </h2>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="border-b-2 border-gray-200">
+                                <th className="py-3 pr-2 text-sm font-semibold text-gray-500">指标</th>
+                                <th className="py-3 px-2 text-sm font-semibold text-gray-800 text-center">
+                                    <span className="block truncate max-w-[150px] mx-auto" title={leader.name}>{leader.name}</span>
+                                    <span className="font-normal text-xs text-yellow-600">龙头 👑</span>
+                                </th>
+                                <th className="py-3 pl-2 text-sm font-semibold text-gray-800 text-center">
+                                    <span className="block truncate max-w-[150px] mx-auto" title={follower.name}>{follower.name}</span>
+                                    <span className="font-normal text-xs text-cyan-600">补涨龙 🐲</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {metrics.map((metric, index) => (
+                                <tr key={index} className="border-b border-gray-100 last:border-b-0">
+                                    <td className="py-4 pr-2 font-medium text-gray-600">{metric.name}</td>
+                                    <td className="py-4 px-2 font-mono text-gray-700 text-center">{metric.leader}</td>
+                                    <td className="py-4 pl-2 font-mono font-bold text-gray-900 text-center bg-cyan-50/50">{metric.follower}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     );
 };
+
 
 interface PositionalWarfareResultProps {
   report: PositionalWarfareReport;
@@ -187,6 +289,7 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
+  const [comparisonTarget, setComparisonTarget] = useState<FollowerCandidate | null>(null);
 
   const keywords = useMemo(() => {
     if (!report) return [];
@@ -245,6 +348,14 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
 
   return (
     <div className="space-y-4 animate-fade-in">
+        {comparisonTarget && (
+            <ComparisonModal
+                leader={report.leaderStock}
+                follower={comparisonTarget}
+                onClose={() => setComparisonTarget(null)}
+            />
+        )}
+
         {isPreparingPdf && (
             <div className="no-print fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
                 <div className="bg-white rounded-lg p-8 shadow-2xl text-center">
@@ -296,6 +407,7 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
                         leaderMetrics={report.leaderStock.metrics} 
                         index={index} 
                         keywords={keywords}
+                        onCompare={setComparisonTarget}
                     />
                 ))}
             </div>
