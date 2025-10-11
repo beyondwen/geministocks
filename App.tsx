@@ -17,7 +17,6 @@ import PositionalWarfareResult from './components/PositionalWarfareResult';
 import SupportModal from './components/SupportModal';
 import BuffettIndicator from './components/BuffettIndicator';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
-import FloatingActionButton from './components/FloatingActionButton';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -282,6 +281,18 @@ const ImageModal: React.FC<{ imageUrl: string; onClose: () => void; title: strin
   </div>
 );
 
+const RadarIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 3v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M21 12h-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 21v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3 12h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 12L7 7" className="radar-sweep" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+);
+
 
 type TabButtonProps = {
   isActive: boolean;
@@ -338,7 +349,6 @@ const MainPage: React.FC = () => {
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [fabClickCount, setFabClickCount] = useState(0);
   const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
   
   // Effect to hide toast after a delay
@@ -735,10 +745,6 @@ const MainPage: React.FC = () => {
     }
   };
   
-  const handleFabClick = () => {
-    setFabClickCount(prev => prev + 1);
-  };
-
   const handleRealtimeSearchToggle = () => {
     setIsRealtimeSearchEnabled(prev => {
       const newState = !prev;
@@ -769,9 +775,12 @@ const MainPage: React.FC = () => {
         <div className="w-full max-w-4xl mx-auto">
           <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
             <div className="order-2 sm:order-1 text-center sm:text-left">
-              <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-                超级挖掘机
-              </h1>
+              <div className="flex justify-center sm:justify-start items-center gap-x-3">
+                <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
+                  超级挖掘机
+                </h1>
+                <RadarIcon className="w-10 h-10 text-cyan-500" />
+              </div>
               <p className="text-gray-600 mt-2">
                 利用 AI 模型进行多维度投资分析 🚀
                 <br />
@@ -979,7 +988,6 @@ const MainPage: React.FC = () => {
           </footer>
         </div>
       </div>
-      <FloatingActionButton onClick={handleFabClick} />
     </>
   );
 };
