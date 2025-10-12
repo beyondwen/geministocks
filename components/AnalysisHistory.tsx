@@ -31,22 +31,22 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
   );
 
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg">
+    <div className="glass-refined bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-soft">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex justify-between items-center p-4 text-left focus:outline-none"
+        className="w-full flex justify-between items-center p-6 text-left focus:outline-none"
         aria-expanded={isExpanded}
         aria-controls="history-content"
       >
-        <div className="flex items-center">
-          <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
-            <ClockIcon />
-          </span>
-          <h2 className="text-xl font-semibold text-gray-800">分析历史 📜</h2>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+            <ClockIcon className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="text-xl font-semibold text-gradient-primary">分析历史</h3>
         </div>
         <svg
           aria-hidden="true"
-          className={`h-6 w-6 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+          className={`h-6 w-6 transform transition-transform duration-200 text-slate-500 ${isExpanded ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -56,18 +56,18 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
       </button>
 
       {isExpanded && (
-        <div id="history-content" className="px-4 pb-4 animate-fade-in">
+        <div id="history-content" className="px-6 pb-6 animate-fade-in">
           <div className="relative mb-4">
             <input
               type="search"
               placeholder="搜索历史记录..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2 border-2 border-slate-200/80 bg-white/70 rounded-full text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/80 transition-colors"
               aria-label="搜索历史记录"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -80,14 +80,14 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
                   <li
                     key={entry.id}
                     onClick={() => onSelect(entry.id)}
-                    className="group flex justify-between items-center p-3 rounded-md cursor-pointer hover:bg-gray-200/70 transition-colors"
+                    className="group flex justify-between items-center p-3 rounded-xl cursor-pointer hover:bg-white/80 transition-colors"
                   >
-                    <p className="truncate text-sm text-gray-700">
+                    <p className="truncate text-sm text-slate-700">
                       {entry.text}
                     </p>
                     <button
                       onClick={(e) => handleDelete(e, entry.id)}
-                      className="ml-4 p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="ml-4 p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-100/80 opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label="Delete history item"
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -96,21 +96,22 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
                 ))}
               </ul>
             ) : (
-              <p className="text-center text-sm text-gray-500 py-4">
+              <p className="text-center text-sm text-slate-500 py-4">
                 未找到匹配的记录。
               </p>
             )}
           </div>
           {history.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-gray-200 flex justify-end">
+            <div className="mt-4 pt-3 border-t border-slate-200/60 flex justify-end">
               <button
                 onClick={() => {
                   onClear();
-                  setSearchTerm(''); // Also clear search term when clearing history
+                  setSearchTerm('');
                 }}
-                className="text-sm text-red-600 hover:text-red-800 transition-colors"
+                className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
               >
-                清空所有历史记录 🗑️
+                <TrashIcon className="w-4 h-4" />
+                清空所有历史记录
               </button>
             </div>
           )}

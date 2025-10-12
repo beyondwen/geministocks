@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ChartBarIcon } from './icons/Icons';
 
 interface Stock {
   name: string;
@@ -62,20 +63,26 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
   }, []);
 
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
+    <div className="glass-refined p-6 animate-reveal-up">
       <form onSubmit={handleSubmit}>
-        <label htmlFor="stock-input" className="block text-lg font-medium text-gray-700 mb-3">
-          输入股票代码或名称进行分析 📈
-        </label>
-        <p id="stock-input-description" className="text-sm text-gray-600 mb-4">
-          例如: "AAPL", "苹果公司", "00700.HK", "腾讯控股"。
-        </p>
+        <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 bg-gradient-to-r from-green-500 to-cyan-500 rounded-xl shadow-lg flex items-center justify-center">
+                <ChartBarIcon className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-cyan-500">个股深度分析</h3>
+              <p id="stock-input-description" className="text-sm text-slate-600">
+                例如: "AAPL", "苹果公司", "00700.HK", "腾讯控股"。
+              </p>
+            </div>
+        </div>
+        
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow w-full" ref={componentRef}>
             <input
               id="stock-input"
               type="text"
-              className="w-full bg-gray-50 border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+              className="w-full bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/80 transition-all duration-300 placeholder:text-slate-400"
               placeholder="输入股票代码或名称..."
               value={stockQuery}
               onChange={handleInputChange}
@@ -91,18 +98,17 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
               <ul
                 id="stock-suggestions"
                 role="listbox"
-                className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto animate-fade-in"
+                className="absolute z-10 w-full mt-2 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-fade-in"
               >
                 {filteredSuggestions.map((stock) => (
                   <li
                     key={stock.ticker}
                     role="option"
                     aria-selected="false"
-                    className="px-4 py-2 text-gray-800 cursor-pointer hover:bg-teal-100 transition-colors"
-                    // Use onMouseDown to prevent blur event from hiding suggestions before click is registered
+                    className="px-4 py-2 text-slate-800 cursor-pointer hover:bg-cyan-100/80 transition-colors"
                     onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(stock.name); }}
                   >
-                    {stock.name} <span className="text-gray-500 font-mono">{stock.ticker}</span>
+                    {stock.name} <span className="text-slate-500 font-mono">{stock.ticker}</span>
                   </li>
                 ))}
               </ul>
@@ -111,18 +117,19 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
           <button
             type="submit"
             disabled={isLoading || !stockQuery.trim()}
-            className="inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 border border-transparent text-base font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-teal-500 transform-gpu transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 whitespace-nowrap"
+            className="relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 bg-gradient-to-r from-green-500 to-cyan-500 text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg whitespace-nowrap"
           >
+             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
             {isLoading ? (
               <>
                 <svg aria-hidden="true" className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                分析中...
+                <span className="relative z-10">分析中...</span>
               </>
             ) : (
-              '分析个股'
+              <span className="relative z-10">分析个股</span>
             )}
           </button>
         </div>

@@ -30,19 +30,16 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-// FIX: Add `progressMessage` prop to allow custom loading messages.
 interface LoaderProps {
   progressMessage?: string;
 }
 
 const Loader: React.FC<LoaderProps> = ({ progressMessage }) => {
-    // Shuffled messages are created once via useMemo to avoid re-shuffling on re-renders
     const shuffledMessages = useMemo(() => shuffleArray(loadingMessages), []);
     
     const [messageIndex, setMessageIndex] = useState(0);
 
     useEffect(() => {
-        // Cycle through the shuffled messages at a slightly faster pace for engagement
         const interval = setInterval(() => {
             setMessageIndex(prevIndex => (prevIndex + 1) % shuffledMessages.length);
         }, 2200);
@@ -53,20 +50,18 @@ const Loader: React.FC<LoaderProps> = ({ progressMessage }) => {
     const currentMessage = progressMessage || shuffledMessages[messageIndex];
 
     return (
-        <div role="status" aria-live="polite" className="text-center p-8 bg-white/50 border border-gray-200 rounded-lg shadow-lg">
+        <div role="status" aria-live="polite" className="text-center p-8 glass-refined">
             <div className="flex justify-center items-center mb-4">
-                <svg aria-hidden="true" className="animate-spin h-10 w-10 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="animate-spin h-12 w-12 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
             </div>
-            <p className="text-lg font-semibold text-gray-800">正在分析中 🤖</p>
-            {/* Wrapper div to prevent layout shifts when message content changes */}
+            <p className="text-xl font-semibold text-slate-800">正在分析中 🤖</p>
             <div className="mt-2 h-6 flex items-center justify-center overflow-hidden">
-              {/* Using the message as a key forces React to re-mount the component, triggering the fade-in animation */}
               <p
                 key={currentMessage}
-                className="text-gray-600 animate-fade-in"
+                className="text-slate-600 animate-fade-in"
               >
                   {currentMessage}
               </p>

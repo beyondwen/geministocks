@@ -53,7 +53,7 @@ const NEWS_SOURCES: NewsSource[] = [
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '雪球': 'bg-blue-100 text-blue-800',
-  '奇客 Solidot': 'bg-gray-100 text-gray-800',
+  '奇客 Solidot': 'bg-slate-100 text-slate-800',
   '36氪': 'bg-cyan-100 text-cyan-800',
   'Hacker News': 'bg-orange-100 text-orange-800',
   '猫笔刀': 'bg-purple-100 text-purple-800',
@@ -76,10 +76,10 @@ const NewsSkeleton: React.FC = () => (
       {[...Array(4)].map((_, i) => (
         <div key={i} className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-3 py-1">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-slate-200/80 rounded w-3/4"></div>
             <div className="space-y-2">
-              <div className="h-3 bg-gray-200 rounded"></div>
-              <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-3 bg-slate-200/80 rounded"></div>
+              <div className="h-3 bg-slate-200/80 rounded w-5/6"></div>
             </div>
           </div>
         </div>
@@ -159,23 +159,23 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   }, [activeSourceId, sources]);
 
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
-      <div className="flex items-center mb-4">
-          <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-600">
-              <NewspaperIcon className="h-6 w-6"/>
-          </span>
-          <h2 className="text-xl font-semibold text-gray-800">最新动态</h2>
+    <div className="glass-refined bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-soft hover:bg-white/80 hover:border-slate-300/80 hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 h-full">
+      <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+              <NewspaperIcon className="w-5 h-5 text-white"/>
+          </div>
+          <h3 className="text-xl font-semibold text-gradient-primary">最新动态</h3>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-4">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200/60 pb-4 mb-4">
         {sources.map(source => (
           <button
             key={source.id}
             onClick={() => setActiveSourceId(source.id)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${
+            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
               activeSourceId === source.id
-                ? 'bg-cyan-600 text-white shadow'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md'
+                : 'bg-white/60 text-slate-700 hover:bg-white/80'
             }`}
           >
             {source.name}
@@ -186,34 +186,37 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
       {isLoading ? (
         <NewsSkeleton />
       ) : error ? (
-        <p className="text-red-600 text-center py-4">{error}</p>
+        <div className="text-center py-4">
+          <p className="text-red-600 bg-red-50/80 p-3 rounded-lg border border-red-200">{error}</p>
+        </div>
       ) : (
         <ul className="space-y-4">
           {articles.length > 0 ? articles.map((article, index) => (
-            <li key={`${article.link}-${index}`} className="group border-b border-gray-200 pb-4 last:border-b-0">
+            <li key={`${article.link}-${index}`} className="group border-b border-slate-200/60 pb-4 last:border-b-0">
               <div className="flex items-center gap-x-2 mb-1 flex-wrap">
-                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-800 hover:text-cyan-600 transition-colors">
+                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
                     {article.title}
                   </a>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-gray-100 text-gray-800'}`}>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-slate-100 text-slate-800'}`}>
                     {article.sourceName}
                   </span>
               </div>
               
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-slate-600 mt-1 leading-relaxed">
                 {truncateText(stripHtml(article.description), 140)}
               </p>
 
               <button
                 onClick={() => onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`)}
-                className="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform-gpu transition-all duration-200 opacity-80 group-hover:opacity-100 group-hover:shadow-md hover:scale-110 active:scale-100"
+                className="mt-3 relative inline-flex items-center gap-2 px-4 py-1.5 text-white text-xs font-medium rounded-full group overflow-hidden btn-premium opacity-80 group-hover:opacity-100 group-hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
               >
-                <SparklesIcon className="w-4 h-4 mr-1.5" />
-                一键分析
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                <SparklesIcon className="w-4 h-4" />
+                <span className="relative z-10">一键分析</span>
               </button>
             </li>
           )) : (
-            <p className="text-center text-gray-500 py-4">该来源暂无最新动态。</p>
+            <p className="text-center text-slate-500 py-4">该来源暂无最新动态。</p>
           )}
         </ul>
       )}
@@ -229,8 +232,8 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      borderColor: 'border-green-400',
-      iconBg: 'bg-green-100',
+      borderColor: 'border-green-400/80',
+      iconBg: 'bg-green-100/80',
       iconColor: 'text-green-600',
     },
     info: {
@@ -239,8 +242,8 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
         </svg>
       ),
-      borderColor: 'border-blue-400',
-      iconBg: 'bg-blue-100',
+      borderColor: 'border-blue-400/80',
+      iconBg: 'bg-blue-100/80',
       iconColor: 'text-blue-600',
     },
   };
@@ -250,13 +253,13 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
   return (
     <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
       <div
-        className={`flex items-center gap-x-2.5 max-w-sm px-4 py-2.5 rounded-xl border-l-4 shadow-2xl bg-white/70 backdrop-blur-lg animate-toast-in ${config.borderColor}`}
+        className={`flex items-center gap-x-2.5 max-w-sm px-4 py-2.5 rounded-2xl border-l-4 shadow-floating bg-white/80 backdrop-blur-lg animate-toast-in ${config.borderColor}`}
         role="alert"
       >
         <div className={`flex-shrink-0 rounded-full p-1 ${config.iconBg} ${config.iconColor}`}>
           {config.icon}
         </div>
-        <div className="text-sm font-medium text-gray-800">
+        <div className="text-sm font-medium text-slate-800">
           {message}
         </div>
       </div>
@@ -273,24 +276,18 @@ const ImageModal: React.FC<{ imageUrl: string; onClose: () => void; title: strin
     aria-labelledby="image-modal-title"
   >
     <div
-      className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center relative transform transition-all scale-95 opacity-0"
+      className="glass-refined bg-white/80 p-6 max-w-sm w-full text-center relative animate-reveal-scale"
       onClick={(e) => e.stopPropagation()}
-      style={{ animation: 'scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
     >
-      <style>{`
-        @keyframes scale-in {
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+        className="absolute top-3 right-3 p-2 rounded-full text-slate-500 hover:bg-slate-100/80 transition-colors"
         aria-label="关闭"
       >
         <XIcon className="w-6 h-6" />
       </button>
-      <h2 id="image-modal-title" className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
-      <div className="p-2 border-4 border-gray-100 rounded-lg inline-block">
+      <h2 id="image-modal-title" className="text-xl font-bold text-slate-800 mb-4">{title}</h2>
+      <div className="p-2 border-4 border-slate-100/80 rounded-lg inline-block">
         <img
           src={imageUrl}
           alt="公众号二维码"
@@ -303,12 +300,12 @@ const ImageModal: React.FC<{ imageUrl: string; onClose: () => void; title: strin
 
 const RadarIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 3v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M21 12h-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 21v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M3 12h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 3v2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M21 12h-2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 21v-2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3 12h2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M12 12L7 7" className="radar-sweep" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
 );
@@ -323,10 +320,10 @@ type TabButtonProps = {
 const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none ${
+    className={`flex-1 flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 ${
       isActive
-        ? 'border-cyan-500 text-cyan-600'
-        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        ? 'bg-white shadow-md text-slate-800'
+        : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
     }`}
     role="tab"
     aria-selected={isActive}
@@ -618,7 +615,7 @@ const MainPage: React.FC = () => {
         report: report,
       };
       const newHistory = [newEntry, ...stockHistory].slice(0, 20);
-      updateStockHistory(newHistory);
+      updateTopicHistory(newHistory);
 
     } catch (err) {
       console.error(err);
@@ -769,15 +766,13 @@ const MainPage: React.FC = () => {
     setIsRealtimeSearchEnabled(prev => {
       const newState = !prev;
       if (newState) {
-        setToast({ message: '实时搜索略贵，欢迎打赏支持', type: 'info' });
+        setToast({ message: '实时搜索已开启，结果更精准', type: 'info' });
       } else {
-        setToast({ message: '恭喜发财', type: 'success' });
+        setToast({ message: '实时搜索已关闭', type: 'success' });
       }
       return newState;
     });
   };
-
-  const formattedDate = new Date().toLocaleDateString('sv'); // 'sv' locale provides YYYY-MM-DD
 
   return (
     <>
@@ -791,61 +786,70 @@ const MainPage: React.FC = () => {
           />
       )}
       <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
-      <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-4xl mx-auto">
-          <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
-            <div className="order-2 sm:order-1 text-center sm:text-left">
-              <div className="flex justify-center sm:justify-start items-center gap-x-3">
-                <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
-                  超级挖掘机
-                </h1>
-                <RadarIcon className="w-10 h-10 text-cyan-500" />
-              </div>
-              <p className="text-gray-600 mt-2">
-                利用 AI 模型进行多维度投资分析 🚀
-                <br />
-                支持美股、A 股、港股、数字货币和实物期货市场
-              </p>
+      <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-6xl mx-auto">
+          <header className="text-center mb-12">
+            <div className="flex justify-center items-center gap-x-4 mb-4">
+              <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
+                超级挖掘机
+              </h1>
+              <RadarIcon className="w-12 h-12 text-blue-500" />
             </div>
-            <div className="order-1 sm:order-2 flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-x-4 mb-4 sm:mb-0">
-                <div className="text-right mb-2 sm:mb-0">
-                  <p className="text-sm text-gray-600 whitespace-nowrap">
-                    累计分析: <span className="font-bold text-cyan-600">{userAnalysisCount}</span> 次
-                  </p>
-                </div>
-                <div className="flex items-center gap-x-3">
-                  <a
-                    href="https://pplx.ai/mastergo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-x-1.5 px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all"
-                  >
-                    <AcademicCapIcon className="w-4 h-4" />
-                    领取 Perplexity 会员
-                  </a>
-                  <button
-                      onClick={() => setIsSupportModalOpen(true)}
-                      className="flex items-center gap-x-1.5 px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
-                      aria-haspopup="dialog"
-                  >
-                      <HeartIcon className="w-4 h-4" />
-                      支持作者
-                  </button>
-                </div>
-            </div>
+            <p className="text-slate-600 text-lg">
+                AI 驱动的智能投研利器，一键洞悉市场先机 🚀
+            </p>
+            <p className="text-sm text-slate-500 mt-2">
+              支持美股、A 股、港股、数字货币和实物期货市场
+            </p>
           </header>
+          
+          <div className="flex justify-center items-center gap-x-4 mb-6 -mt-6">
+            {/* Cumulative Analysis Counter */}
+            <div className="text-center">
+              <p className="text-xs text-slate-500">累计分析</p>
+              <p className="text-3xl font-bold text-blue-600 tracking-tight">{userAnalysisCount}</p>
+              <div className="w-8 h-px mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-0.5"></div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-10 w-px bg-slate-200/60"></div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-x-3">
+              <a
+                href="https://pplx.ai/mastergo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-xl group overflow-hidden btn-premium shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                <AcademicCapIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                <span className="relative z-10">Perplexity Pro</span>
+              </a>
+              <button
+                  onClick={() => setIsSupportModalOpen(true)}
+                  className="relative inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-xl group overflow-hidden btn-support shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+                  aria-haspopup="dialog"
+              >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                  <HeartIcon className="w-5 h-5" />
+                  <span className="relative z-10">支持作者</span>
+              </button>
+            </div>
+          </div>
+
 
           <main>
             {/* --- Realtime Search Toggle --- */}
-            <div className="mb-4 flex justify-center items-center gap-x-3">
-              <label htmlFor="realtime-search-toggle" className="text-sm font-medium text-gray-700">
+            <div className="mb-6 flex justify-center items-center gap-x-3">
+              <label htmlFor="realtime-search-toggle" className="text-sm font-medium text-slate-700">
                 实时搜索
               </label>
               <button
                 id="realtime-search-toggle"
                 onClick={handleRealtimeSearchToggle}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
-                  isRealtimeSearchEnabled ? 'bg-cyan-600' : 'bg-gray-200'
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 ${
+                  isRealtimeSearchEnabled ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-slate-200/80'
                 }`}
                 role="switch"
                 aria-checked={isRealtimeSearchEnabled}
@@ -860,8 +864,8 @@ const MainPage: React.FC = () => {
             </div>
             
             {/* --- Tabs Navigation --- */}
-            <div className="mb-6 bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-2">
-              <div className="flex justify-center border-b border-gray-200" role="tablist" aria-label="分析模式">
+            <div className="mb-8" role="tablist" aria-label="分析模式">
+              <div className="glass-refined p-2 flex justify-center items-center gap-x-2 max-w-md mx-auto">
                 <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                    <DocumentTextIcon className="w-5 h-5" />
                    <span>挖掘</span>
@@ -891,8 +895,9 @@ const MainPage: React.FC = () => {
                         {isLoading && <Loader />}
             
                         {error && (
-                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-                            <p>{error}</p>
+                          <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
+                            <p className="font-semibold">分析出错</p>
+                            <p className="text-sm mt-1">{error}</p>
                           </div>
                         )}
             
@@ -931,8 +936,9 @@ const MainPage: React.FC = () => {
                         {isStockLoading && <Loader />}
             
                         {stockError && (
-                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-                            <p>{stockError}</p>
+                          <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
+                            <p className="font-semibold">分析出错</p>
+                            <p className="text-sm mt-1">{stockError}</p>
                           </div>
                         )}
             
@@ -960,8 +966,9 @@ const MainPage: React.FC = () => {
                         {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}
 
                         {positionalWarfareError && (
-                          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-                            <p>{positionalWarfareError}</p>
+                          <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
+                            <p className="font-semibold">分析出错</p>
+                            <p className="text-sm mt-1">{positionalWarfareError}</p>
                           </div>
                         )}
                         
@@ -978,27 +985,27 @@ const MainPage: React.FC = () => {
             </div>
           </main>
           
-          <footer className="text-center mt-12 py-6 border-t border-gray-200">
+          <footer className="text-center mt-16 py-8 border-t border-slate-200/60">
             <BuffettIndicator />
             <div className="mb-4 flex justify-center items-center gap-x-4">
-              <Link to="/about" className="text-sm text-gray-500 hover:text-cyan-600 animated-underline transition-colors">
+              <Link to="/about" className="text-sm text-slate-500 hover:text-blue-600 animated-underline transition-colors">
                 使用说明
               </Link>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               由
               <a
                 href="https://t.me/lover_links"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-cyan-600 hover:text-cyan-700 animated-underline transition-colors"
+                className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
               >
                 僧僧
               </a>
               独立开发，欢迎关注“
               <button
                 onClick={() => setIsImageModalOpen(true)}
-                className="font-medium text-cyan-600 hover:text-cyan-700 animated-underline transition-colors"
+                className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
               >
                 小声读书
               </button>

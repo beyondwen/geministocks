@@ -15,19 +15,19 @@ interface HotStocksProps {
 const HotStockSkeleton: React.FC = () => (
   <div className="flex flex-wrap gap-3 animate-pulse">
     {[...Array(10)].map((_, i) => (
-      <div key={i} className="px-4 py-2 bg-gray-200 rounded-full w-28 h-9"></div>
+      <div key={i} className="px-4 py-2 bg-slate-200/80 rounded-full w-28 h-9"></div>
     ))}
   </div>
 );
 
 const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) => {
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
-      <div className="flex items-center mb-4">
-        <span className="p-2 bg-gray-200 rounded-full mr-3 text-red-500">
-          <FireIcon className="h-6 w-6" />
-        </span>
-        <h2 className="text-xl font-semibold text-gray-800">24小时热门股票</h2>
+    <div className="glass-refined p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-lg">
+          <FireIcon className="h-5 w-5 text-white" />
+        </div>
+        <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">24小时热门股票</h3>
       </div>
       {isLoading ? (
         <HotStockSkeleton />
@@ -37,9 +37,9 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
             <button
               key={stock.ticker}
               onClick={() => onSelect(stock.name)}
-              className="px-4 py-2 bg-gray-100 text-gray-800 text-sm font-medium rounded-full hover:bg-teal-100 hover:text-teal-800 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+              className="px-4 py-2 bg-white/60 text-slate-800 text-sm font-medium rounded-full hover:bg-white/80 hover:text-cyan-700 transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
             >
-              {stock.name} <span className="text-gray-500 font-mono">{stock.ticker}</span>
+              {stock.name} <span className="text-slate-500 font-mono">{stock.ticker}</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { SparklesIcon } from './icons/Icons';
 
 interface AnalysisInputProps {
   userInput: string;
@@ -9,17 +10,23 @@ interface AnalysisInputProps {
 
 const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading }) => {
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200 rounded-lg p-6 shadow-lg">
-      <label htmlFor="news-input" className="block text-lg font-medium text-gray-700 mb-3">
-        输入新闻、URL 内容或主题 ✍️
-      </label>
-      <p id="input-description" className="text-sm text-gray-600 mb-4">
-        请粘贴新闻全文，或描述一个财经主题（例如：“近期加息对科技板块的影响”）。
-      </p>
+    <div className="glass-refined p-6 animate-reveal-up">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg flex items-center justify-center">
+          <SparklesIcon className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold text-gradient-primary">输入分析内容</h3>
+          <p id="input-description" className="text-sm text-slate-600">
+            输入新闻、URL 内容或主题 ✍️
+          </p>
+        </div>
+      </div>
+      
       <textarea
         id="news-input"
         rows={8}
-        className="w-full bg-gray-50 border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+        className="w-full bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/80 transition-all duration-300 placeholder:text-slate-400"
         placeholder="请在此处粘贴您的内容..."
         value={userInput}
         onChange={(e) => setUserInput(e.target.value)}
@@ -31,18 +38,19 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
         <button
           onClick={onAnalyze}
           disabled={isLoading || !userInput.trim()}
-          className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-cyan-500 transform-gpu transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+          className="relative inline-flex items-center gap-2 px-8 py-3 btn-premium text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg"
         >
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
           {isLoading ? (
             <>
               <svg aria-hidden="true" className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              分析中... ⏳
+              <span className="relative z-10">分析中... ⏳</span>
             </>
           ) : (
-            '开始分析 ✨'
+            <span className="relative z-10">开始分析 ✨</span>
           )}
         </button>
       </div>

@@ -16,28 +16,28 @@ const AboutPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 animate-fade-in">
-      <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-8 space-y-8">
+    <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 animate-fade-in">
+      <div className="w-full max-w-3xl mx-auto glass-refined bg-white/60 p-8 sm:p-10 space-y-8">
         
-        <header className="text-center border-b pb-6">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500">
+        <header className="text-center border-b border-slate-200/60 pb-6">
+          <h1 className="text-4xl sm:text-5xl font-light text-gradient-primary">
             使用说明
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-slate-600 mt-2">
             您的智能投资研究助手
           </p>
         </header>
 
         <section aria-labelledby="app-purpose">
-          <h2 id="app-purpose" className="text-2xl font-bold text-gray-800 mb-4">应用宗旨</h2>
-          <p className="text-gray-700 leading-relaxed">
+          <h2 id="app-purpose" className="text-2xl font-semibold text-slate-900 mb-4">应用宗旨</h2>
+          <p className="text-slate-700 leading-relaxed">
             “超级挖掘机”是一款智能投研工具，旨在利用尖端的 AI 技术将复杂、非结构化的财经新闻、研究报告或市场主题，转化为结构清晰、多维度的投资策略分析报告。我们的目标是帮助投资者节省时间，快速抓住信息重点，发现潜在的投资机会，并理解其中的风险。
           </p>
         </section>
 
         <section aria-labelledby="app-features">
-          <h2 id="app-features" className="text-2xl font-bold text-gray-800 mb-4">核心功能</h2>
-          <ul className="list-disc list-inside space-y-3 text-gray-700">
+          <h2 id="app-features" className="text-2xl font-semibold text-slate-900 mb-4">核心功能</h2>
+          <ul className="list-disc list-inside space-y-3 text-slate-700">
             <li>
               <strong>四维一体分析法：</strong> 
               报告从宏观与政策、行业与产业链、公司基本面、市场情绪与催化剂四个维度进行全面分析，提供立体化的投资视角。
@@ -61,13 +61,14 @@ const AboutPage: React.FC = () => {
           </ul>
         </section>
         
-        <footer className="text-center pt-6 border-t">
+        <footer className="text-center pt-6 border-t border-slate-200/60">
             <Link 
                 to="/"
-                className="inline-flex items-center px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all"
+                className="relative inline-flex items-center gap-2 px-8 py-3 btn-premium text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95"
             >
-                <SparklesIcon className="w-5 h-5 mr-2" />
-                返回主页开始分析
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                <SparklesIcon className="w-5 h-5" />
+                <span className="relative z-10">返回主页开始分析</span>
             </Link>
         </footer>
 
