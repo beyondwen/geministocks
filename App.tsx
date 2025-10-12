@@ -796,43 +796,43 @@ const MainPage: React.FC = () => {
               <RadarIcon className="w-12 h-12 text-blue-500" />
             </div>
             <p className="text-slate-600 text-lg">
-                AI 驱动的智能投研利器，一键洞悉市场先机 🚀
+                智能分析热点，精准把握机会
             </p>
             <p className="text-sm text-slate-500 mt-2">
               支持美股、A 股、港股、数字货币和实物期货市场
             </p>
           </header>
           
-          <div className="flex justify-center items-center gap-x-4 mb-6 -mt-6">
+          <div className="flex justify-center items-center gap-x-3 mb-8 -mt-4">
             {/* Cumulative Analysis Counter */}
             <div className="text-center">
               <p className="text-xs text-slate-500">累计分析</p>
-              <p className="text-3xl font-bold text-blue-600 tracking-tight">{userAnalysisCount}</p>
-              <div className="w-8 h-px mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-0.5"></div>
+              <p className="text-2xl font-bold text-blue-600 tracking-tight">{userAnalysisCount}</p>
+              <div className="w-6 h-px mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-0.5"></div>
             </div>
 
             {/* Divider */}
-            <div className="h-10 w-px bg-slate-200/60"></div>
+            <div className="h-8 w-px bg-slate-200/60"></div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-x-3">
+            <div className="flex items-center gap-x-2">
               <a
                 href="https://pplx.ai/mastergo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-xl group overflow-hidden btn-premium shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+                className="relative inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg group overflow-hidden btn-premium shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                <AcademicCapIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                <AcademicCapIcon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                 <span className="relative z-10">Perplexity Pro</span>
               </a>
               <button
                   onClick={() => setIsSupportModalOpen(true)}
-                  className="relative inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-xl group overflow-hidden btn-support shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+                  className="relative inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg group overflow-hidden btn-support shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
                   aria-haspopup="dialog"
               >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                  <HeartIcon className="w-5 h-5" />
+                  <HeartIcon className="w-4 h-4" />
                   <span className="relative z-10">支持作者</span>
               </button>
             </div>
