@@ -614,7 +614,8 @@ const MainPage: React.FC = () => {
         report: report,
       };
       const newHistory = [newEntry, ...stockHistory].slice(0, 20);
-      updateTopicHistory(newHistory);
+      // FIX: Correctly call updateStockHistory instead of updateTopicHistory.
+      updateStockHistory(newHistory);
 
     } catch (err) {
       console.error(err);
