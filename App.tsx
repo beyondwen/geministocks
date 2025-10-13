@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { HashRouter, Routes, Route, Link } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis } from './services/geminiService';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
@@ -7,7 +7,7 @@ import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
 import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
-// import AdSenseAd from './components/AdSenseAd';
+import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
 import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon } from './components/icons/Icons';
@@ -15,7 +15,6 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import SupportModal from './components/SupportModal';
-import BuffettIndicator from './components/BuffettIndicator';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -914,7 +913,7 @@ const MainPage: React.FC = () => {
                           onAnalyze={handleNewsSelect} 
                           sources={NEWS_SOURCES}
                         />
-                        {/* <AdSenseAd /> */}
+                        <AdSenseAd />
                     </div>
                 )}
                 {activeTab === 'stock' && (
@@ -951,7 +950,7 @@ const MainPage: React.FC = () => {
                           onClear={handleClearStockHistory}
                         />
 
-                        {/* <AdSenseAd /> */}
+                        <AdSenseAd />
                     </div>
                 )}
                 {activeTab === 'positional' && (
@@ -986,12 +985,6 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-16 py-8 border-t border-slate-200/60">
-            <BuffettIndicator />
-            <div className="mb-4 flex justify-center items-center gap-x-4">
-              <Link to="/about" className="text-sm text-slate-500 hover:text-blue-600 animated-underline transition-colors">
-                使用说明
-              </Link>
-            </div>
             <p className="text-sm text-slate-500">
               由
               <a
