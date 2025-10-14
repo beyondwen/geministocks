@@ -14,7 +14,6 @@ import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
-import SupportModal from './components/SupportModal';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -362,7 +361,6 @@ const MainPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
-  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
@@ -785,7 +783,6 @@ const MainPage: React.FC = () => {
               title="欢迎关注“小声读书”"
           />
       )}
-      <SupportModal isOpen={isSupportModalOpen} onClose={() => setIsSupportModalOpen(false)} />
       <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-6xl mx-auto">
           <header className="text-center mb-12">
@@ -824,17 +821,8 @@ const MainPage: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
                 <AcademicCapIcon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
-                <span className="relative z-10">Perplexity Pro</span>
+                <span className="relative z-10">免费领取 Perplexity 会员</span>
               </a>
-              <button
-                  onClick={() => setIsSupportModalOpen(true)}
-                  className="relative inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg group overflow-hidden btn-support shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
-                  aria-haspopup="dialog"
-              >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                  <HeartIcon className="w-4 h-4" />
-                  <span className="relative z-10">支持作者</span>
-              </button>
             </div>
           </div>
 
