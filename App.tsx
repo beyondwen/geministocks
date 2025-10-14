@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, type AnalysisModel } from './services/geminiService';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
@@ -363,7 +363,7 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
+  const [activeModel, setActiveModel] = useState<AnalysisModel>('grok');
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -459,21 +459,6 @@ const MainPage: React.FC = () => {
     };
     fetchGlobalStats();
 
-    // Fetch dynamic hot stocks on initial load
-    const fetchHotStocks = async () => {
-      setIsHotStocksLoading(true);
-      try {
-        const stocks = await getHotStocksFromAI();
-        setHotStocks(stocks);
-      } catch (err) {
-        console.error("Failed to fetch hot stocks:", err);
-        // Fallback to a default list or show an error, here we just log it
-      } finally {
-        setIsHotStocksLoading(false);
-      }
-    };
-    fetchHotStocks();
-
     // Register the service worker for PWA capabilities.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -489,6 +474,23 @@ const MainPage: React.FC = () => {
       });
     }
   }, []);
+
+  // Fetch dynamic hot stocks when model changes
+  useEffect(() => {
+    const fetchHotStocks = async () => {
+      setIsHotStocksLoading(true);
+      try {
+        const stocks = await getHotStocksFromAI(activeModel);
+        setHotStocks(stocks);
+      } catch (err) {
+        console.error("Failed to fetch hot stocks:", err);
+        // Fallback to a default list or show an error, here we just log it
+      } finally {
+        setIsHotStocksLoading(false);
+      }
+    };
+    fetchHotStocks();
+  }, [activeModel]);
 
   // SEO: Set meta tags for the main page
   useEffect(() => {
@@ -558,7 +560,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getAnalysis(topic, isRealtimeSearchEnabled);
+      const report = await getAnalysis(topic, activeModel);
       setAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -579,7 +581,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory, isRealtimeSearchEnabled]);
+  }, [topicHistory, activeModel]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) {
@@ -600,7 +602,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getStockAnalysis(stockQueryToAnalyze, isRealtimeSearchEnabled);
+      const report = await getStockAnalysis(stockQueryToAnalyze, activeModel);
       setStockAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -622,7 +624,7 @@ const MainPage: React.FC = () => {
     } finally {
       setIsStockLoading(false);
     }
-  }, [stockHistory, isRealtimeSearchEnabled]);
+  }, [stockHistory, activeModel]);
 
   const handlePositionalWarfareAnalyze = useCallback(async () => {
     if (!leaderStockQuery.trim()) {
@@ -643,7 +645,7 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress, isRealtimeSearchEnabled);
+        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress, activeModel);
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
         incrementAnalysisCount();
@@ -665,7 +667,7 @@ const MainPage: React.FC = () => {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [leaderStockQuery, positionalWarfareHistory, isRealtimeSearchEnabled]);
+  }, [leaderStockQuery, positionalWarfareHistory, activeModel]);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -759,18 +761,6 @@ const MainPage: React.FC = () => {
         console.error("Failed to save to localStorage", err);
     }
   };
-  
-  const handleRealtimeSearchToggle = () => {
-    setIsRealtimeSearchEnabled(prev => {
-      const newState = !prev;
-      if (newState) {
-        setToast({ message: '实时搜索已开启，结果更精准', type: 'info' });
-      } else {
-        setToast({ message: '实时搜索已关闭', type: 'success' });
-      }
-      return newState;
-    });
-  };
 
   return (
     <>
@@ -828,27 +818,35 @@ const MainPage: React.FC = () => {
 
 
           <main>
-            {/* --- Realtime Search Toggle --- */}
-            <div className="mb-6 flex justify-center items-center gap-x-3">
-              <label htmlFor="realtime-search-toggle" className="text-sm font-medium text-slate-700">
-                实时搜索
-              </label>
-              <button
-                id="realtime-search-toggle"
-                onClick={handleRealtimeSearchToggle}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 ${
-                  isRealtimeSearchEnabled ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-slate-200/80'
-                }`}
-                role="switch"
-                aria-checked={isRealtimeSearchEnabled}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    isRealtimeSearchEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
+            {/* --- Analysis Controls --- */}
+            <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
+              {/* Model Switcher */}
+              <div className="flex items-center gap-x-3">
+                <label id="model-switcher-label" className="text-sm font-medium text-slate-700">
+                  分析模型
+                </label>
+                <div role="group" aria-labelledby="model-switcher-label" className="flex items-center gap-x-1.5 p-1 rounded-full bg-slate-200/60">
+                    <button
+                        onClick={() => setActiveModel('grok')}
+                        className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
+                            activeModel === 'grok' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        Grok
+                    </button>
+                    <button
+                        onClick={() => setActiveModel('gemini')}
+                        className={`inline-flex items-center gap-x-1.5 px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
+                            activeModel === 'gemini' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        <span>Gemini</span>
+                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-1.5 py-0.5 rounded-md leading-none">
+                          Pro
+                        </span>
+                    </button>
+                </div>
+              </div>
             </div>
             
             {/* --- Tabs Navigation --- */}

@@ -1,11 +1,21 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile } from '../types';
 
+export type AnalysisModel = 'grok' | 'gemini';
+
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
 const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtM2QyNWM4NzRjOWM4ODJhZjVmYTM3ZDA0MmMxMmY0ZjEyZGYxYzIyZWNjMzE5ZTUyMzdkM2E4ZjdmYjE2NTgxNg==';
 const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
+
+const getModelName = (model: AnalysisModel): string => {
+    if (model === 'gemini') {
+        return 'google/gemini-2.5-flash';
+    }
+    // Default to grok
+    return 'x-ai/grok-4-fast:online';
+};
 
 /**
  * A generic helper function to call the OpenRouter API.
@@ -67,8 +77,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 }
 
 
-export const getAnalysis = async (topic: string, isRealtime: boolean): Promise<AnalysisReport> => {
-    const modelName = isRealtime ? 'x-ai/grok-4-fast:online' : 'x-ai/grok-4-fast';
+export const getAnalysis = async (topic: string, model: AnalysisModel): Promise<AnalysisReport> => {
+    const modelName = getModelName(model);
     const systemInstruction = `
         You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
         Ensure your analysis is timely by incorporating the latest web information and market data.
@@ -144,8 +154,8 @@ export const getAnalysis = async (topic: string, isRealtime: boolean): Promise<A
     return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
-export const getStockAnalysis = async (stockQuery: string, isRealtime: boolean): Promise<StockAnalysisReport> => {
-    const modelName = isRealtime ? 'x-ai/grok-4-fast:online' : 'x-ai/grok-4-fast';
+export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel): Promise<StockAnalysisReport> => {
+    const modelName = getModelName(model);
     const systemInstruction = `
         You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
         It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
@@ -243,8 +253,8 @@ export const getStockAnalysis = async (stockQuery: string, isRealtime: boolean):
     return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
-export const getHotStocksFromAI = async (): Promise<{name: string; ticker: string}[]> => {
-    const modelName = 'x-ai/grok-4-fast';
+export const getHotStocksFromAI = async (model: AnalysisModel): Promise<{name: string; ticker: string}[]> => {
+    const modelName = getModelName(model);
     const systemInstruction = `
         You are a market analyst AI. Your task is to identify the 10 most discussed and trending stocks on the global market (including US, Hong Kong, and A-shares) within the last 24 hours based on current web data.
         You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
@@ -274,9 +284,9 @@ export const getHotStocksFromAI = async (): Promise<{name: string; ticker: strin
 export const getPositionalWarfareAnalysis = async (
     leaderStockQuery: string,
     onProgress: (message: string) => void,
-    isRealtime: boolean
+    model: AnalysisModel
 ): Promise<PositionalWarfareReport> => {
-    const modelName = isRealtime ? 'x-ai/grok-4-fast:online' : 'x-ai/grok-4-fast';
+    const modelName = getModelName(model);
 
     // Step 1: Deep Profile on the Leader Stock
     onProgress("正在锁定并深度剖析龙头... 🎯");

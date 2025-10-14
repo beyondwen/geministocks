@@ -18,14 +18,20 @@ const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
     ...new Set([...Object.keys(GLOSSARY), ...keywords.map(k => k.toLowerCase())]),
   ].filter(Boolean);
 
-  if (allTerms.length === 0) {
-    return <>{text}</>;
-  }
-  
-  // Build a regex that will find any of the terms, case-insensitively.
   const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${allTerms.map(escapeRegExp).join('|')})`, 'gi');
-  const parts = text.split(regex);
+  
+  // Regex to match URLs OR any of the terms.
+  const urlRegexPart = '(https?://\\S+)';
+  const termsRegexPart = allTerms.map(escapeRegExp).join('|');
+  
+  // We only build the terms part if there are terms to avoid an empty alternation group `()` which can cause issues.
+  const combinedRegex = termsRegexPart 
+    ? new RegExp(`(${urlRegexPart}|${termsRegexPart})`, 'gi')
+    : new RegExp(`(${urlRegexPart})`, 'gi');
+
+  const parts = text.split(combinedRegex);
+
+  const urlCheckRegex = /^https?:\/\//i;
 
   return (
     <>
@@ -33,12 +39,39 @@ const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
         if (!part) return null; // Don't render empty strings
 
         const lowerPart = part.toLowerCase();
-        const isKeyword = keywords.some(k => k.toLowerCase() === lowerPart);
-        const glossaryDefinition = GLOSSARY[lowerPart];
 
-        // Case 1: The part is a glossary term.
+        // 1. Check for URL
+        if (urlCheckRegex.test(part)) {
+          try {
+            // Trim trailing punctuation that might be part of the URL match
+            const cleanUrl = part.replace(/[.,;!?)]+$/, '');
+            const hostname = new URL(cleanUrl).hostname;
+            // Capture the trailing punctuation to append it after the link
+            const trailingPunctuation = part.substring(cleanUrl.length);
+            
+            return (
+              <React.Fragment key={index}>
+                <a 
+                  href={cleanUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-purple-600 animated-underline transition-colors"
+                >
+                  {hostname.replace(/^www\./, '')}
+                </a>
+                {trailingPunctuation}
+              </React.Fragment>
+            );
+          } catch (e) {
+            // Fallback for invalid URL that matched regex
+            return <span key={index}>{part}</span>;
+          }
+        }
+        
+        // 2. Check for Glossary Term
+        const glossaryDefinition = GLOSSARY[lowerPart];
         if (glossaryDefinition) {
-          // If it's also a keyword, wrap it in a <mark> tag inside the tooltip.
+          const isKeyword = keywords.some(k => k.toLowerCase() === lowerPart);
           const content = isKeyword ? (
             <mark className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
               {part}
@@ -51,16 +84,19 @@ const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
               {content}
             </Tooltip>
           );
-        } 
-        // Case 2: The part is just a keyword (and not a glossary term).
-        else if (isKeyword) {
+        }
+
+        // 3. Check for Keyword (that's not a glossary term)
+        const isKeyword = keywords.some(k => k.toLowerCase() === lowerPart);
+        if (isKeyword) {
           return (
             <mark key={index} className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
               {part}
             </mark>
           );
         }
-        // Case 3: The part is plain text.
+
+        // 4. Plain text
         return <span key={index}>{part}</span>;
       })}
     </>
