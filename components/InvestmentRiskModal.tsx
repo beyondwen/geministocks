@@ -13,7 +13,7 @@ const InvestmentRiskModal: React.FC<InvestmentRiskModalProps> = ({ onAccept }) =
       aria-labelledby="risk-modal-title"
     >
       <div
-        className="glass-refined bg-white/80 p-8 max-w-lg w-full mx-4 text-left relative animate-reveal-scale"
+        className="glass-refined bg-white/80 p-8 max-w-lg w-full mx-4 text-left relative animate-reveal-scale rounded-2xl shadow-floating"
       >
         <h2 id="risk-modal-title" className="text-2xl font-bold text-slate-800 mb-4 text-center border-b border-slate-200/60 pb-3">
           【投资风险警示】
