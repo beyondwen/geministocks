@@ -27,7 +27,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
   };
 
   const filteredHistory = history.filter(entry =>
-    entry.text.toLowerCase().includes(searchTerm.toLowerCase())
+    typeof entry.text === 'string' && entry.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

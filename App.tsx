@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, type AnalysisModel } from './services/geminiService';
@@ -460,6 +461,7 @@ const MainPage: React.FC = () => {
     fetchGlobalStats();
 
     // Register the service worker for PWA capabilities.
+    /*
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const swUrl = `${window.location.origin}/sw.js`;
@@ -473,6 +475,7 @@ const MainPage: React.FC = () => {
           });
       });
     }
+    */
   }, []);
 
   // Fetch dynamic hot stocks when model changes
@@ -840,9 +843,9 @@ const MainPage: React.FC = () => {
                             activeModel === 'gemini' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
-                        <span>Gemini</span>
+                        <span>Gemini 3.0</span>
                         <span className="text-[10px] font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-1.5 py-0.5 rounded-md leading-none">
-                          Pro
+                          beta
                         </span>
                     </button>
                 </div>

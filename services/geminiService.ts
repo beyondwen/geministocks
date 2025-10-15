@@ -14,7 +14,7 @@ const getModelName = (model: AnalysisModel): string => {
         return 'google/gemini-2.5-flash';
     }
     // Default to grok
-    return 'x-ai/grok-4-fast:online';
+    return 'x-ai/grok-4-fast';
 };
 
 /**
@@ -26,6 +26,27 @@ const getModelName = (model: AnalysisModel): string => {
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
     try {
+        // Construct the base request body.
+        const requestBody: {
+            model: string;
+            messages: { role: string; content: string }[];
+            response_format?: { type: string };
+        } = {
+            model: modelName,
+            messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: prompt }
+            ],
+        };
+
+        // Handle model-specific parameters for JSON output.
+        // The Grok model via OpenRouter has issues with `tool_choice` and `response_format`.
+        // By NOT setting either, we rely on its instruction-following capability from the system prompt.
+        if (!modelName.startsWith('x-ai/grok')) {
+            // For other models like Gemini, use the standard `response_format` for reliable JSON mode.
+            requestBody.response_format = { type: "json_object" };
+        }
+        
         const response = await fetch(API_BASE_URL, {
             method: 'POST',
             headers: {
@@ -35,13 +56,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
                 // FIX: URL-encode the site title to handle non-ASCII characters in HTTP headers.
                 'X-Title': encodeURIComponent(SITE_NAME),
             },
-            body: JSON.stringify({
-                model: modelName,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
-                ]
-            }),
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -57,7 +72,6 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         }
 
         // FIX: Clean the response to handle models that wrap JSON in Markdown or other text.
-        // This is a robust way to extract a JSON object from a string that might have extra text.
         let jsonString = content;
         const firstBraceIndex = jsonString.indexOf('{');
         const lastBraceIndex = jsonString.lastIndexOf('}');
@@ -66,8 +80,27 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             jsonString = jsonString.substring(firstBraceIndex, lastBraceIndex + 1);
         }
 
-        // The response content is a JSON string, so we need to parse it.
-        return JSON.parse(jsonString);
+        // FIX: The Gemini model can sometimes generate malformed JSON arrays by omitting commas
+        // between objects. This attempts to parse the JSON, and if it fails with a specific
+        // syntax error, it tries to fix the common comma issue and re-parses.
+        try {
+            return JSON.parse(jsonString);
+        } catch (e) {
+            if (e instanceof SyntaxError && (e.message.includes("Unexpected token") || e.message.includes("expected ',' or ']"))) {
+                console.warn("Initial JSON parsing failed with a suspected missing comma. Attempting to auto-correct.", e);
+                try {
+                    // This regex finds `}` followed by `{` (with optional whitespace) and inserts a comma.
+                    const correctedJson = jsonString.replace(/}(?=\s*\{)/g, '},');
+                    return JSON.parse(correctedJson);
+                } catch (correctionError) {
+                    console.error("Auto-correction of JSON failed. The error is likely more complex.", correctionError);
+                    // Re-throw the original error as it is more indicative of the initial problem.
+                    throw e;
+                }
+            }
+            // If the error is not the one we're trying to fix, re-throw it immediately.
+            throw e;
+        }
 
     } catch (error) {
         console.error('Error calling OpenRouter AI:', error);
