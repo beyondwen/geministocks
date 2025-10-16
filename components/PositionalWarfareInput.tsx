@@ -1,5 +1,6 @@
 import React from 'react';
 import { SwordsIcon } from './icons/Icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface PositionalWarfareInputProps {
   leaderStockQuery: string;
@@ -9,6 +10,7 @@ interface PositionalWarfareInputProps {
 }
 
 const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading }) => {
+  const { t } = useI18n();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAnalyze();
@@ -22,9 +24,9 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
                 <SwordsIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">卡位战法分析</h3>
+              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">{t('positionalWarfareInput.title')}</h3>
               <p id="leader-stock-description" className="text-sm text-slate-600">
-                寻找同板块中有潜力的“补涨龙”或“龙二” 🎯
+                {t('positionalWarfareInput.description')}
               </p>
             </div>
         </div>
@@ -34,7 +36,7 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
               id="leader-stock-input"
               type="text"
               className="w-full flex-grow bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500/80 transition-all duration-300 placeholder:text-slate-400"
-              placeholder="例如: 英伟达, NVDA, 宁德时代..."
+              placeholder={t('positionalWarfareInput.placeholder')}
               value={leaderStockQuery}
               onChange={(e) => setLeaderStockQuery(e.target.value)}
               disabled={isLoading}
@@ -53,10 +55,10 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span className="relative z-10">分析中...</span>
+                  <span className="relative z-10">{t('analysisInput.buttonLoading')}</span>
                 </>
               ) : (
-                <span className="relative z-10">开始分析</span>
+                <span className="relative z-10">{t('positionalWarfareInput.button')}</span>
               )}
             </button>
         </div>

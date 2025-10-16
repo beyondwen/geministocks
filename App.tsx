@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, type AnalysisModel } from './services/geminiService';
@@ -16,6 +19,8 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { useI18n } from './hooks/useI18n';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -97,12 +102,13 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSourceId, setActiveSourceId] = useState<string>('36kr'); // Default to 36kr
+  const { t } = useI18n();
 
   useEffect(() => {
     const fetchNewsForSource = async () => {
       const source = sources.find(s => s.id === activeSourceId);
       if (!source) {
-        setError("所选新闻源未找到。");
+        setError(t('latestNews.errorNotFound'));
         setIsLoading(false);
         return;
       }
@@ -147,7 +153,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         console.error(`Failed to fetch from ${source.name}:`, errorMessage);
-        setError(`无法加载 “${source.name}” 的新闻。请稍后再试或选择其他来源。`);
+        setError(t('latestNews.errorLoad', { sourceName: source.name }));
         setArticles([]);
       } finally {
         setIsLoading(false);
@@ -155,7 +161,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
     };
 
     fetchNewsForSource();
-  }, [activeSourceId, sources]);
+  }, [activeSourceId, sources, t]);
 
   return (
     <div className="glass-refined bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-soft hover:bg-white/80 hover:border-slate-300/80 hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 h-full">
@@ -163,7 +169,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
           <div className="p-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl shadow-lg">
               <NewspaperIcon className="w-5 h-5 text-white"/>
           </div>
-          <h3 className="text-xl font-semibold text-gradient-primary">最新动态</h3>
+          <h3 className="text-xl font-semibold text-gradient-primary">{t('latestNews.title')}</h3>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-slate-200/60 pb-4 mb-4">
@@ -211,11 +217,11 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
                 <SparklesIcon className="w-4 h-4" />
-                <span className="relative z-10">一键分析</span>
+                <span className="relative z-10">{t('latestNews.analyzeButton')}</span>
               </button>
             </li>
           )) : (
-            <p className="text-center text-slate-500 py-4">该来源暂无最新动态。</p>
+            <p className="text-center text-slate-500 py-4">{t('latestNews.noNews')}</p>
           )}
         </ul>
       )}
@@ -332,6 +338,8 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
 );
 
 const MainPage: React.FC = () => {
+  const { t, locale } = useI18n();
+
   // State for Topic Analysis
   const [userInput, setUserInput] = useState<string>('');
   const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
@@ -478,12 +486,12 @@ const MainPage: React.FC = () => {
     */
   }, []);
 
-  // Fetch dynamic hot stocks when model changes
+  // Fetch dynamic hot stocks when model or language changes
   useEffect(() => {
     const fetchHotStocks = async () => {
       setIsHotStocksLoading(true);
       try {
-        const stocks = await getHotStocksFromAI(activeModel);
+        const stocks = await getHotStocksFromAI(activeModel, locale);
         setHotStocks(stocks);
       } catch (err) {
         console.error("Failed to fetch hot stocks:", err);
@@ -493,20 +501,23 @@ const MainPage: React.FC = () => {
       }
     };
     fetchHotStocks();
-  }, [activeModel]);
+  }, [activeModel, locale]);
 
-  // SEO: Set meta tags for the main page
+  // SEO: Set meta tags and html lang
   useEffect(() => {
-    const title = "超级挖掘机 | AI驱动的智能投研与股票分析利器";
-    const description = "利用Google Gemini AI，超级挖掘机能将任何财经新闻或主题一键转化为深度投资分析报告。覆盖宏观、产业链、基本面与市场情绪，助您精准挖掘A股、港股、美股的投资机会。";
-    
+    document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en-US';
+    const title = t('meta.title');
+    const description = t('meta.description');
+    const ogTitle = t('meta.ogTitle');
+    const ogDescription = t('meta.ogDescription');
+
     document.title = title;
     document.querySelector('meta[name="description"]')?.setAttribute('content', description);
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
-    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
-    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
-  }, []);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', ogTitle);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', ogDescription);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', ogTitle);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', ogDescription);
+  }, [locale, t]);
 
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
     setTopicHistory(newHistory);
@@ -546,12 +557,12 @@ const MainPage: React.FC = () => {
 
   const handleAnalyze = useCallback(async (topic: string) => {
     if (!topic.trim()) {
-      setError('分析主题为必填项。');
+      setError(t('errors.emptyTopic'));
       return;
     }
 
     if (checkRateLimit()) {
-      setError('您在过去一小时内的使用次数已达上限 (12次)。请稍后再试。');
+      setError(t('errors.rateLimit'));
       return;
     }
     
@@ -563,7 +574,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getAnalysis(topic, activeModel);
+      const report = await getAnalysis(topic, activeModel, locale);
       setAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -579,21 +590,21 @@ const MainPage: React.FC = () => {
 
     } catch (err) {
       console.error(err);
-      const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
+      const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
       setError(errorMessage);
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory, activeModel]);
+  }, [topicHistory, activeModel, locale, t]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) {
-      setStockError('股票代码或名称为必填项。');
+      setStockError(t('errors.emptyStock'));
       return;
     }
 
     if (checkRateLimit()) {
-        setStockError('您在过去一小时内的使用次数已达上限 (12次)。请稍后再试。');
+        setStockError(t('errors.rateLimit'));
         return;
     }
 
@@ -605,7 +616,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getStockAnalysis(stockQueryToAnalyze, activeModel);
+      const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
       setStockAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -617,26 +628,25 @@ const MainPage: React.FC = () => {
         report: report,
       };
       const newHistory = [newEntry, ...stockHistory].slice(0, 20);
-      // FIX: Correctly call updateStockHistory instead of updateTopicHistory.
       updateStockHistory(newHistory);
 
     } catch (err) {
       console.error(err);
-      const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
+      const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
       setStockError(errorMessage);
     } finally {
       setIsStockLoading(false);
     }
-  }, [stockHistory, activeModel]);
+  }, [stockHistory, activeModel, locale, t]);
 
   const handlePositionalWarfareAnalyze = useCallback(async () => {
     if (!leaderStockQuery.trim()) {
-        setPositionalWarfareError('龙头股票为必填项。');
+        setPositionalWarfareError(t('errors.emptyLeaderStock'));
         return;
     }
 
     if (checkRateLimit()) {
-        setPositionalWarfareError('您在过去一小时内的使用次数已达上限 (12次)。请稍后再试。');
+        setPositionalWarfareError(t('errors.rateLimit'));
         return;
     }
 
@@ -648,7 +658,7 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress, activeModel);
+        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress, activeModel, locale);
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
         incrementAnalysisCount();
@@ -664,13 +674,13 @@ const MainPage: React.FC = () => {
 
     } catch (err) {
         console.error(err);
-        const errorMessage = err instanceof Error ? `分析失败：${err.message} 😭` : '发生未知错误。🤯';
+        const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setPositionalWarfareError(errorMessage);
     } finally {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [leaderStockQuery, positionalWarfareHistory, activeModel]);
+  }, [leaderStockQuery, positionalWarfareHistory, activeModel, locale, t]);
 
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -773,30 +783,39 @@ const MainPage: React.FC = () => {
           <ImageModal
               imageUrl="https://youke1.picui.cn/s1/2025/10/02/68de9d3a88ef4.jpg"
               onClose={() => setIsImageModalOpen(false)}
-              title="欢迎关注“小声读书”"
+              title={t('imageModal.title')}
           />
       )}
       <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-6xl mx-auto">
           <header className="text-center mb-12">
-            <div className="flex justify-center items-center gap-x-4 mb-4">
-              <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
-                超级挖掘机
-              </h1>
-              <RadarIcon className="w-12 h-12 text-blue-500" />
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+                <LanguageSwitcher />
             </div>
-            <p className="text-slate-600 text-lg">
-                智能分析热点，精准把握机会
-            </p>
-            <p className="text-sm text-slate-500 mt-2">
-              支持美股、A 股、港股、数字货币和实物期货市场
+            
+            {/* Group title and subtitle for better vertical spacing and control */}
+            <div className="flex flex-col items-center gap-y-4">
+                <div className="flex justify-center items-center gap-x-4">
+                  <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
+                    {t('header.title')}
+                  </h1>
+                  <RadarIcon className="w-12 h-12 text-blue-500" />
+                </div>
+                <p className="text-slate-600 text-lg max-w-xl">
+                    {t('header.subtitle')}
+                </p>
+            </div>
+            
+            {/* Markets text with slightly more top margin to separate it from the main title block */}
+            <p className="text-sm text-slate-500 mt-4">
+              {t('header.markets')}
             </p>
           </header>
           
           <div className="flex justify-center items-center gap-x-3 mb-8 -mt-4">
             {/* Cumulative Analysis Counter */}
             <div className="text-center">
-              <p className="text-xs text-slate-500">累计分析</p>
+              <p className="text-xs text-slate-500">{t('stats.userAnalysisCount')}</p>
               <p className="text-2xl font-bold text-blue-600 tracking-tight">{userAnalysisCount}</p>
               <div className="w-6 h-px mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-0.5"></div>
             </div>
@@ -814,7 +833,7 @@ const MainPage: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
                 <AcademicCapIcon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
-                <span className="relative z-10">免费领取 Perplexity 会员</span>
+                <span className="relative z-10">{t('actions.getPerplexity')}</span>
               </a>
             </div>
           </div>
@@ -826,7 +845,7 @@ const MainPage: React.FC = () => {
               {/* Model Switcher */}
               <div className="flex items-center gap-x-3">
                 <label id="model-switcher-label" className="text-sm font-medium text-slate-700">
-                  分析模型
+                  {t('controls.model')}
                 </label>
                 <div role="group" aria-labelledby="model-switcher-label" className="flex items-center gap-x-1.5 p-1 rounded-full bg-slate-200/60">
                     <button
@@ -835,7 +854,7 @@ const MainPage: React.FC = () => {
                             activeModel === 'grok' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
-                        Grok
+                        {t('controls.grok')}
                     </button>
                     <button
                         onClick={() => setActiveModel('gemini')}
@@ -843,9 +862,9 @@ const MainPage: React.FC = () => {
                             activeModel === 'gemini' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
-                        <span>Gemini 3.0</span>
+                        <span>{t('controls.gemini')}</span>
                         <span className="text-[10px] font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-1.5 py-0.5 rounded-md leading-none">
-                          beta
+                          {t('controls.beta')}
                         </span>
                     </button>
                 </div>
@@ -857,15 +876,15 @@ const MainPage: React.FC = () => {
               <div className="glass-refined p-2 flex justify-center items-center gap-x-2 max-w-md mx-auto">
                 <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                    <DocumentTextIcon className="w-5 h-5" />
-                   <span>挖掘</span>
+                   <span>{t('tabs.topic')}</span>
                 </TabButton>
                 <TabButton isActive={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
                   <ChartBarIcon className="w-5 h-5" />
-                  <span>个股</span>
+                  <span>{t('tabs.stock')}</span>
                 </TabButton>
                 <TabButton isActive={activeTab === 'positional'} onClick={() => setActiveTab('positional')}>
                   <SwordsIcon className="w-5 h-5" />
-                  <span>卡位</span>
+                  <span>{t('tabs.positional')}</span>
                 </TabButton>
               </div>
             </div>
@@ -885,7 +904,7 @@ const MainPage: React.FC = () => {
             
                         {error && (
                           <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
-                            <p className="font-semibold">分析出错</p>
+                            <p className="font-semibold">{t('errors.title')}</p>
                             <p className="text-sm mt-1">{error}</p>
                           </div>
                         )}
@@ -899,10 +918,10 @@ const MainPage: React.FC = () => {
                           onClear={handleClearTopicHistory}
                         />
 
-                        <LatestNews 
+                        {locale === 'zh' && <LatestNews 
                           onAnalyze={handleNewsSelect} 
                           sources={NEWS_SOURCES}
-                        />
+                        />}
                         <AdSenseAd />
                     </div>
                 )}
@@ -926,7 +945,7 @@ const MainPage: React.FC = () => {
             
                         {stockError && (
                           <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
-                            <p className="font-semibold">分析出错</p>
+                            <p className="font-semibold">{t('errors.title')}</p>
                             <p className="text-sm mt-1">{stockError}</p>
                           </div>
                         )}
@@ -956,7 +975,7 @@ const MainPage: React.FC = () => {
 
                         {positionalWarfareError && (
                           <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
-                            <p className="font-semibold">分析出错</p>
+                            <p className="font-semibold">{t('errors.title')}</p>
                             <p className="text-sm mt-1">{positionalWarfareError}</p>
                           </div>
                         )}
@@ -976,23 +995,23 @@ const MainPage: React.FC = () => {
           
           <footer className="text-center mt-16 py-8 border-t border-slate-200/60">
             <p className="text-sm text-slate-500">
-              由
+              {t('footer.developedBy')}&nbsp;
               <a
                 href="https://t.me/lover_links"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
               >
-                僧僧
+                {t('footer.developerName')}
               </a>
-              独立开发，欢迎关注“
+              {t('footer.followUs')}
               <button
                 onClick={() => setIsImageModalOpen(true)}
                 className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
               >
-                小声读书
+                {t('footer.accountName')}
               </button>
-              ”公众号
+              {t('footer.endText')}
             </p>
           </footer>
         </div>

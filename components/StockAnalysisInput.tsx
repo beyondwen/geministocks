@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChartBarIcon } from './icons/Icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface Stock {
   name: string;
@@ -15,6 +16,7 @@ interface StockAnalysisInputProps {
 }
 
 const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions }) => {
+  const { t } = useI18n();
   const [filteredSuggestions, setFilteredSuggestions] = useState<Stock[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
@@ -70,9 +72,9 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
                 <ChartBarIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-cyan-500">个股深度分析</h3>
+              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-cyan-500">{t('stockAnalysisInput.title')}</h3>
               <p id="stock-input-description" className="text-sm text-slate-600">
-                例如: "AAPL", "苹果公司", "00700.HK", "腾讯控股"。
+                {t('stockAnalysisInput.description')}
               </p>
             </div>
         </div>
@@ -83,7 +85,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
               id="stock-input"
               type="text"
               className="w-full bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/80 transition-all duration-300 placeholder:text-slate-400"
-              placeholder="输入股票代码或名称..."
+              placeholder={t('stockAnalysisInput.placeholder')}
               value={stockQuery}
               onChange={handleInputChange}
               onFocus={handleInputChange} // Show suggestions on focus as well
@@ -126,10 +128,10 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span className="relative z-10">分析中...</span>
+                <span className="relative z-10">{t('analysisInput.buttonLoading')}</span>
               </>
             ) : (
-              <span className="relative z-10">分析个股</span>
+              <span className="relative z-10">{t('stockAnalysisInput.button')}</span>
             )}
           </button>
         </div>

@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "title": "Super Digger | AI-Powered Investment Research & Stock Analysis Tool",
+    "description": "Using Google Gemini AI, Super Digger instantly transforms any financial news or topic into an in-depth investment analysis report. Covering macro, industry chain, fundamentals, and market sentiment to help you find opportunities in US, HK, and A-share markets.",
+    "ogTitle": "Super Digger | AI-Powered Investment Research & Stock Analysis Tool",
+    "ogDescription": "Using Google Gemini AI, Super Digger instantly transforms any financial news or topic into an in-depth investment analysis report. Covering macro, industry chain, fundamentals, and market sentiment to help you find opportunities in US, HK, and A-share markets."
+  },
+  "header": {
+    "title": "Super Digger",
+    "subtitle": "Intelligently analyze hotspots, accurately seize opportunities",
+    "markets": "Supports US, A-share, HK stocks, crypto, and commodity futures markets"
+  },
+  "stats": {
+    "userAnalysisCount": "Analyses"
+  },
+  "actions": {
+    "getPerplexity": "Get Perplexity Pro for Free"
+  },
+  "controls": {
+    "model": "Analysis Model",
+    "grok": "Grok",
+    "gemini": "Gemini 3.0",
+    "beta": "beta"
+  },
+  "tabs": {
+    "topic": "Dig",
+    "stock": "Stock",
+    "positional": "Positional"
+  },
+  "errors": {
+    "title": "Analysis Error",
+    "emptyTopic": "Analysis topic is required.",
+    "rateLimit": "You have reached the usage limit for the past hour (12 times). Please try again later.",
+    "analysisFailed": "Analysis failed: {{message}} 😭",
+    "unknownError": "An unknown error occurred. 🤯",
+    "emptyStock": "Stock ticker or name is required.",
+    "emptyLeaderStock": "Leader stock is required."
+  },
+  "footer": {
+    "developedBy": "Independently developed by",
+    "developerName": "Sengseng",
+    "followUs": ", feel free to follow the official account \"",
+    "accountName": "Xiaosheng Dushu",
+    "accountNameEn": "Xiaosheng Dushu",
+    "endText": "\""
+  },
+  "imageModal": {
+    "title": "Welcome to follow \"Xiaosheng Dushu\""
+  },
+  "riskModal": {
+    "title": "【Investment Risk Warning】",
+    "line1": "The stock market is risky, and investment requires caution.",
+    "line2": "This platform only provides information display and does not constitute any investment advice.",
+    "line3": "Investors should make independent judgments and bear investment risks.",
+    "line4": "By continuing to use this service, you acknowledge that you have fully understood and accepted the above risk warnings.",
+    "acceptButton": "I Understand the Risks"
+  },
+  "languageSwitcher": {
+    "label": "Select language"
+  },
+  "latestNews": {
+    "title": "Latest News",
+    "analyzeButton": "One-Click Analysis",
+    "errorNotFound": "The selected news source was not found.",
+    "errorLoad": "Failed to load news from \"{{sourceName}}\". Please try again later or select another source.",
+    "noNews": "No recent news from this source."
+  },
+  "loader": {
+    "analyzing": "Analyzing...",
+    "messages": [
+      "Initializing analysis engine... ⚙️",
+      "Connecting to AI for deep insights... 🧠",
+      "Cross-validating data sources... 📊",
+      "Applying quantitative models... 🧮",
+      "Scanning for market anomaly signals... 📡",
+      "Assessing geopolitical risks... 🗺️",
+      "Simulating future cash flows... 💰",
+      "Building multi-dimensional analysis framework... 🏗️",
+      "Parsing latest financial report data... 📄",
+      "Analyzing macroeconomic factors... 🌍",
+      "Mapping the industry chain... 🔗",
+      "Evaluating company core fundamentals... 🧾",
+      "Gauging current market sentiment... 🎭",
+      "AI is in deep thought... 🤔",
+      "Generating investment strategies... 📈",
+      "Finalizing stock recommendations... ✅"
+    ]
+  },
+  "analysisInput": {
+    "title": "Enter Content for Analysis",
+    "description": "Enter news, URL content, or a topic ✍️",
+    "placeholder": "Please paste your content here...",
+    "button": "Start Analysis ✨",
+    "buttonLoading": "Analyzing... ⏳"
+  },
+  "analysisHistory": {
+    "title": "Analysis History",
+    "searchPlaceholder": "Search history...",
+    "noResults": "No matching records found.",
+    "clearAll": "Clear All History",
+    "deleteLabel": "Delete history item"
+  },
+  "analysisResult": {
+    "exportPDF": "Export PDF",
+    "exportImage": "Export Image",
+    "exporting": "Exporting...",
+    "exportError": "Failed to export image. Please try again later.",
+    "preparingPDF": "Preparing to export...",
+    "pdfSubtext": "The print preview window is about to open",
+    "reportTitle": "Multi-dimensional Investment Analysis Report",
+    "source": "Analysis Source",
+    "summaryTitle": "Overall Summary",
+    "takeawaysTitle": "Key Takeaways",
+    "macroTitle": "Macro & Policy",
+    "sentimentTitle": "Market Sentiment & Catalysts",
+    "sentimentLabel": "Sentiment Assessment:",
+    "industryChainTitle": "Industry & Supply Chain",
+    "fundamentalsTitle": "Company Fundamentals",
+    "marketSizeTitle": "Market Size & Application Outlook",
+    "strategyTitle": "Investment Strategy",
+    "strategyLogic": "Core Investment Logic:",
+    "strategySuggestion": "Strategy Suggestion:",
+    "strategyRisks": "Potential Risks:",
+    "allocationTitle": "Allocation Cadence & Outlook",
+    "associationTitle": "Association Analysis Graph",
+    "sourcesTitle": "Reference Sources",
+    "footer": "This report was generated by 'Super Digger'",
+    "disclaimer": "Investment is risky, make decisions with caution",
+    "noDataAvailable": "Data for this section is not available."
+  },
+  "scoreDisplay": {
+    "title": "Investment Attractiveness Score"
+  },
+  "sentiments": {
+    "Positive": "Positive",
+    "Neutral": "Neutral",
+    "Negative": "Negative"
+  },
+  "industryChain": {
+    "upstream": "Upstream ⬆️",
+    "midstream": "Midstream ↔️",
+    "downstream": "Downstream ⬇️",
+    "modalTitle": "Node Details",
+    "close": "Close details"
+  },
+  "associationGraph": {
+    "coreTopic": "Core Topic",
+    "relatedStocks": "Related Stocks",
+    "relatedTopics": "Related Topics",
+    "noAssociation": "No strong associations found for stocks or topics."
+  },
+  "tieredSuggestions": {
+    "core": "Tier 1: Core Holdings",
+    "satellite": "Tier 2: Strategic Satellites",
+    "watchlist": "Tier 3: Watchlist"
+  },
+  "stockAnalysisInput": {
+    "title": "In-depth Stock Analysis",
+    "description": "e.g., \"AAPL\", \"Apple Inc.\", \"00700.HK\", \"Tencent\".",
+    "placeholder": "Enter stock ticker or name...",
+    "button": "Analyze Stock"
+  },
+  "hotStocks": {
+    "title": "24h Hot Stocks"
+  },
+  "stockAnalysisResult": {
+    "reportTitle": "Stock Analysis Report 📊",
+    "generatedBy": "Generated by AI",
+    "companyProfile": "Company Profile",
+    "takeawaysTitle": "Key Takeaways",
+    "financialTrends": "Financial Trends",
+    "revenue": "Revenue",
+    "netIncome": "Net Income",
+    "noFinancialData": "No financial trend data available.",
+    "valuation": {
+      "title": "Valuation Analysis",
+      "targetPrice": "Target Price"
+    },
+    "investmentThesis": {
+      "title": "Investment Thesis",
+      "bull": "Bull Case 👍",
+      "bear": "Bear Case 👎"
+    },
+    "swot": {
+      "title": "SWOT Analysis",
+      "strengths": "Strengths",
+      "weaknesses": "Weaknesses",
+      "opportunities": "Opportunities",
+      "threats": "Threats"
+    },
+    "peerComparison": {
+      "title": "Peer Comparison",
+      "company": "Company",
+      "marketCap": "Market Cap",
+      "peRatio": "P/E",
+      "revenueGrowth": "Rev. Growth"
+    },
+    "sourcesTitle": "Reference Sources",
+    "footer": "This report was generated by Super Digger,",
+    "footerFollow": "follow the 'Xiaosheng Dushu' official account for more information",
+    "noDataAvailable": "Data for this section is not available."
+  },
+  "positionalWarfareInput": {
+    "title": "Positional Warfare Analysis",
+    "description": "Find potential \"catch-up\" stocks in the same sector 🎯",
+    "placeholder": "e.g., NVIDIA, NVDA, CATL...",
+    "button": "Start Analysis"
+  },
+  "positionalWarfareResult": {
+    "reportTitle": "Positional Warfare・In-depth Analysis Report ⚔️",
+    "subtitle": "Finding the next opportunity in the sector",
+    "summaryTitle": "Strategist's Summary",
+    "leaderTitle": "Leader Stock Profile",
+    "leaderSubtitle": "The benchmark for finding our \"catch-up\" targets",
+    "leaderLabel": "Leader 👑",
+    "marketCap": "Market Cap",
+    "peRatio": "P/E Ratio",
+    "revenueGrowth": "Revenue Growth",
+    "recentPerformance": "Recent Performance",
+    "followerTitle": "Potential Follower Candidate #{{index}}",
+    "dataPK": "Data PK Panel:",
+    "compareAnalysis": "Comparative Analysis (vs. Leader):",
+    "investmentThesis": "Investment Thesis (Positional Logic):",
+    "catalysts": "Potential Catalysts:",
+    "risks": "Core Risks:",
+    "scoreTitle": "Positioning Potential Score",
+    "viewDetails": "View Details",
+    "compareMetrics": "Compare Metrics",
+    "modalTitle": "Metric Comparison",
+    "closeComparison": "Close comparison",
+    "metric": "Metric",
+    "leader": "Leader 👑",
+    "follower": "Follower 🐲"
+  },
+  "aboutPage": {
+    "title": "User Guide",
+    "subtitle": "Your Intelligent Investment Research Assistant",
+    "purposeTitle": "Application Purpose",
+    "purposeText": "\"Super Digger\" is an intelligent investment research tool designed to transform complex, unstructured financial news, research reports, or market themes into clear, multi-dimensional investment strategy analysis reports using cutting-edge AI technology. Our goal is to help investors save time, quickly grasp key information, discover potential investment opportunities, and understand the associated risks.",
+    "featuresTitle": "Core Features",
+    "feature1": "Four-Dimensional Integrated Analysis: Reports provide a comprehensive investment perspective by analyzing from four dimensions: macro & policy, industry & supply chain, company fundamentals, and market sentiment & catalysts.",
+    "feature2": "Structured Report Output: AI analysis results are presented in a structured format, making the content clear and easy to understand, moving away from lengthy and complex texts.",
+    "feature3": "Data Visualization: Tools like industry chain diagrams and stock association graphs make data and relationships clear at a glance.",
+    "feature4": "History & Playback: Automatically saves your analysis history for easy review and comparison at any time.",
+    "feature5": "One-Click Export: Easily export complete analysis reports as high-fidelity images or PDF documents for sharing and saving.",
+    "backButton": "Back to Home for Analysis"
+  },
+  "stockCard": {
+    "relevancePrefix": "Relevance",
+    "viewDetails": "View Details",
+    "onchainStock": "On-chain Stock",
+    "onchainStockAria": "View on-chain stock for {{stockName}}",
+    "viewDetailsAria": "View details for {{stockName}}"
+  },
+  "relevance": {
+    "High": "High",
+    "Medium": "Medium",
+    "Low": "Low"
+  }
+}

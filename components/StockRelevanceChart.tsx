@@ -1,7 +1,9 @@
+
 import React from 'react';
 import type { StockTicker } from '../types';
 import { ExternalLinkIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
+import { useI18n } from '../hooks/useI18n';
 
 const generateStockLink = (stock: StockTicker): string => {
     const { ticker, market } = stock;
@@ -24,21 +26,22 @@ const generateStockLink = (stock: StockTicker): string => {
 };
 
 const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stock, keywords }) => {
+  const { t } = useI18n();
   const relevanceConfig = {
     High: {
-      label: '高',
+      label: t('relevance.High'),
       borderColor: 'border-green-500',
       bgColor: 'bg-green-100',
       textColor: 'text-green-800'
     },
     Medium: {
-      label: '中',
+      label: t('relevance.Medium'),
       borderColor: 'border-yellow-500',
       bgColor: 'bg-yellow-100',
       textColor: 'text-yellow-800'
     },
     Low: {
-      label: '低',
+      label: t('relevance.Low'),
       borderColor: 'border-red-500',
       bgColor: 'bg-red-100',
       textColor: 'text-red-800'
@@ -58,7 +61,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
             <p className="text-xs text-gray-500 font-mono">{stock.ticker} ({stock.market})</p>
           </div>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.bgColor} ${config.textColor} flex-shrink-0`}>
-            关联度: {config.label}
+            {t('stockCard.relevancePrefix')}: {config.label}
           </span>
         </div>
         <p className="text-sm text-gray-700 leading-relaxed">
@@ -72,9 +75,9 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center text-xs font-semibold text-cyan-600 hover:text-cyan-700 transition-colors"
-          aria-label={`查看 ${stock.name} 的详情`}
+          aria-label={t('stockCard.viewDetailsAria', { stockName: stock.name })}
         >
-          查看详情
+          {t('stockCard.viewDetails')}
           <ExternalLinkIcon className="h-3.5 w-3.5 ml-1" />
         </a>
       </div>

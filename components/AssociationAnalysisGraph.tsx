@@ -2,6 +2,7 @@ import React from 'react';
 import type { AssociationAnalysis, AssociationStockNode, AssociationTopicNode } from '../types';
 import { BuildingStorefrontIcon, LinkIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
+import { useI18n } from '../hooks/useI18n';
 
 const NodeCard: React.FC<{ node: AssociationStockNode | AssociationTopicNode; icon: React.ReactNode; }> = ({ node, icon }) => (
   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm w-full transition-transform hover:scale-105 hover:shadow-md">
@@ -22,6 +23,7 @@ interface AssociationAnalysisGraphProps {
 }
 
 const AssociationAnalysisGraph: React.FC<AssociationAnalysisGraphProps> = ({ analysis, originalTopic }) => {
+  const { t } = useI18n();
   const { relatedStocks, relatedTopics } = analysis;
 
   const truncateText = (text: string, length: number): string => {
@@ -32,7 +34,7 @@ const AssociationAnalysisGraph: React.FC<AssociationAnalysisGraphProps> = ({ ana
   const hasContent = (relatedStocks && relatedStocks.length > 0) || (relatedTopics && relatedTopics.length > 0);
 
   if (!hasContent) {
-    return <p className="text-center text-gray-500 text-sm">未发现强关联的股票或主题。</p>;
+    return <p className="text-center text-gray-500 text-sm">{t('associationGraph.noAssociation')}</p>;
   }
 
   return (
@@ -41,7 +43,7 @@ const AssociationAnalysisGraph: React.FC<AssociationAnalysisGraphProps> = ({ ana
       {/* Central Node */}
       <div className="relative z-10">
         <div className="bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold p-4 rounded-xl shadow-lg max-w-xs">
-          <p className="text-sm opacity-80">核心主题</p>
+          <p className="text-sm opacity-80">{t('associationGraph.coreTopic')}</p>
           <p className="text-lg" title={originalTopic}>{truncateText(originalTopic, 50)}</p>
         </div>
       </div>
@@ -52,7 +54,7 @@ const AssociationAnalysisGraph: React.FC<AssociationAnalysisGraphProps> = ({ ana
         {/* Related Stocks */}
         {relatedStocks && relatedStocks.length > 0 && (
           <div className="flex flex-col items-center gap-y-3 w-full md:w-1/2">
-            <h4 className="font-bold text-gray-700">关联股票</h4>
+            <h4 className="font-bold text-gray-700">{t('associationGraph.relatedStocks')}</h4>
             <div className="space-y-3 w-full max-w-sm">
               {relatedStocks.map((stock, index) => (
                 <NodeCard key={`stock-${index}`} node={stock} icon={<BuildingStorefrontIcon className="w-5 h-5" />} />
@@ -64,7 +66,7 @@ const AssociationAnalysisGraph: React.FC<AssociationAnalysisGraphProps> = ({ ana
         {/* Related Topics */}
         {relatedTopics && relatedTopics.length > 0 && (
           <div className="flex flex-col items-center gap-y-3 w-full md:w-1/2">
-            <h4 className="font-bold text-gray-700">关联主题</h4>
+            <h4 className="font-bold text-gray-700">{t('associationGraph.relatedTopics')}</h4>
             <div className="space-y-3 w-full max-w-sm">
               {relatedTopics.map((topic, index) => (
                 <NodeCard key={`topic-${index}`} node={topic} icon={<LinkIcon className="w-5 h-5" />} />

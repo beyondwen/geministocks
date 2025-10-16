@@ -1,5 +1,6 @@
 import React from 'react';
 import { FireIcon } from './icons/Icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface HotStock {
   name: string;
@@ -21,13 +22,15 @@ const HotStockSkeleton: React.FC = () => (
 );
 
 const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) => {
+  const { t } = useI18n();
+
   return (
     <div className="glass-refined p-6">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-lg">
           <FireIcon className="h-5 w-5 text-white" />
         </div>
-        <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">24小时热门股票</h3>
+        <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">{t('hotStocks.title')}</h3>
       </div>
       {isLoading ? (
         <HotStockSkeleton />

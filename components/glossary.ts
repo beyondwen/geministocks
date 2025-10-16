@@ -1,5 +1,6 @@
 // components/glossary.ts
-export const GLOSSARY: Record<string, string> = {
+
+const GLOSSARY_ZH: Record<string, string> = {
   '宏观经济': '指对整个经济体系的总量分析，包括国民收入、经济增长率、通货膨胀、失业率、利率等。',
   '产业链': '指从原材料采购、生产、加工、分销到最终消费者的整个链条，包括上游、中游和下游。',
   '基本面': '指对公司财务状况、盈利能力、管理水平、行业前景等内在价值的分析，是价值投资的基础。',
@@ -24,4 +25,36 @@ export const GLOSSARY: Record<string, string> = {
   '价值股': '指那些市场价格低于其内在价值（基本面）的股票，通常市盈率和市净率较低。',
   '量化交易': '利用计算机技术和数学模型去实现投资策略的过程，通过数据分析寻找投资机会。',
   '对冲基金': '采用各种交易策略（如多空仓、套利等）进行对冲、换位、套期、投机，以获取高额回报的投资基金。',
+};
+
+const GLOSSARY_EN: Record<string, string> = {
+  'macroeconomy': 'Analysis of the economy as a whole, including national income, growth rate, inflation, unemployment, and interest rates.',
+  'industry chain': 'The entire process from raw material procurement, production, processing, distribution to the final consumer, including upstream, midstream, and downstream.',
+  'fundamentals': 'Analysis of a company\'s intrinsic value, including financial condition, profitability, management, and industry prospects. It is the basis of value investing.',
+  'market sentiment': 'The general psychological expectation of investors about future price movements, which can be bullish, bearish, or neutral.',
+  'catalyst': 'A specific event or information that may trigger a significant price movement in an asset, such as a new product launch, policy change, or merger.',
+  'investment thesis': 'The core reasoning and analytical framework behind an investment decision.',
+  'risk warning': 'A statement about the various uncertain factors in an investment that could lead to losses.',
+  'a-share': 'Common stocks registered in mainland China, listed on the Shanghai or Shenzhen stock exchanges, and traded in RMB.',
+  'hong kong stock': 'Stocks listed on the Hong Kong Stock Exchange.',
+  'us stock': 'Stocks listed on stock exchanges in the United States, such as the NYSE or NASDAQ.',
+  'swot': 'A strategic analysis tool used to assess an organization\'s Strengths, Weaknesses, Opportunities, and Threats.',
+  'swot analysis': 'A strategic analysis tool used to assess an organization\'s Strengths, Weaknesses, Opportunities, and Threats.',
+  'esg': 'Stands for Environmental, Social, and Governance, which are standards for measuring the sustainability and social responsibility of a company.',
+  'p/e ratio': 'Also known as the Price-to-Earnings ratio, it is the ratio of a company\'s stock price to its earnings per share, often used to assess if a stock is overvalued or undervalued.',
+  'p/b ratio': 'Also known as the Price-to-Book ratio, it is the ratio of a company\'s stock price to its book value per share, used to compare a company\'s market value to its book value.',
+  'gross margin': 'The percentage of revenue that exceeds the cost of goods sold (COGS), calculated as: (Revenue - COGS) / Revenue. It reflects initial profitability.',
+  'net margin': 'The percentage of revenue remaining after all operating expenses, interest, taxes, and preferred stock dividends have been deducted from a company\'s total revenue. It measures final profitability.',
+  'cash flow': 'The total amount of money being transferred into and out of a business, especially as affecting liquidity, over a period of time.',
+  'moat': 'A sustainable competitive advantage that a company has that protects it from competitors, a term popularized by Warren Buffett.',
+  'blue-chip stock': 'Stock of a large, well-established, and financially sound company that has operated for many years.',
+  'growth stock': 'A stock of a company that generates substantial and sustainable positive cash flow and whose revenues and earnings are expected to increase at a faster rate than the average company in the same industry.',
+  'value stock': 'A stock that trades at a lower price compared to its fundamentals, such as earnings, sales, and book value.',
+  'quantitative trading': 'A type of market strategy that uses mathematical models and computer algorithms to make trading decisions.',
+  'hedge fund': 'A pooled investment fund that trades in relatively liquid assets and is able to make extensive use of more complex trading, portfolio-construction and risk management techniques to improve performance, such as short selling, leverage, and derivatives.',
+};
+
+export const GLOSSARIES = {
+  zh: GLOSSARY_ZH,
+  en: GLOSSARY_EN,
 };

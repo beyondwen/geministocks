@@ -1,9 +1,12 @@
+
+
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, RecentNewsItem, FinancialTrend, ResearchAnalysis } from '../types';
-import { DownloadIcon, BookmarkSquareIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, SpeakerWaveIcon, AcademicCapIcon } from './icons/Icons';
+import type { StockAnalysisReport, InvestmentScore, SWOT } from '../types';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
+import { useI18n } from '../hooks/useI18n';
 
 // --- SVG Icons (defined locally to minimize file changes) ---
 const BuildingOfficeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -18,387 +21,146 @@ const ChartBarIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 );
 const LightBulbIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3 7.5a7.478 7.478 0 01-4.242 0M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-);
-const ShieldExclamationIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-    </svg>
-);
-const UsersIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.663M12 12.031c-1.63 0-3.07.73-4.025 1.887M12 12.031c.64.043 1.282.082 1.94.121a5.964 5.964 0 013.913 1.152m-11.854.482a6.375 6.375 0 0011.964-4.663M4.5 12.031a9.37 9.37 0 019.375-9.375 9.37 9.37 0 019.375 9.375c0 4.135-2.693 7.62-6.375 8.92-2.124.762-4.383 1.15-6.75.981-2.5-1.5-4.5-4.5-4.5-7.844z" />
-    </svg>
-);
-const GlobeAltIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.184m-1.5.184a6.01 6.01 0 01.316-1.532m-.316 1.532l2.648-5.302A6.002 6.002 0 005.501 6.25a6 6 0 00-4.032 9.688 6 6 0 0010.533-3.611m-1.032 3.611a6 6 0 01-.316-1.532m0 0l2.648-5.302m-2.648 5.302a6.002 6.002 0 001.5-.184m-1.5.184a6.001 6.001 0 01.316-1.532m0 0l-2.648-5.302m.001-4.182a5.962 5.962 0 01-3.36 1.018 5.962 5.962 0 01-3.36-1.018" />
     </svg>
 );
 
-
-// --- Reusable Components ---
-const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
-    <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200 h-full">
-        <div className="flex items-center mb-4">
-            <span className="p-2 bg-gray-200 rounded-full mr-3 text-cyan-700">{icon}</span>
-            <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-        </div>
-        <div className="text-gray-700 space-y-3">{children}</div>
+const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
+  <div className={`glass-refined bg-white/40 backdrop-blur-md border border-slate-200/40 rounded-2xl p-6 shadow-soft h-full ${className}`}>
+    <div className="flex items-center gap-3 mb-6">
+      <div className="p-2 bg-gradient-to-r from-cyan-500 to-green-500 rounded-xl shadow-lg">
+        <span className="w-5 h-5 text-white block">{icon}</span>
+      </div>
+      <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-green-600">{title}</h3>
     </div>
+    <div className="text-slate-700 space-y-4 leading-relaxed">{children}</div>
+  </div>
 );
 
-const RiskIndicator: React.FC<{ level: 'High' | 'Medium' | 'Low' }> = ({ level }) => {
-    const config = {
-      High: { label: '高风险', color: 'bg-red-100 text-red-800 border-red-400' },
-      Medium: { label: '中等风险', color: 'bg-yellow-100 text-yellow-800 border-yellow-400' },
-      Low: { label: '低风险', color: 'bg-green-100 text-green-800 border-green-400' },
-    }[level] || { label: '中等风险', color: 'bg-yellow-100 text-yellow-800 border-yellow-400' };
-  
-    return <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full border ${config.color}`}><TextRenderer text={config.label} /></span>;
-};
-
-const ScoreDisplay: React.FC<{ scoreData: InvestmentScore, keywords: string[] }> = ({ scoreData, keywords }) => {
+const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) => {
+  const { t } = useI18n();
   const getScoreColor = (score: number) => {
-    if (score >= 75) return { text: 'text-green-600', bg: 'bg-green-100', border: 'border-green-500' };
-    if (score >= 50) return { text: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-500' };
-    return { text: 'text-red-600', bg: 'bg-red-100', border: 'border-red-500' };
+    if (score >= 75) return { text: 'text-green-600', bg: 'bg-green-50/80', border: 'border-green-200', accent: 'from-green-500 to-emerald-500' };
+    if (score >= 50) return { text: 'text-yellow-600', bg: 'bg-yellow-50/80', border: 'border-yellow-200', accent: 'from-yellow-500 to-orange-500' };
+    return { text: 'text-red-600', bg: 'bg-red-50/80', border: 'border-red-200', accent: 'from-red-500 to-red-600' };
   };
 
   const { score, reason } = scoreData;
-  const { text, bg, border } = getScoreColor(score);
+  const { text, bg, border, accent } = getScoreColor(score);
 
   return (
-    <div className={`p-4 rounded-lg shadow-sm border-l-4 ${border} ${bg} mb-6 col-span-1 md:col-span-2`}>
+    <div className={`glass-refined backdrop-blur-sm border-2 ${border} ${bg} rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center mb-2 sm:mb-0">
-          <SparklesIcon className={`w-6 h-6 mr-2 ${text}`} />
-          <h3 className="text-lg font-bold text-gray-800">投资吸引力评分</h3>
+        <div className="flex items-center mb-4 sm:mb-0">
+          <div className={`p-2 bg-gradient-to-r ${accent} rounded-xl shadow-lg mr-3`}>
+            <SparklesIcon className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="text-2xl font-light text-gradient-primary">{t('scoreDisplay.title')}</h3>
         </div>
         <div className="text-center sm:text-right">
-          <p className={`text-4xl font-extrabold ${text}`}>{score}<span className="text-xl font-medium">/100</span></p>
+          <div className="relative">
+            <p className={`text-5xl font-bold ${text} tracking-tight`}>
+              {score}
+              <span className="text-2xl font-medium opacity-70">/100</span>
+            </p>
+            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r ${accent} rounded-full opacity-60`}></div>
+          </div>
         </div>
       </div>
-      <p className="text-sm text-gray-700 mt-2 pl-1"><TextRenderer text={reason} keywords={keywords} /></p>
+      <div className="mt-4 pt-4 border-t border-slate-200/60">
+        <p className="text-sm text-slate-600 leading-relaxed"><TextRenderer text={reason} /></p>
+      </div>
     </div>
   );
 };
 
-const KeyTakeaways: React.FC<{ takeaways: string[], keywords: string[] }> = ({ takeaways, keywords }) => (
-    <div className="bg-white/60 p-6 rounded-lg shadow-md border border-gray-200 mb-6 col-span-1 md:col-span-2">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">核心摘要</h3>
-        <ul className="space-y-2">
-            {takeaways.map((item, index) => (
-                <li key={index} className="flex items-start">
-                    <CheckCircleIcon className="w-5 h-5 text-cyan-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><TextRenderer text={item} keywords={keywords} /></span>
-                </li>
-            ))}
-        </ul>
-    </div>
-);
-
-
-// --- Main Display Sections ---
-const ProfileSection: React.FC<{ profile: StockAnalysisReport['companyProfile'], keywords: string[] }> = ({ profile, keywords }) => (
-    <div className="col-span-1 md:col-span-2">
-        <Card title="公司概况" icon={<BuildingOfficeIcon className="w-6 h-6" />}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                    <p className="font-semibold text-gray-900">{profile.name}</p>
-                    <p className="text-gray-600">公司名称</p>
-                </div>
-                <div>
-                    <p className="font-semibold text-gray-900 font-mono">{profile.ticker}</p>
-                    <p className="text-gray-600">股票代码</p>
-                </div>
-                <div>
-                    <p className="font-semibold text-gray-900">{profile.exchange}</p>
-                    <p className="text-gray-600">交易所</p>
-                </div>
-                <div>
-                    <p className="font-semibold text-gray-900"><TextRenderer text={profile.sector} keywords={keywords} /></p>
-                    <p className="text-gray-600">行业板块</p>
-                </div>
-            </div>
-            <p className="text-sm leading-relaxed mt-4 pt-4 border-t border-gray-200"><TextRenderer text={profile.summary} keywords={keywords} /></p>
+const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => {
+    const { t } = useI18n();
+    return (
+        <Card title={t('stockAnalysisResult.takeawaysTitle')} icon={<CheckCircleIcon className="w-5 h-5"/>}>
+            <ul className="space-y-3">
+                {takeaways.map((item, index) => (
+                    <li key={index} className="flex items-start">
+                        <div className="mt-1 mr-3 w-1.5 h-1.5 bg-gradient-to-r from-cyan-500 to-green-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-slate-700"><TextRenderer text={item} /></span>
+                    </li>
+                ))}
+            </ul>
         </Card>
-    </div>
-);
-
-const FinancialTrendChart: React.FC<{ data: FinancialTrend[] }> = ({ data }) => {
-    const yAxisFormatter = (value: number) => new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value);
-  
-    return (
-      <div style={{ width: '100%', height: 300 }}>
-        <ResponsiveContainer>
-          <LineChart data={data} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-            <XAxis dataKey="year" stroke="#6b7280" />
-            <YAxis tickFormatter={yAxisFormatter} stroke="#6b7280" />
-            <Tooltip
-              formatter={(value: number) => yAxisFormatter(value)}
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(5px)',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.5rem',
-              }}
-            />
-            <Legend />
-            <Line type="monotone" dataKey="revenue" name="营收" stroke="#38bdf8" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-            <Line type="monotone" dataKey="netIncome" name="净利润" stroke="#34d399" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
     );
 };
 
-const ValuationSection: React.FC<{ valuation: ValuationAnalysis, keywords: string[] }> = ({ valuation, keywords }) => {
-    const judgmentConfig = {
-      undervalued: { label: '低估', color: 'bg-green-100 text-green-800 border-green-400' },
-      'fairly valued': { label: '合理', color: 'bg-yellow-100 text-yellow-800 border-yellow-400' },
-      overvalued: { label: '高估', color: 'bg-red-100 text-red-800 border-red-400' },
-    };
-    const config = judgmentConfig[valuation.judgment] || judgmentConfig['fairly valued'];
-  
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900">估值判断:</span>
-            <span className={`px-3 py-1 text-sm font-bold rounded-full border ${config.color}`}>{config.label}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900">目标价区间:</span>
-            <span className="px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md">{valuation.targetPriceRange}</span>
-          </div>
-        </div>
-        <div>
-          <h4 className="font-semibold text-gray-900 text-sm mb-1">分析方法:</h4>
-          <p className="text-sm pl-4 border-l-2 border-gray-300"><TextRenderer text={valuation.methodology} keywords={keywords} /></p>
-        </div>
-        <div>
-          <h4 className="font-semibold text-gray-900 text-sm mb-1">判断依据:</h4>
-          <p className="text-sm pl-4 border-l-2 border-cyan-400"><TextRenderer text={valuation.reasoning} keywords={keywords} /></p>
-        </div>
-      </div>
-    );
-};
+const FinancialTrendsChart: React.FC<{ data?: StockAnalysisReport['financialTrends'] }> = ({ data }) => {
+  const { t } = useI18n();
+  if (!data || data.length === 0) return <p className="text-center text-slate-500">{t('stockAnalysisResult.noFinancialData')}</p>;
 
-const AnalystRatingsSection: React.FC<{ analysis: ResearchAnalysis }> = ({ analysis }) => {
-  const { consensusRating, targetPriceSummary } = analysis;
-
-  if (!consensusRating && !targetPriceSummary) {
-    return null;
-  }
+  const formatNumber = (num: number) => {
+    if (Math.abs(num) > 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + 'B';
+    if (Math.abs(num) > 1_000_000) return (num / 1_000_000).toFixed(2) + 'M';
+    if (Math.abs(num) > 1_000) return (num / 1_000).toFixed(2) + 'K';
+    return num.toString();
+  };
 
   return (
-    <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-cyan-50 to-blue-100 p-6 rounded-lg shadow-md border border-cyan-200">
-        <div className="flex items-center mb-4">
-            <span className="p-2 bg-white rounded-full mr-3 text-cyan-700 shadow-sm"><AcademicCapIcon className="w-6 h-6" /></span>
-            <h3 className="text-xl font-bold text-gray-800">分析师评级 (近3个月)</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
-            {consensusRating && (
-                <div className="bg-white/70 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 font-semibold">综合评级</p>
-                    <p className="text-2xl font-extrabold text-cyan-700 mt-1">{consensusRating}</p>
-                </div>
-            )}
-            {targetPriceSummary && (
-                <div className="bg-white/70 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 font-semibold">综合目标价</p>
-                    <p className="text-2xl font-extrabold text-cyan-700 mt-1">{targetPriceSummary}</p>
-                </div>
-            )}
-        </div>
+    <ResponsiveContainer width="100%" height={300}>
+      <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+        <XAxis dataKey="year" stroke="#64748b" />
+        <YAxis yAxisId="left" stroke="#10b981" tickFormatter={formatNumber} />
+        <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" tickFormatter={formatNumber} />
+        <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(5px)', border: '1px solid #e2e8f0', borderRadius: '0.75rem' }} formatter={(value: number, name: string) => [formatNumber(value), t(`stockAnalysisResult.${name}`)]} />
+        <Legend />
+        <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name={t('stockAnalysisResult.revenue')} />
+        <Line yAxisId="right" type="monotone" dataKey="netIncome" stroke="#3b82f6" strokeWidth={2} name={t('stockAnalysisResult.netIncome')} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+};
+
+const SwotDisplay: React.FC<{ swot?: SWOT }> = ({ swot }) => {
+  const { t } = useI18n();
+  const { strengths = [], weaknesses = [], opportunities = [], threats = [] } = swot || {};
+
+  if (!strengths.length && !weaknesses.length && !opportunities.length && !threats.length) {
+    return <p className="text-center text-slate-500">{t('stockAnalysisResult.noDataAvailable')}</p>;
+  }
+
+  const sections = [
+    { title: t('stockAnalysisResult.swot.strengths'), items: strengths, icon: <CheckCircleIcon className="w-5 h-5 flex-shrink-0 text-green-500" /> },
+    { title: t('stockAnalysisResult.swot.weaknesses'), items: weaknesses, icon: <XCircleIcon className="w-5 h-5 flex-shrink-0 text-red-500" /> },
+    { title: t('stockAnalysisResult.swot.opportunities'), items: opportunities, icon: <SparklesIcon className="w-5 h-5 flex-shrink-0 text-blue-500" /> },
+    { title: t('stockAnalysisResult.swot.threats'), items: threats, icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 flex-shrink-0 text-orange-500"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg> },
+  ];
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {sections.map(section => (
+        section.items.length > 0 && (
+          <div key={section.title}>
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">{section.icon} {section.title}</h4>
+            <ul className="space-y-2 text-sm">
+              {section.items.map((item, index) => <li key={index} className="flex items-start"><span className="mr-2 mt-1 text-slate-400">&bull;</span><TextRenderer text={item} /></li>)}
+            </ul>
+          </div>
+        )
+      ))}
     </div>
   );
 };
-  
-const PeerComparisonSection: React.FC<{ peers: PeerCompetitor[] }> = ({ peers }) => (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left text-gray-700">
-        <thead className="text-xs text-gray-800 uppercase bg-gray-200/60">
-          <tr>
-            <th scope="col" className="px-4 py-3">公司</th>
-            <th scope="col" className="px-4 py-3">市值</th>
-            <th scope="col" className="px-4 py-3">市盈率 (PE)</th>
-            <th scope="col" className="px-4 py-3">营收增长</th>
-            <th scope="col" className="px-4 py-3">毛利率</th>
-          </tr>
-        </thead>
-        <tbody>
-          {peers.map((peer, index) => (
-            <tr key={index} className="bg-white/50 border-b border-gray-200 hover:bg-gray-100/70">
-              <th scope="row" className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-                {peer.name} <span className="font-mono text-gray-500">{peer.ticker}</span>
-              </th>
-              <td className="px-4 py-3">{peer.marketCap}</td>
-              <td className="px-4 py-3">{peer.peRatio}</td>
-              <td className="px-4 py-3">{peer.revenueGrowth}</td>
-              <td className="px-4 py-3">{peer.grossMargin}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-);
 
-const ResearchAnalysisSection: React.FC<{ analysis: ResearchAnalysis, keywords: string[] }> = ({ analysis, keywords }) => {
-    if (!analysis || !analysis.recentReports || analysis.recentReports.length === 0) {
-        return <p className="text-sm text-gray-500">最近3个月暂无机构研报。</p>;
-    }
-
-    const { recentReports } = analysis;
-
-    return (
-        <div className="space-y-4">
-            <h4 className="text-lg font-bold text-gray-800">最新研报摘要</h4>
-            <div className="space-y-4">
-                {recentReports.map((report, index) => (
-                    <div key={index} className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
-                        <h5 className="font-bold text-gray-900 mb-1"><TextRenderer text={report.title} keywords={keywords} /></h5>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
-                            <span><strong>机构:</strong> {report.source}</span>
-                            <span><strong>日期:</strong> {report.publishDate}</span>
-                            <span className="font-semibold text-gray-700"><strong>评级:</strong> <span className="text-orange-600">{report.rating}</span></span>
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed"><TextRenderer text={report.summary} keywords={keywords} /></p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const RecentNewsSection: React.FC<{ news: RecentNewsItem[], keywords: string[] }> = ({ news, keywords }) => {
-    const impactConfig = {
-      Positive: { label: '正面', color: 'bg-green-100 text-green-800' },
-      Neutral: { label: '中性', color: 'bg-yellow-100 text-yellow-800' },
-      Negative: { label: '负面', color: 'bg-red-100 text-red-800' },
-    };
-  
-    return (
-      <ul className="space-y-4">
-        {news.map((item, index) => (
-          <li key={index} className="border-b border-gray-200 pb-3 last:border-b-0">
-            <div className="flex justify-between items-start mb-1">
-              <h4 className="font-semibold text-gray-900">{item.title}</h4>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${impactConfig[item.impact]?.color || impactConfig.Neutral.color}`}>
-                {impactConfig[item.impact]?.label || '中性'}
-              </span>
-            </div>
-            <p className="text-sm"><TextRenderer text={item.summary} keywords={keywords} /></p>
-          </li>
-        ))}
-      </ul>
-    );
-};
-
-const SWOTSection: React.FC<{ swot: SWOT, keywords: string[] }> = ({ swot, keywords }) => (
-    <div className="col-span-1 md:col-span-2">
-        <Card title="SWOT 分析" icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                    <h4 className="font-bold text-green-800 mb-2">优势 (S)</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                        {swot.strengths.map((s, i) => <li key={i}><TextRenderer text={s} keywords={keywords} /></li>)}
-                    </ul>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                    <h4 className="font-bold text-red-800 mb-2">劣势 (W)</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                        {swot.weaknesses.map((w, i) => <li key={i}><TextRenderer text={w} keywords={keywords} /></li>)}
-                    </ul>
-                </div>
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <h4 className="font-bold text-blue-800 mb-2">机会 (O)</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                        {swot.opportunities.map((o, i) => <li key={i}><TextRenderer text={o} keywords={keywords} /></li>)}
-                    </ul>
-                </div>
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                    <h4 className="font-bold text-yellow-800 mb-2">威胁 (T)</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                        {swot.threats.map((t, i) => <li key={i}><TextRenderer text={t} keywords={keywords} /></li>)}
-                    </ul>
-                </div>
-            </div>
-        </Card>
-    </div>
-);
-
-const ThesisSection: React.FC<{ thesis: StockAnalysisReport['investmentThesis'], keywords: string[] }> = ({ thesis, keywords }) => (
-    <Card title="投资论点" icon={<LightBulbIcon className="w-6 h-6" />}>
-        <div>
-            <h4 className="font-bold text-gray-800 mb-1">看涨理由 (Bull) 👍</h4>
-            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bull} keywords={keywords} /></p>
-        </div>
-        <div className="mt-3">
-            <h4 className="font-bold text-gray-800 mb-1">看跌理由 (Bear) 👎</h4>
-            <p className="text-sm leading-relaxed"><TextRenderer text={thesis.bear} keywords={keywords} /></p>
-        </div>
-        <div className="mt-4 pt-4 border-t border-gray-200">
-            <h4 className="font-bold text-gray-800 mb-1">综合结论 🎯</h4>
-            <p className="text-sm font-semibold leading-relaxed"><TextRenderer text={thesis.conclusion} keywords={keywords} /></p>
-        </div>
-    </Card>
-);
-
-const RiskSection: React.FC<{ risk: StockAnalysisReport['riskAnalysis'], keywords: string[] }> = ({ risk, keywords }) => (
-    <div className="col-span-1 md:col-span-2">
-        <Card title="风险分析" icon={<ShieldExclamationIcon className="w-6 h-6" />}>
-            <div className="flex items-center gap-x-4 mb-3">
-                <h4 className="font-bold text-gray-800">综合风险评级:</h4>
-                <RiskIndicator level={risk.level} />
-            </div>
-            <p className="text-sm mb-3"><TextRenderer text={risk.description} keywords={keywords} /></p>
-            <div>
-                <h4 className="font-bold text-gray-800 mb-2">主要风险因素:</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                    {risk.factors.map((factor, i) => <li key={i}><TextRenderer text={factor} keywords={keywords} /></li>)}
-                </ul>
-            </div>
-        </Card>
-    </div>
-);
-
-const GovernanceSection: React.FC<{ governance: StockAnalysisReport['corporateGovernance'], keywords: string[] }> = ({ governance, keywords }) => (
-    <Card title="公司治理" icon={<UsersIcon className="w-6 h-6" />}>
-        <p className="text-sm leading-relaxed"><TextRenderer text={governance.summary} keywords={keywords} /></p>
-    </Card>
-);
-
-const ESGSection: React.FC<{ esg: StockAnalysisReport['esgRating'], keywords: string[] }> = ({ esg, keywords }) => (
-    <Card title="ESG 评级" icon={<GlobeAltIcon className="w-6 h-6" />}>
-        <div className="flex items-center gap-x-4 mb-3">
-            <h4 className="font-bold text-gray-800">综合评级:</h4>
-            <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-200 text-gray-800 rounded-md"><TextRenderer text={esg.rating} keywords={keywords} /></span>
-        </div>
-        <p className="text-sm leading-relaxed"><TextRenderer text={esg.summary} keywords={keywords} /></p>
-    </Card>
-);
-
-// --- Main Component ---
 interface StockAnalysisResultProps {
   report: StockAnalysisReport;
 }
 
 const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => {
+  const { t } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
   const keywords = useMemo(() => {
-    if (!report?.companyProfile) return [];
-    const { name, ticker } = report.companyProfile;
-    // Split name into potential keywords, e.g., "Apple Inc." -> ["Apple", "Inc."]
-    const nameParts = name.split(/\s+/);
-    return [...new Set([name, ticker, ...nameParts])].filter(Boolean);
+    if (!report) return [];
+    return [report.companyProfile?.name, report.companyProfile?.ticker].filter(Boolean);
   }, [report]);
 
   const handleExportImage = useCallback(() => {
@@ -408,165 +170,131 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
     toPng(exportRef.current, { cacheBust: true, pixelRatio: 2 })
       .then((dataUrl) => {
         const link = document.createElement('a');
-        link.download = `个股分析报告_${report.companyProfile.name}.png`;
+        const topic = report.companyProfile?.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '') || 'stock';
+        link.download = `Stock_Analysis_${topic}.png`;
         link.href = dataUrl;
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
       })
       .catch((err) => {
         console.error('Failed to export image:', err);
-        setExportError('导出图片失败。请稍后再试。');
+        setExportError(t('analysisResult.exportError'));
       })
       .finally(() => setIsExporting(false));
-  }, [report]);
-  
+  }, [report, t]);
+
   const handlePrint = useCallback(() => {
     setIsPreparingPdf(true);
-    // Using a short timeout allows the state to update and the preparing message to render
-    // before the blocking print dialog opens.
-    setTimeout(() => {
-      window.print();
-    }, 50);
+    setTimeout(() => window.print(), 50);
+  }, []);
+
+  useEffect(() => {
+    const handleAfterPrint = () => setIsPreparingPdf(false);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
   
-  useEffect(() => {
-    const handleAfterPrint = () => {
-      setIsPreparingPdf(false);
-    };
-
-    window.addEventListener('afterprint', handleAfterPrint);
-
-    return () => {
-      window.removeEventListener('afterprint', handleAfterPrint);
-    };
-  }, []);
+  const FallbackContent = <p className="text-slate-500 text-sm">{t('stockAnalysisResult.noDataAvailable')}</p>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-        {isPreparingPdf && (
-            <div className="no-print fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-                <div className="bg-white rounded-lg p-8 shadow-2xl text-center">
-                    <svg className="animate-spin h-10 w-10 text-teal-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p className="text-xl font-semibold text-gray-800">正在准备导出...</p>
-                    <p className="text-sm text-gray-600 mt-1">即将打开打印预览窗口</p>
-                </div>
-            </div>
-        )}
-
-        <div className="no-print flex justify-end gap-x-2">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all"
-              aria-label="导出为 PDF"
-            >
-                <DocumentArrowDownIcon className="-ml-1 mr-2 h-5 w-5" />
-                导出 PDF
-            </button>
-            <button
-              onClick={handleExportImage}
-              disabled={isExporting}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <DownloadIcon className="-ml-1 mr-2 h-5 w-5" />
-              {isExporting ? '正在导出...' : '导出图片'}
-            </button>
+    <div className="space-y-6 animate-reveal-scale">
+      {isPreparingPdf && (
+        <div className="no-print fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl p-8 shadow-floating text-center">
+             <svg className="animate-spin h-10 w-10 text-cyan-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p className="text-xl font-semibold text-slate-800">{t('analysisResult.preparingPDF')}</p>
+            <p className="text-sm text-slate-600 mt-1">{t('analysisResult.pdfSubtext')}</p>
+          </div>
         </div>
-        {exportError && <div role="alert" className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded text-center"><p>{exportError}</p></div>}
-        
-        <div ref={exportRef} className="printable-area p-4 sm:p-6 bg-gray-50 rounded-lg shadow-lg">
-            <div className="mb-6 pb-4 border-b border-gray-300">
-                <h2 className="text-3xl font-bold text-gray-900">个股分析报告 📊</h2>
-                <p className="text-gray-600">由 AI 生成</p>
-            </div>
+      )}
+
+      <div className="no-print relative flex justify-end gap-x-2">
+        <button onClick={handlePrint} className="inline-flex items-center gap-2 px-4 py-2 glass-refined bg-white/90 backdrop-blur-sm border-2 border-slate-200/60 text-slate-700 text-sm font-medium rounded-xl shadow-soft hover:bg-white hover:border-slate-300/80 hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5" aria-label={t('analysisResult.exportPDF')}><DocumentArrowDownIcon className="h-5 w-5" /><span>{t('analysisResult.exportPDF')}</span></button>
+        <button onClick={handleExportImage} disabled={isExporting} className="relative inline-flex items-center gap-2 px-4 py-2 btn-premium text-white text-sm font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed" aria-label={t('analysisResult.exportImage')}><div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div><DownloadIcon className="h-5 w-5" /><span className="relative z-10">{isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}</span></button>
+      </div>
+
+      {exportError && <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center"><p>{exportError}</p></div>}
+      
+      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-gradient-to-br from-slate-50/80 to-slate-100/80 rounded-3xl shadow-floating border border-white/80">
+        <header className="text-center mb-8 pb-6 border-b border-slate-200/60">
+          <h2 className="text-4xl font-light text-gradient-primary mb-2">{t('stockAnalysisResult.reportTitle')}</h2>
+          <p className="text-2xl font-semibold text-slate-800">{report.companyProfile?.name} ({report.companyProfile?.ticker})</p>
+        </header>
+
+        <div className="space-y-6">
+            {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
+            {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} />}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} keywords={keywords} />}
-                {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} keywords={keywords} />}
-                <ProfileSection profile={report.companyProfile} keywords={keywords} />
+                <Card title={t('stockAnalysisResult.companyProfile')} icon={<BuildingOfficeIcon className="w-5 h-5" />} className="md:col-span-2">
+                    {report.companyProfile ? (
+                        <>
+                            <p className="font-semibold">{report.companyProfile.sector} / {report.companyProfile.industry}</p>
+                            <TextRenderer text={report.companyProfile.summary} keywords={keywords} />
+                        </>
+                    ) : FallbackContent}
+                </Card>
                 
-                {report.financialTrends && report.financialTrends.length > 0 && (
-                    <div className="col-span-1 md:col-span-2">
-                        <Card title="财务趋势 (近3年)" icon={<ChartBarIcon className="w-6 h-6" />}>
-                            <FinancialTrendChart data={report.financialTrends} />
-                        </Card>
-                    </div>
-                )}
+                <Card title={t('stockAnalysisResult.financialTrends')} icon={<ChartBarIcon className="w-5 h-5" />} className="md:col-span-2">
+                    <FinancialTrendsChart data={report.financialTrends} />
+                </Card>
+
+                <Card title={t('stockAnalysisResult.valuation.title')} icon={<TagIcon className="w-5 h-5"/>}>
+                  {report.valuationAnalysis ? (
+                      <>
+                        <p className='text-center text-3xl font-bold text-cyan-700'>{report.valuationAnalysis.targetPriceRange}</p>
+                        <p className='text-center text-sm text-slate-500 -mt-2 mb-2'>{t('stockAnalysisResult.valuation.targetPrice')}</p>
+                        <TextRenderer text={report.valuationAnalysis.reasoning} keywords={keywords} />
+                      </>
+                  ) : FallbackContent}
+                </Card>
+
+                <Card title={t('stockAnalysisResult.investmentThesis.title')} icon={<LightBulbIcon className="w-5 h-5"/>}>
+                  {report.investmentThesis ? (
+                      <>
+                        <div>
+                          <h4 className="font-semibold text-green-700">{t('stockAnalysisResult.investmentThesis.bull')}</h4>
+                          <p className="text-sm"><TextRenderer text={report.investmentThesis.bull} keywords={keywords} /></p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-red-700">{t('stockAnalysisResult.investmentThesis.bear')}</h4>
+                          <p className="text-sm"><TextRenderer text={report.investmentThesis.bear} keywords={keywords} /></p>
+                        </div>
+                      </>
+                  ) : FallbackContent}
+                </Card>
                 
-                {report.valuationAnalysis && (
-                    <div className="col-span-1 md:col-span-2">
-                        <Card title="估值分析" icon={<TagIcon className="w-6 h-6" />}>
-                            <ValuationSection valuation={report.valuationAnalysis} keywords={keywords} />
-                        </Card>
-                    </div>
-                )}
+                <Card title={t('stockAnalysisResult.swot.title')} icon={<SparklesIcon className="w-5 h-5" />} className="md:col-span-2">
+                    <SwotDisplay swot={report.swotAnalysis} />
+                </Card>
+
+                <Card title={t('stockAnalysisResult.peerComparison.title')} icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.28a4.5 4.5 0 00-1.883-2.384-4.5 4.5 0 00-6.42 6.42a4.5 4.5 0 006.42 1.883A4.5 4.5 0 0010.5 18.72m-7.5-2.28a4.5 4.5 0 001.883-2.384m6.214 4.764a4.5 4.5 0 01-1.883 2.384m1.883-2.384a4.5 4.5 0 016.42-6.42 4.5 4.5 0 01-6.42-1.883a4.5 4.5 0 01-1.883 2.384m6.214-4.764a4.5 4.5 0 001.883 2.384m-1.883-2.384a4.5 4.5 0 00-6.42 6.42 4.5 4.5 0 006.42 1.883M10.5 18.72a9.094 9.094 0 013.741-.479 3 3 0 014.682-2.72m-7.5-2.28a4.5 4.5 0 011.883 2.384m-1.883 2.384a4.5 4.5 0 01-6.42-6.42 4.5 4.5 0 016.42-1.883m-1.883 2.384A4.5 4.5 0 015.25 10.5m1.883-2.384a4.5 4.5 0 016.42 6.42" /></svg>} className="md:col-span-2">
+                    {report.peerComparison && report.peerComparison.length > 0 ? (
+                      <div className="overflow-x-auto -mx-4">
+                          <table className="w-full text-sm text-left">
+                              <thead className="text-xs text-slate-700 uppercase bg-slate-200/50"><tr><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.company')}</th><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.marketCap')}</th><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.peRatio')}</th><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.revenueGrowth')}</th></tr></thead>
+                              <tbody>{report.peerComparison.map(p => <tr key={p.ticker} className="border-b border-slate-200/60">
+                                  <td className="px-4 py-2 font-medium">{p.name} ({p.ticker})</td><td className="px-4 py-2">{p.marketCap}</td><td className="px-4 py-2">{p.peRatio}</td><td className="px-4 py-2">{p.revenueGrowth}</td>
+                              </tr>)}</tbody>
+                          </table>
+                      </div>
+                    ) : FallbackContent}
+                </Card>
                 
-                {report.researchAnalysis && <AnalystRatingsSection analysis={report.researchAnalysis} />}
-
-                {report.peerComparison && report.peerComparison.length > 0 && (
-                     <div className="col-span-1 md:col-span-2">
-                        <Card title="同行对比" icon={<UsersIcon className="w-6 h-6" />}>
-                            <PeerComparisonSection peers={report.peerComparison} />
-                        </Card>
-                    </div>
-                )}
-                
-                {report.researchAnalysis && (
-                     <div className="col-span-1 md:col-span-2">
-                        <Card title="机构研报分析" icon={<AcademicCapIcon className="w-6 h-6" />}>
-                            <ResearchAnalysisSection analysis={report.researchAnalysis} keywords={keywords} />
-                        </Card>
-                    </div>
-                )}
-
-                <div className="col-span-1 md:col-span-2">
-                    <ThesisSection thesis={report.investmentThesis} keywords={keywords} />
-                </div>
-                
-                <SWOTSection swot={report.swotAnalysis} keywords={keywords} />
-
-                {report.recentNews && report.recentNews.length > 0 && (
-                    <div className="col-span-1 md:col-span-2">
-                       <Card title="近期动态" icon={<SpeakerWaveIcon className="w-6 h-6" />}>
-                           <RecentNewsSection news={report.recentNews} keywords={keywords} />
-                       </Card>
-                   </div>
-                )}
-
-                <GovernanceSection governance={report.corporateGovernance} keywords={keywords} />
-                <ESGSection esg={report.esgRating} keywords={keywords} />
-                <RiskSection risk={report.riskAnalysis} keywords={keywords} />
-
-                {report.sources && report.sources.length > 0 && (
-                    <div className="col-span-1 md:col-span-2">
-                        <Card title="参考来源" icon={<BookmarkSquareIcon className="w-6 h-6" />}>
-                            <ul className="list-disc list-inside space-y-2 text-sm">
-                                {report.sources.map((source, index) => (
-                                    <li key={index}>
-                                        <a
-                                            href={source.uri}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-cyan-600 hover:text-cyan-800 hover:underline transition-colors"
-                                            title={source.title}
-                                        >
-                                            {source.title}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </Card>
-                    </div>
-                )}
+                 {report.sources && report.sources.length > 0 && (
+                  <Card title={t('stockAnalysisResult.sourcesTitle')} icon={<DocumentArrowDownIcon className="w-5 h-5"/>} className="md:col-span-2">
+                      <ul className="list-disc list-inside space-y-2 text-sm">
+                          {report.sources.map((source, index) => <li key={index}><a href={source.uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-purple-600 hover:underline transition-colors animated-underline" title={source.title}>{source.title}</a></li>)}
+                      </ul>
+                  </Card>
+                 )}
             </div>
-            <footer className="text-center mt-8 pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500">
-                    本报告使用超级挖掘机分析生成，<br />欢迎关注“小声读书”公众号获取更多信息
-                </p>
-            </footer>
         </div>
+        <footer className="text-center mt-8 pt-4 border-t border-slate-200/60">
+          <p className="text-xs text-slate-500">
+            {t('stockAnalysisResult.footer')}<br />{t('stockAnalysisResult.footerFollow')}
+          </p>
+        </footer>
+      </div>
     </div>
   );
 };

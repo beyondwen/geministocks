@@ -1,6 +1,7 @@
 import React from 'react';
 import Tooltip from './Tooltip';
-import { GLOSSARY } from './glossary';
+import { GLOSSARIES } from './glossary';
+import { useI18n } from '../hooks/useI18n';
 
 interface TextRendererProps {
   text: string;
@@ -8,6 +9,9 @@ interface TextRendererProps {
 }
 
 const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
+  const { locale } = useI18n();
+  const GLOSSARY = GLOSSARIES[locale];
+  
   if (!text) {
     return null;
   }

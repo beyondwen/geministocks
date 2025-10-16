@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { IndustryChain, IndustryChainNode } from '../types';
 import { XIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
+import { useI18n } from '../hooks/useI18n';
 
 const NodeCard: React.FC<{ 
     node: IndustryChainNode; 
@@ -78,6 +79,7 @@ interface IndustryChainVizProps {
 
 const IndustryChainViz: React.FC<IndustryChainVizProps> = ({ chain }) => {
   const [selectedNode, setSelectedNode] = useState<IndustryChainNode | null>(null);
+  const { t } = useI18n();
 
   const handleNodeSelect = (node: IndustryChainNode) => {
     // Allow toggling selection by clicking the same node again
@@ -95,15 +97,15 @@ const IndustryChainViz: React.FC<IndustryChainVizProps> = ({ chain }) => {
   return (
     <div className="mt-4 font-sans">
         <div className="flex flex-col md:flex-row justify-center items-stretch">
-            {hasUpstream && <Branch title="上游 ⬆️" nodes={chain.upstream} color="blue" onNodeSelect={handleNodeSelect} selectedNode={selectedNode} />}
+            {hasUpstream && <Branch title={t('industryChain.upstream')} nodes={chain.upstream} color="blue" onNodeSelect={handleNodeSelect} selectedNode={selectedNode} />}
             
             {hasUpstream && hasMidstream && <ArrowConnector />}
 
-            {hasMidstream && <Branch title="中游 ↔️" nodes={chain.midstream} color="purple" onNodeSelect={handleNodeSelect} selectedNode={selectedNode} />}
+            {hasMidstream && <Branch title={t('industryChain.midstream')} nodes={chain.midstream} color="purple" onNodeSelect={handleNodeSelect} selectedNode={selectedNode} />}
 
             {hasMidstream && hasDownstream && <ArrowConnector />}
             
-            {hasDownstream && <Branch title="下游 ⬇️" nodes={chain.downstream} color="green" onNodeSelect={handleNodeSelect} selectedNode={selectedNode} />}
+            {hasDownstream && <Branch title={t('industryChain.downstream')} nodes={chain.downstream} color="green" onNodeSelect={handleNodeSelect} selectedNode={selectedNode} />}
         </div>
         
         {/* Detail View Panel */}
@@ -119,7 +121,7 @@ const IndustryChainViz: React.FC<IndustryChainVizProps> = ({ chain }) => {
                     <button 
                         onClick={() => setSelectedNode(null)}
                         className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
-                        aria-label="关闭详细信息"
+                        aria-label={t('industryChain.close')}
                     >
                         <XIcon className="w-5 h-5" />
                     </button>

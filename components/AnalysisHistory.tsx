@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ClockIcon, TrashIcon } from './icons/Icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface DisplayHistoryItem {
   id: number;
@@ -16,6 +17,7 @@ interface AnalysisHistoryProps {
 const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, onDelete, onClear }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useI18n();
 
   if (history.length === 0) {
     return null;
@@ -42,7 +44,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
           <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
             <ClockIcon className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gradient-primary">分析历史</h3>
+          <h3 className="text-xl font-semibold text-gradient-primary">{t('analysisHistory.title')}</h3>
         </div>
         <svg
           aria-hidden="true"
@@ -60,11 +62,11 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
           <div className="relative mb-4">
             <input
               type="search"
-              placeholder="搜索历史记录..."
+              placeholder={t('analysisHistory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border-2 border-slate-200/80 bg-white/70 rounded-full text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/80 transition-colors"
-              aria-label="搜索历史记录"
+              aria-label={t('analysisHistory.searchPlaceholder')}
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -88,7 +90,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
                     <button
                       onClick={(e) => handleDelete(e, entry.id)}
                       className="ml-4 p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-100/80 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Delete history item"
+                      aria-label={t('analysisHistory.deleteLabel')}
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
@@ -97,7 +99,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
               </ul>
             ) : (
               <p className="text-center text-sm text-slate-500 py-4">
-                未找到匹配的记录。
+                {t('analysisHistory.noResults')}
               </p>
             )}
           </div>
@@ -111,7 +113,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
                 className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
               >
                 <TrashIcon className="w-4 h-4" />
-                清空所有历史记录
+                {t('analysisHistory.clearAll')}
               </button>
             </div>
           )}
