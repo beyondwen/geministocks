@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, type AnalysisModel } from './services/geminiService';
@@ -786,9 +787,6 @@ const MainPage: React.FC = () => {
       <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-6xl mx-auto">
           <header className="text-center mb-12">
-            <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-                <LanguageSwitcher />
-            </div>
             <div className="flex justify-center items-center gap-x-4 mb-4">
               <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
                 {t('header.title')}
@@ -984,7 +982,7 @@ const MainPage: React.FC = () => {
             </div>
           </main>
           
-          <footer className="text-center mt-16 py-8 border-t border-slate-200/60">
+          <footer className="text-center mt-16 py-8 border-t border-slate-200/60 flex flex-col items-center gap-y-4">
             <p className="text-sm text-slate-500">
               {t('footer.developedBy')}&nbsp;
               <a
@@ -995,15 +993,18 @@ const MainPage: React.FC = () => {
               >
                 {t('footer.developerName')}
               </a>
-              {t('footer.followUs')}
-              <button
-                onClick={() => setIsImageModalOpen(true)}
+              &nbsp;{t('footer.followUs')}
+            </p>
+            <p className="text-sm text-slate-500">
+              {t('footer.contact')}
+              <a
+                href="mailto:codes@z.org"
                 className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
               >
-                {t('footer.accountName')}
-              </button>
-              {t('footer.endText')}
+                codes@z.org
+              </a>
             </p>
+            <LanguageSwitcher />
           </footer>
         </div>
       </div>

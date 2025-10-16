@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useState, useContext, useMemo, useCallback, useEffect } from 'react';
 
 export type Locale = 'en' | 'zh';
 
@@ -8,18 +8,17 @@ const LOCAL_STORAGE_KEY = 'gemini-app-locale';
 interface I18nContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string, options?: Record<string, string | number>) => string;
+  t: (key: string, options?: Record<string, string | number>) => any;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 // Helper to get nested value from an object using a dot-notation string
-const getNestedTranslation = (obj: any, key: string): string | undefined => {
+const getNestedTranslation = (obj: any, key: string): any => {
   return key.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
 };
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [translations, setTranslations] = useState<Record<Locale, any> | null>(null);
   const [locale, setLocaleState] = useState<Locale>(() => {
     try {
       const storedLocale = localStorage.getItem(LOCAL_STORAGE_KEY) as Locale;
@@ -33,26 +32,29 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return browserLang === 'zh' ? 'zh' : 'en';
   });
 
+  const [translations, setTranslations] = useState<Record<Locale, any> | null>(null);
+
   useEffect(() => {
-    const fetchTranslations = async () => {
+    const loadTranslations = async () => {
       try {
         const [enResponse, zhResponse] = await Promise.all([
           fetch('/locales/en.json'),
           fetch('/locales/zh.json')
         ]);
         if (!enResponse.ok || !zhResponse.ok) {
-          throw new Error('Failed to fetch translation files');
+          throw new Error(`Failed to fetch translation files: en ${enResponse.status}, zh ${zhResponse.status}`);
         }
         const enData = await enResponse.json();
         const zhData = await zhResponse.json();
         setTranslations({ en: enData, zh: zhData });
       } catch (error) {
-        console.error("Failed to load translation files", error);
-        // Fallback to empty objects to prevent crashing
+        console.error('Failed to load translation files:', error);
+        // Fallback to empty to prevent crash, but translations will be missing
         setTranslations({ en: {}, zh: {} });
       }
     };
-    fetchTranslations();
+
+    loadTranslations();
   }, []);
 
   const setLocale = useCallback((newLocale: Locale) => {
@@ -64,11 +66,11 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const t = useCallback((key: string, options?: Record<string, string | number>): string => {
+  const t = useCallback((key: string, options?: Record<string, string | number>): any => {
     if (!translations) {
-      return key; // Return key as fallback during load
+      return key; // Return key if translations aren't loaded yet
     }
-    
+
     let text = getNestedTranslation(translations[locale], key);
     if (text === undefined) {
       console.warn(`Translation key "${key}" not found for locale "${locale}". Falling back to default.`);
@@ -76,6 +78,11 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (text === undefined) {
         return key; // Return the key itself as a last resort
       }
+    }
+
+    // Handle array return types (e.g., for loader messages)
+    if (Array.isArray(text)) {
+      return text;
     }
 
     if (options && typeof text === 'string') {
@@ -88,10 +95,10 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [locale, translations]);
   
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
-  
-  // Don't render the rest of the app until translations are loaded
+
+  // Do not render the app until translations are loaded to prevent rendering with keys.
   if (!translations) {
-    return null; // Or return a loading spinner component
+    return null;
   }
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
