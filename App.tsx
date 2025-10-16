@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, type AnalysisModel } from './services/geminiService';
@@ -792,22 +789,16 @@ const MainPage: React.FC = () => {
             <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
                 <LanguageSwitcher />
             </div>
-            
-            {/* Group title and subtitle for better vertical spacing and control */}
-            <div className="flex flex-col items-center gap-y-4">
-                <div className="flex justify-center items-center gap-x-4">
-                  <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
-                    {t('header.title')}
-                  </h1>
-                  <RadarIcon className="w-12 h-12 text-blue-500" />
-                </div>
-                <p className="text-slate-600 text-lg max-w-xl">
-                    {t('header.subtitle')}
-                </p>
+            <div className="flex justify-center items-center gap-x-4 mb-4">
+              <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
+                {t('header.title')}
+              </h1>
+              <RadarIcon className="w-12 h-12 text-blue-500" />
             </div>
-            
-            {/* Markets text with slightly more top margin to separate it from the main title block */}
-            <p className="text-sm text-slate-500 mt-4">
+            <p className="text-slate-600 text-lg">
+                {t('header.subtitle')}
+            </p>
+            <p className="text-sm text-slate-500 mt-2">
               {t('header.markets')}
             </p>
           </header>
