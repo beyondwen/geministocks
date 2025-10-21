@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { StockTicker, TieredSuggestions } from '../types';
 import { ExternalLinkIcon } from './icons/Icons';
@@ -59,7 +60,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
         <div className="flex justify-between items-start mb-2">
           <div>
             <h5 className="font-bold text-gray-800 pr-2">{stock.name}</h5>
-            <p className="text-xs text-gray-500 font-mono">{stock.ticker} ({stock.market})</p>
+            <p className="text-xs text-gray-500">({stock.market})</p>
           </div>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.bgColor} ${config.textColor} flex-shrink-0`}>
             {t('stockCard.relevancePrefix')}: {config.label}

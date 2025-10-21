@@ -110,7 +110,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
                     className="px-4 py-2 text-slate-800 cursor-pointer hover:bg-cyan-100/80 transition-colors"
                     onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(stock.name); }}
                   >
-                    {stock.name} <span className="text-slate-500 font-mono">{stock.ticker}</span>
+                    {stock.name}
                   </li>
                 ))}
               </ul>

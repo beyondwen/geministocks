@@ -160,7 +160,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
 
   const keywords = useMemo(() => {
     if (!report) return [];
-    return [report.companyProfile?.name, report.companyProfile?.ticker].filter(Boolean);
+    return [report.companyProfile?.name].filter(Boolean);
   }, [report]);
 
   const handleExportImage = useCallback(() => {
@@ -217,7 +217,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
       <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-gradient-to-br from-slate-50/80 to-slate-100/80 rounded-3xl shadow-floating border border-white/80">
         <header className="text-center mb-8 pb-6 border-b border-slate-200/60">
           <h2 className="text-4xl font-light text-gradient-primary mb-2">{t('stockAnalysisResult.reportTitle')}</h2>
-          <p className="text-2xl font-semibold text-slate-800">{report.companyProfile?.name} ({report.companyProfile?.ticker})</p>
+          <p className="text-2xl font-semibold text-slate-800">{report.companyProfile?.name}</p>
         </header>
 
         <div className="space-y-6">
@@ -273,7 +273,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                           <table className="w-full text-sm text-left">
                               <thead className="text-xs text-slate-700 uppercase bg-slate-200/50"><tr><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.company')}</th><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.marketCap')}</th><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.peRatio')}</th><th className="px-4 py-2">{t('stockAnalysisResult.peerComparison.revenueGrowth')}</th></tr></thead>
                               <tbody>{report.peerComparison.map(p => <tr key={p.ticker} className="border-b border-slate-200/60">
-                                  <td className="px-4 py-2 font-medium">{p.name} ({p.ticker})</td><td className="px-4 py-2">{p.marketCap}</td><td className="px-4 py-2">{p.peRatio}</td><td className="px-4 py-2">{p.revenueGrowth}</td>
+                                  <td className="px-4 py-2 font-medium">{p.name}</td><td className="px-4 py-2">{p.marketCap}</td><td className="px-4 py-2">{p.peRatio}</td><td className="px-4 py-2">{p.revenueGrowth}</td>
                               </tr>)}</tbody>
                           </table>
                       </div>

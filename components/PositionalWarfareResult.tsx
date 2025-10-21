@@ -48,7 +48,7 @@ const LeaderStockCard: React.FC<{ leader: LeaderStockProfile, keywords: string[]
                 </span>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200">
-                <h4 className="text-xl font-semibold">{leader.name} <span className="text-gray-500 font-mono text-base">{leader.ticker}</span></h4>
+                <h4 className="text-xl font-semibold">{leader.name}</h4>
                 <p className="text-sm text-gray-600 mb-3">{leader.sector} | {leader.market}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4 bg-gray-100 p-3 rounded-md">
                     <div>
@@ -140,7 +140,7 @@ const FollowerCandidateCard: React.FC<{
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <h3 className="text-xl font-bold text-gray-800">{t('positionalWarfareResult.followerTitle', { index: index + 1 })}</h3>
-                        <h4 className="text-lg font-semibold">{candidate.name} <span className="text-gray-500 font-mono text-base">{candidate.ticker}</span></h4>
+                        <h4 className="text-lg font-semibold">{candidate.name}</h4>
                         <p className="text-sm text-gray-600">{candidate.market}</p>
                     </div>
                 </div>
@@ -307,8 +307,8 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
 
   const keywords = useMemo(() => {
     if (!report) return [];
-    const leaderKeywords = [report.leaderStock.name, report.leaderStock.ticker];
-    const followerKeywords = report.followerCandidates.flatMap(f => [f.name, f.ticker]);
+    const leaderKeywords = [report.leaderStock.name];
+    const followerKeywords = report.followerCandidates.flatMap(f => [f.name]);
     return [...new Set([...leaderKeywords, ...followerKeywords])].filter(Boolean);
   }, [report]);
 

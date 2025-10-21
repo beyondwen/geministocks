@@ -42,7 +42,7 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
               onClick={() => onSelect(stock.name)}
               className="px-4 py-2 bg-white/60 text-slate-800 text-sm font-medium rounded-full hover:bg-white/80 hover:text-cyan-700 transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
             >
-              {stock.name} <span className="text-slate-500 font-mono">{stock.ticker}</span>
+              {stock.name}
             </button>
           ))}
         </div>

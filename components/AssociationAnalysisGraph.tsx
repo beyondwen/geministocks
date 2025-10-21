@@ -10,7 +10,6 @@ const NodeCard: React.FC<{ node: AssociationStockNode | AssociationTopicNode; ic
       <span className="mr-2 text-cyan-600">{icon}</span>
       <h5 className="font-semibold text-sm text-gray-800 flex-1 truncate">
         {node.name}
-        {'ticker' in node && <span className="ml-2 font-mono text-xs text-gray-500">{node.ticker}</span>}
       </h5>
     </div>
     <p className="text-xs text-gray-600 pl-7 leading-snug"><TextRenderer text={node.reason} /></p>
