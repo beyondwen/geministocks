@@ -373,7 +373,7 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<AnalysisModel>('grok');
+  const [activeModel, setActiveModel] = useState<AnalysisModel>('gemini');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   
   // Effect to hide toast after a delay
