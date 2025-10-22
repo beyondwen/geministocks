@@ -57,6 +57,13 @@ export interface AssociationAnalysis {
   relatedTopics: AssociationTopicNode[];
 }
 
+export interface PolymarketData {
+  question: string;
+  yesOdds: number;
+  noOdds: number;
+  totalVolume: string;
+}
+
 export interface AnalysisReport {
   summary: string;
   keyTakeaways: string[];
@@ -77,6 +84,7 @@ export interface AnalysisReport {
   tieredSuggestions: TieredSuggestions;
   associationAnalysis?: AssociationAnalysis;
   sources?: GroundingSource[];
+  polymarketData?: PolymarketData;
 }
 
 export interface TopicHistoryEntry {

@@ -257,6 +257,81 @@ export const getAnalysis = async (topic: string, model: AnalysisModel, locale: L
     return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
+const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
+    const commonSchema = `
+        {
+          "polymarketData": {
+            "question": "string (The specific question being predicted on the Polymarket page)",
+            "yesOdds": "number (The current probability for 'Yes', between 0 and 1)",
+            "noOdds": "number (The current probability for 'No', between 0 and 1)",
+            "totalVolume": "string (The total trading volume, e.g., '$1.5M')"
+          },
+          "summary": "string (A 1-3 sentence summary of the market's prediction and its investment implications)",
+          "keyTakeaways": ["string (3-5 key takeaways covering both 'Yes' and 'No' scenarios)"],
+          "investmentScore": {
+            "score": "number (1-100, representing the clarity and actionability of the investment opportunity)",
+            "reason": "string (Brief reason for the score)"
+          },
+          "analysis": {
+            "macroPolicy": "string (How macro factors or policy could influence the outcome of this prediction)",
+            "industryChain": "string (Which industry sectors are most affected if 'Yes' wins vs. if 'No' wins)",
+            "companyFundamentals": "string (Analyze which specific companies' fundamentals would be most impacted by either outcome)",
+            "marketSentiment": {
+              "sentiment": "'Positive' | 'Neutral' | 'Negative'",
+              "description": "string (Describe the current market sentiment surrounding this prediction and potential catalysts)"
+            }
+          },
+          "marketSizeAndOutlook": "string (Analyze the potential market impact of both a 'Yes' and 'No' outcome)",
+          "investmentStrategy": {
+            "logic": "string (Explain the core logic for investing based on this prediction market. This MUST cover strategies for both 'Yes' and 'No' outcomes)",
+            "suggestion": "string (Provide actionable suggestions for how to position a portfolio for either outcome)",
+            "risks": "string (What are the risks associated with trading this prediction?)"
+          },
+          "allocationCadenceAndOutlook": "string (Guidance on timing and long-term outlook depending on the outcome)",
+          "tieredSuggestions": {
+            "coreHoldings": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string (A high-conviction asset to hold if you believe 'Yes' will happen)", "relevance": "'High'" }],
+            "strategicSatellites": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string (A high-conviction asset to hold if you believe 'No' will happen)", "relevance": "'Medium'" }],
+            "watchlist": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string (An asset to watch that is sensitive to the outcome)", "relevance": "'Low'" }]
+          }
+        }
+    `;
+
+    if (locale === 'zh') {
+        return `
+        You are a top-tier quantitative and qualitative analyst specializing in prediction markets. Your task is to analyze the provided Polymarket URL.
+        First, you MUST extract the core data from the market: the question, the 'Yes'/'No' odds, and the total volume.
+        Second, you MUST perform a comprehensive scenario analysis. Detail the market impact, investment logic, and provide specific, tiered investment suggestions for BOTH the 'Yes' outcome AND the 'No' outcome.
+        You MUST respond strictly in the following JSON format. Do not add any extra explanations. All content must be in Simplified Chinese.
+        The JSON schema is as follows:
+        ${commonSchema}
+    `;
+    }
+    return `
+        You are a top-tier quantitative and qualitative analyst specializing in prediction markets. Your task is to analyze the provided Polymarket URL.
+        First, you MUST extract the core data from the market: the question, the 'Yes'/'No' odds, and the total volume.
+        Second, you MUST perform a comprehensive scenario analysis. Detail the market impact, investment logic, and provide specific, tiered investment suggestions for BOTH the 'Yes' outcome AND the 'No' outcome.
+        You MUST respond strictly in the following JSON format. Do not add any extra explanations. All content must be in English.
+        The JSON schema is as follows:
+        ${commonSchema}
+    `;
+};
+
+
+export const getPolymarketAnalysis = async (url: string, model: AnalysisModel, locale: Locale): Promise<AnalysisReport> => {
+    const modelName = getModelName(model);
+    const systemInstruction = getPolymarketAnalysisSystemInstruction(locale);
+    
+    const prompt = `
+        Please analyze the following Polymarket URL and provide a structured investment strategy report based on its prediction market data and potential outcomes.
+        URL to analyze:
+        ---
+        ${url}
+        ---
+    `;
+
+    return callOpenRouterAI(prompt, systemInstruction, modelName);
+};
+
 const getStockAnalysisSystemInstruction = (locale: Locale): string => {
     if (locale === 'zh') {
         return `

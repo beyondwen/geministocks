@@ -14,7 +14,8 @@
     "userAnalysisCount": "Analyses"
   },
   "actions": {
-    "getPerplexity": "Get Perplexity Pro for Free"
+    "getPerplexity": "Get Perplexity Pro for Free",
+    "marketPrediction": "Market Prediction"
   },
   "controls": {
     "model": "Analysis Model",
@@ -258,6 +259,12 @@
     ],
     "button": "View Analysis Report",
     "close": "Close Case Study"
+  },
+  "polymarketCard": {
+    "title": "Prediction Market Analysis",
+    "yesOdds": "Yes",
+    "noOdds": "No",
+    "volume": "Total Volume"
   },
   "stockCard": {
     "relevancePrefix": "Relevance",

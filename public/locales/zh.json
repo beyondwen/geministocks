@@ -14,7 +14,8 @@
     "userAnalysisCount": "累计分析"
   },
   "actions": {
-    "getPerplexity": "免费领取 Perplexity 会员"
+    "getPerplexity": "免费领取 Perplexity 会员",
+    "marketPrediction": "市场预测"
   },
   "controls": {
     "model": "分析模型",
@@ -258,6 +259,12 @@
     ],
     "button": "一键查看分析报告",
     "close": "关闭案例展示"
+  },
+   "polymarketCard": {
+    "title": "市场预测分析",
+    "yesOdds": "会",
+    "noOdds": "不会",
+    "volume": "总交易量"
   },
   "stockCard": {
     "relevancePrefix": "关联度",

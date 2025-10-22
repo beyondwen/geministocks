@@ -1,8 +1,6 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, type AnalysisModel } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, type AnalysisModel } from './services/geminiService';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
@@ -12,7 +10,7 @@ import Loader from './components/Loader';
 import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
@@ -583,7 +581,12 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      const report = await getAnalysis(topic, activeModel, locale);
+      const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
+      
+      const report = isPolymarketUrl 
+        ? await getPolymarketAnalysis(topic, activeModel, locale)
+        : await getAnalysis(topic, activeModel, locale);
+
       setAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -855,7 +858,7 @@ const MainPage: React.FC = () => {
             <div className="h-8 w-px bg-slate-200/60"></div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-x-2">
+            <div className="flex items-center gap-x-3">
               <a
                 href="https://pplx.ai/mastergo"
                 target="_blank"
@@ -1029,7 +1032,17 @@ const MainPage: React.FC = () => {
             </div>
           </main>
           
-          <footer className="text-center mt-16 py-8 border-t border-slate-200/60 flex flex-col items-center gap-y-4">
+          <footer className="text-center mt-16 py-8 border-t border-slate-200/60 flex flex-col items-center gap-y-6">
+            <a
+              href="https://polymarket.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative inline-flex items-center gap-2 px-6 py-2.5 text-white text-sm font-medium rounded-xl group overflow-hidden bg-gradient-to-r from-green-500 to-cyan-500 shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+              <ChartTrendingUpIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              <span className="relative z-10">{t('actions.marketPrediction')}</span>
+            </a>
             <p className="text-sm text-slate-500">
               {t('footer.developedBy')}&nbsp;
               <a

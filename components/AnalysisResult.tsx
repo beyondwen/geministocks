@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import type { AnalysisReport, InvestmentScore } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon } from './icons/Icons';
+import type { AnalysisReport, InvestmentScore, PolymarketData } from '../types';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
@@ -141,6 +141,39 @@ const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => {
     );
 };
 
+const PolymarketInfoCard: React.FC<{ data: PolymarketData }> = ({ data }) => {
+  const { t } = useI18n();
+  const yesPercentage = (data.yesOdds * 100).toFixed(0);
+  const noPercentage = (data.noOdds * 100).toFixed(0);
+
+  return (
+    <Card title={t('polymarketCard.title')} icon={<ChartTrendingUpIcon className="w-5 h-5"/>}>
+      <div className="space-y-4">
+        <blockquote className="text-slate-800 font-semibold text-lg border-l-4 border-purple-400 pl-4 py-2 bg-purple-50/80 rounded-r-lg">
+          {data.question}
+        </blockquote>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          {/* Yes Odds */}
+          <div className="p-4 bg-green-50/80 rounded-lg border border-green-200">
+            <p className="text-sm font-semibold text-green-800 mb-1">{t('polymarketCard.yesOdds')}</p>
+            <p className="text-4xl font-bold text-green-600">{yesPercentage}%</p>
+          </div>
+          {/* No Odds */}
+          <div className="p-4 bg-red-50/80 rounded-lg border border-red-200">
+            <p className="text-sm font-semibold text-red-800 mb-1">{t('polymarketCard.noOdds')}</p>
+            <p className="text-4xl font-bold text-red-600">{noPercentage}%</p>
+          </div>
+          {/* Total Volume */}
+          <div className="p-4 bg-slate-100/80 rounded-lg border border-slate-200">
+            <p className="text-sm font-semibold text-slate-800 mb-1">{t('polymarketCard.volume')}</p>
+            <p className="text-4xl font-bold text-slate-600">{data.totalVolume}</p>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
@@ -276,6 +309,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
         </div>
         
         <div className="space-y-6">
+            {report.polymarketData && <PolymarketInfoCard data={report.polymarketData} />}
             {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
             
             {report.summary && (
