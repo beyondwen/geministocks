@@ -246,6 +246,19 @@
     "feature5": "一键导出：轻松将完整的分析报告导出为高保真图片或 PDF 文档，便于分享和保存。",
     "backButton": "返回主页开始分析"
   },
+  "caseStudyCard": {
+    "title": "案例展示",
+    "descriptionTitle": "OpenAI 发布 ChatGPT Atlas 浏览器",
+    "features": [
+      "基于 Chromium，内嵌 ChatGPT 入口",
+      "支持一键对网页提问",
+      "支持基于浏览器的记忆功能",
+      "支持 Agent 模式，对网页进行操作 (付费)",
+      "macOS 版现已可用"
+    ],
+    "button": "一键查看分析报告",
+    "close": "关闭案例展示"
+  },
   "stockCard": {
     "relevancePrefix": "关联度",
     "viewDetails": "查看详情",

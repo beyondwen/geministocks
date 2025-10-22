@@ -19,6 +19,8 @@ import PositionalWarfareResult from './components/PositionalWarfareResult';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
+import CaseStudyCard from './components/CaseStudyCard';
+import { getCaseStudyData } from './services/caseStudyData';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -26,6 +28,7 @@ const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-histor
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 const RISK_WARNING_ACCEPTED_KEY = 'gemini-risk-warning-accepted';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
+const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
@@ -46,6 +49,7 @@ interface NewsSource {
 }
 
 const NEWS_SOURCES: NewsSource[] = [
+  { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
   { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
@@ -54,6 +58,7 @@ const NEWS_SOURCES: NewsSource[] = [
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
+  '极客洞察': 'bg-indigo-100 text-indigo-800',
   '雪球': 'bg-blue-100 text-blue-800',
   '奇客 Solidot': 'bg-slate-100 text-slate-800',
   '36氪': 'bg-cyan-100 text-cyan-800',
@@ -99,7 +104,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSourceId, setActiveSourceId] = useState<string>('36kr'); // Default to 36kr
+  const [activeSourceId, setActiveSourceId] = useState<string>('geekinsight'); // Default to Geek Insight
   const { t } = useI18n();
 
   useEffect(() => {
@@ -371,6 +376,7 @@ const MainPage: React.FC = () => {
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [activeModel, setActiveModel] = useState<AnalysisModel>('grok');
+  const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -439,6 +445,11 @@ const MainPage: React.FC = () => {
       const storedUserCount = localStorage.getItem(USER_ANALYSIS_COUNT_KEY);
       if (storedUserCount) {
         setUserAnalysisCount(JSON.parse(storedUserCount));
+      }
+      
+      const isCaseStudyClosed = localStorage.getItem(CASE_STUDY_CLOSED_KEY);
+      if (isCaseStudyClosed === 'true') {
+          setIsCaseStudyVisible(false);
       }
 
     } catch (err) {
@@ -693,6 +704,34 @@ const MainPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleSelectCaseStudy = useCallback(() => {
+    const caseStudy = getCaseStudyData(locale);
+    
+    setUserInput(caseStudy.topic);
+    setAnalysisReport(caseStudy.report);
+    
+    // Clear other states
+    setStockAnalysisReport(null);
+    setPositionalWarfareReport(null);
+    setError(null);
+    setStockError(null);
+    setPositionalWarfareError(null);
+    setIsLoading(false); // Ensure loader is off
+    
+    setActiveTab('topic');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [locale]);
+
+  const handleCloseCaseStudy = () => {
+    setIsCaseStudyVisible(false);
+    try {
+        localStorage.setItem(CASE_STUDY_CLOSED_KEY, 'true');
+    } catch (err) {
+        console.error("Failed to save to localStorage", err);
+    }
+  };
+
+
   // --- History Handlers ---
 
   const handleSelectTopicHistory = (id: number) => {
@@ -772,6 +811,9 @@ const MainPage: React.FC = () => {
         console.error("Failed to save to localStorage", err);
     }
   };
+
+  const showLatestNews = locale === 'zh';
+  const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
 
   return (
     <>
@@ -907,10 +949,15 @@ const MainPage: React.FC = () => {
                           onClear={handleClearTopicHistory}
                         />
 
-                        {locale === 'zh' && <LatestNews 
-                          onAnalyze={handleNewsSelect} 
-                          sources={NEWS_SOURCES}
-                        />}
+                        <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
+                          {isCaseStudyVisible && (
+                            <CaseStudyCard onSelect={handleSelectCaseStudy} onClose={handleCloseCaseStudy} />
+                          )}
+                          {showLatestNews && <LatestNews 
+                            onAnalyze={handleNewsSelect} 
+                            sources={NEWS_SOURCES}
+                          />}
+                        </div>
                         <AdSenseAd />
                     </div>
                 )}

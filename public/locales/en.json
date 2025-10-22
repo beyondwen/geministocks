@@ -246,6 +246,19 @@
     "feature5": "One-Click Export: Easily export complete analysis reports as high-fidelity images or PDF documents for sharing and saving.",
     "backButton": "Back to Home for Analysis"
   },
+  "caseStudyCard": {
+    "title": "Case Study",
+    "descriptionTitle": "OpenAI Releases ChatGPT Atlas Browser",
+    "features": [
+      "Based on Chromium, with a built-in ChatGPT entry point",
+      "Supports one-click questioning of web pages",
+      "Supports browser-based memory functionality",
+      "Supports Agent mode for web page operations (premium)",
+      "macOS version now available"
+    ],
+    "button": "View Analysis Report",
+    "close": "Close Case Study"
+  },
   "stockCard": {
     "relevancePrefix": "Relevance",
     "viewDetails": "View Details",
