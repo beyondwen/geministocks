@@ -19,9 +19,9 @@
   },
   "controls": {
     "model": "Analysis Model",
-    "grok": "Grok",
-    "gemini": "Gemini 3.0",
-    "beta": "beta"
+    "deepseek": "DeepSeek",
+    "gemini": "Gemini",
+    "beta": "Live"
   },
   "tabs": {
     "topic": "Dig",

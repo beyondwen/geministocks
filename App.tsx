@@ -883,12 +883,12 @@ const MainPage: React.FC = () => {
                 </label>
                 <div role="group" aria-labelledby="model-switcher-label" className="flex items-center gap-x-1.5 p-1 rounded-full bg-slate-200/60">
                     <button
-                        onClick={() => setActiveModel('grok')}
+                        onClick={() => setActiveModel('deepseek')}
                         className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
-                            activeModel === 'grok' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                            activeModel === 'deepseek' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
-                        {t('controls.grok')}
+                        {t('controls.deepseek')}
                     </button>
                     <button
                         onClick={() => setActiveModel('gemini')}
@@ -897,7 +897,7 @@ const MainPage: React.FC = () => {
                         }`}
                     >
                         <span>{t('controls.gemini')}</span>
-                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-1.5 py-0.5 rounded-md leading-none">
+                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-green-500 to-cyan-500 px-1.5 py-0.5 rounded-md leading-none">
                           {t('controls.beta')}
                         </span>
                     </button>

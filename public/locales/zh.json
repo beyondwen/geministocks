@@ -19,9 +19,9 @@
   },
   "controls": {
     "model": "分析模型",
-    "grok": "Grok",
-    "gemini": "Gemini 3.0",
-    "beta": "测试版"
+    "deepseek": "DeepSeek",
+    "gemini": "Gemini",
+    "beta": "实时"
   },
   "tabs": {
     "topic": "挖掘",

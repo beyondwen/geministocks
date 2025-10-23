@@ -1,7 +1,7 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile } from '../types';
 import type { Locale } from '../hooks/useI18n';
 
-export type AnalysisModel = 'grok' | 'gemini';
+export type AnalysisModel = 'deepseek' | 'gemini';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -14,8 +14,8 @@ const getModelName = (model: AnalysisModel): string => {
     if (model === 'gemini') {
         return 'google/gemini-2.5-flash';
     }
-    // Default to grok
-    return 'x-ai/grok-4-fast';
+    // Default to deepseek
+    return 'deepseek/deepseek-v3.2-exp';
 };
 
 /**
