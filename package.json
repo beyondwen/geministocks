@@ -16,7 +16,11 @@
     "react-router-dom": "^6.25.1",
     "html-to-image": "^1.11.11",
     "recharts": "^2.12.7",
-    "crypto": "^1.0.1"
+    "crypto": "^1.0.1",
+    "uuid": "9.0.1",
+    "@stripe/stripe-js": "3.5.0",
+    "@stripe/react-stripe-js": "2.7.3",
+    "stripe": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

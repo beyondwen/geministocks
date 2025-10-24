@@ -7,10 +7,13 @@ interface PositionalWarfareInputProps {
   setLeaderStockQuery: (query: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
+  isClaudePaywalled: boolean;
 }
 
-const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading }) => {
+const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading, isClaudePaywalled }) => {
   const { t } = useI18n();
+  const buttonText = isClaudePaywalled ? t('controls.payAndAnalyze') : t('positionalWarfareInput.button');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAnalyze();
@@ -58,7 +61,7 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
                   <span className="relative z-10">{t('analysisInput.buttonLoading')}</span>
                 </>
               ) : (
-                <span className="relative z-10">{t('positionalWarfareInput.button')}</span>
+                <span className="relative z-10">{buttonText}</span>
               )}
             </button>
         </div>

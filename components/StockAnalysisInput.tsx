@@ -13,13 +13,15 @@ interface StockAnalysisInputProps {
   onAnalyze: (stockQuery: string) => void;
   isLoading: boolean;
   suggestions: Stock[];
+  isClaudePaywalled: boolean;
 }
 
-const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions }) => {
+const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions, isClaudePaywalled }) => {
   const { t } = useI18n();
   const [filteredSuggestions, setFilteredSuggestions] = useState<Stock[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
+  const buttonText = isClaudePaywalled ? t('controls.payAndAnalyze') : t('stockAnalysisInput.button');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +133,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
                 <span className="relative z-10">{t('analysisInput.buttonLoading')}</span>
               </>
             ) : (
-              <span className="relative z-10">{t('stockAnalysisInput.button')}</span>
+              <span className="relative z-10">{buttonText}</span>
             )}
           </button>
         </div>

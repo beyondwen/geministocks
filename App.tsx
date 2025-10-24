@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, type AnalysisModel } from './services/geminiService';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
@@ -19,6 +20,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import CaseStudyCard from './components/CaseStudyCard';
 import { getCaseStudyData } from './services/caseStudyData';
+import PaymentModal from './components/PaymentModal';
 
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
@@ -29,6 +31,50 @@ const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
+const USER_ID_KEY = 'gemini-user-id';
+const CLAUDE_CREDITS_KEY = 'gemini-claude-credits';
+
+// --- User/Credit Helper Functions ---
+const getUserId = (): string => {
+  try {
+    let userId = localStorage.getItem(USER_ID_KEY);
+    if (!userId) {
+      userId = uuidv4();
+      localStorage.setItem(USER_ID_KEY, userId);
+    }
+    return userId;
+  } catch (e) {
+    console.error("localStorage not available, using temporary ID.", e);
+    return uuidv4(); // fallback for SSR or disabled localStorage
+  }
+};
+
+const getClaudeCredits = (): number => {
+  try {
+    const credits = localStorage.getItem(CLAUDE_CREDITS_KEY);
+    return credits ? parseInt(credits, 10) : 0;
+  } catch (e) { return 0; }
+};
+
+const addClaudeCredit = (): number => {
+  try {
+    const newCredits = getClaudeCredits() + 1;
+    localStorage.setItem(CLAUDE_CREDITS_KEY, String(newCredits));
+    return newCredits;
+  } catch (e) { return 1; }
+};
+
+const useClaudeCredit = (): number => {
+  try {
+    const currentCredits = getClaudeCredits();
+    if (currentCredits > 0) {
+      const newCredits = currentCredits - 1;
+      localStorage.setItem(CLAUDE_CREDITS_KEY, String(newCredits));
+      return newCredits;
+    }
+    return 0;
+  } catch (e) { return 0; }
+};
 
 // --- Data & Types ---
 interface NewsArticle {
@@ -338,6 +384,8 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
   </button>
 );
 
+type PendingAnalysis = { type: 'topic' | 'stock' | 'positional'; query: string };
+
 const MainPage: React.FC = () => {
   const { t, locale } = useI18n();
 
@@ -375,6 +423,11 @@ const MainPage: React.FC = () => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [activeModel, setActiveModel] = useState<AnalysisModel>('gemini');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
+
+  // Payment State
+  const [claudeCredits, setClaudeCredits] = useState<number>(0);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -423,6 +476,10 @@ const MainPage: React.FC = () => {
   };
 
   useEffect(() => {
+    // Initialize user ID and credits
+    getUserId();
+    setClaudeCredits(getClaudeCredits());
+
     // Check if risk warning has been accepted
     const hasAcceptedRisk = localStorage.getItem(RISK_WARNING_ACCEPTED_KEY);
     if (hasAcceptedRisk !== 'true') {
@@ -474,23 +531,6 @@ const MainPage: React.FC = () => {
       }
     };
     fetchGlobalStats();
-
-    // Register the service worker for PWA capabilities.
-    /*
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        const swUrl = `${window.location.origin}/sw.js`;
-        navigator.serviceWorker
-          .register(swUrl)
-          .then(registration => {
-            console.log('Service Worker registered with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('Service Worker registration failed:', error);
-          });
-      });
-    }
-    */
   }, []);
 
   // Fetch dynamic hot stocks when model or language changes
@@ -562,7 +602,7 @@ const MainPage: React.FC = () => {
       }
   }
 
-  const handleAnalyze = useCallback(async (topic: string) => {
+  const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
     if (!topic.trim()) {
       setError(t('errors.emptyTopic'));
       return;
@@ -571,6 +611,12 @@ const MainPage: React.FC = () => {
     if (checkRateLimit()) {
       setError(t('errors.rateLimit'));
       return;
+    }
+
+    if (activeModel === 'claude' && getClaudeCredits() === 0 && !bypassCreditCheck) {
+        setPendingAnalysis({ type: 'topic', query: topic });
+        setIsPaymentModalOpen(true);
+        return;
     }
     
     setActiveTab('topic');
@@ -586,7 +632,10 @@ const MainPage: React.FC = () => {
       const report = isPolymarketUrl 
         ? await getPolymarketAnalysis(topic, activeModel, locale)
         : await getAnalysis(topic, activeModel, locale);
-
+      
+      if (activeModel === 'claude') {
+        setClaudeCredits(useClaudeCredit());
+      }
       setAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -609,7 +658,7 @@ const MainPage: React.FC = () => {
     }
   }, [topicHistory, activeModel, locale, t]);
 
-  const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
+  const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (!stockQueryToAnalyze.trim()) {
       setStockError(t('errors.emptyStock'));
       return;
@@ -617,6 +666,12 @@ const MainPage: React.FC = () => {
 
     if (checkRateLimit()) {
         setStockError(t('errors.rateLimit'));
+        return;
+    }
+
+    if (activeModel === 'claude' && getClaudeCredits() === 0 && !bypassCreditCheck) {
+        setPendingAnalysis({ type: 'stock', query: stockQueryToAnalyze });
+        setIsPaymentModalOpen(true);
         return;
     }
 
@@ -629,6 +684,10 @@ const MainPage: React.FC = () => {
 
     try {
       const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
+      
+      if (activeModel === 'claude') {
+          setClaudeCredits(useClaudeCredit());
+      }
       setStockAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -651,14 +710,20 @@ const MainPage: React.FC = () => {
     }
   }, [stockHistory, activeModel, locale, t]);
 
-  const handlePositionalWarfareAnalyze = useCallback(async () => {
-    if (!leaderStockQuery.trim()) {
+  const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
+    if (!query.trim()) {
         setPositionalWarfareError(t('errors.emptyLeaderStock'));
         return;
     }
 
     if (checkRateLimit()) {
         setPositionalWarfareError(t('errors.rateLimit'));
+        return;
+    }
+
+    if (activeModel === 'claude' && getClaudeCredits() === 0 && !bypassCreditCheck) {
+        setPendingAnalysis({ type: 'positional', query });
+        setIsPaymentModalOpen(true);
         return;
     }
 
@@ -670,7 +735,11 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        const report = await getPositionalWarfareAnalysis(leaderStockQuery, setPositionalWarfareProgress, activeModel, locale);
+        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale);
+
+        if (activeModel === 'claude') {
+            setClaudeCredits(useClaudeCredit());
+        }
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
         incrementAnalysisCount();
@@ -678,7 +747,7 @@ const MainPage: React.FC = () => {
 
         const newEntry: PositionalWarfareHistoryEntry = {
           id: Date.now(),
-          leaderStockQuery: leaderStockQuery,
+          leaderStockQuery: query,
           report: report,
         };
         const newHistory = [newEntry, ...positionalWarfareHistory].slice(0, 20);
@@ -692,8 +761,24 @@ const MainPage: React.FC = () => {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [leaderStockQuery, positionalWarfareHistory, activeModel, locale, t]);
+  }, [positionalWarfareHistory, activeModel, locale, t]);
 
+  const handlePaymentSuccess = () => {
+    setClaudeCredits(addClaudeCredit());
+    setIsPaymentModalOpen(false);
+    setToast({ message: t('paymentModal.success'), type: 'success' });
+
+    if (pendingAnalysis) {
+        const { type, query } = pendingAnalysis;
+        // Use a timeout to allow the modal to close gracefully before starting analysis
+        setTimeout(() => {
+            if (type === 'topic') handleAnalyze(query, true);
+            if (type === 'stock') handleStockAnalyze(query, true);
+            if (type === 'positional') handlePositionalWarfareAnalyze(query, true);
+        }, 300);
+        setPendingAnalysis(null);
+    }
+  };
 
   const handleNewsSelect = (newsTopic: string) => {
     setUserInput(newsTopic);
@@ -817,10 +902,16 @@ const MainPage: React.FC = () => {
 
   const showLatestNews = locale === 'zh';
   const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
+  const isClaudePaywalled = activeModel === 'claude' && claudeCredits === 0;
 
   return (
     <>
       {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
       {toast && <Toast message={toast.message} type={toast.type} />}
       {isImageModalOpen && (
           <ImageModal
@@ -901,6 +992,17 @@ const MainPage: React.FC = () => {
                           {t('controls.beta')}
                         </span>
                     </button>
+                    <button
+                        onClick={() => setActiveModel('claude')}
+                        className={`inline-flex items-center gap-x-1.5 px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
+                            activeModel === 'claude' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        <span>{t('controls.claude')}</span>
+                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-1.5 py-0.5 rounded-md leading-none">
+                          {t('controls.top')}
+                        </span>
+                    </button>
                 </div>
               </div>
             </div>
@@ -932,6 +1034,7 @@ const MainPage: React.FC = () => {
                           setUserInput={setUserInput}
                           onAnalyze={() => handleAnalyze(userInput)}
                           isLoading={isLoading}
+                          isClaudePaywalled={isClaudePaywalled}
                         />
             
                         {isLoading && <Loader />}
@@ -972,6 +1075,7 @@ const MainPage: React.FC = () => {
                           onAnalyze={handleStockAnalyze}
                           isLoading={isStockLoading}
                           suggestions={hotStocks}
+                          isClaudePaywalled={isClaudePaywalled}
                         />
 
                         <HotStocks 
@@ -1006,8 +1110,9 @@ const MainPage: React.FC = () => {
                         <PositionalWarfareInput
                           leaderStockQuery={leaderStockQuery}
                           setLeaderStockQuery={setLeaderStockQuery}
-                          onAnalyze={handlePositionalWarfareAnalyze}
+                          onAnalyze={() => handlePositionalWarfareAnalyze(leaderStockQuery)}
                           isLoading={isPositionalWarfareLoading}
+                          isClaudePaywalled={isClaudePaywalled}
                         />
 
                         {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}

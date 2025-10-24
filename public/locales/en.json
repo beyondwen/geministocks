@@ -20,8 +20,11 @@
   "controls": {
     "model": "Analysis Model",
     "deepseek": "DeepSeek",
+    "claude": "Claude",
     "gemini": "Gemini",
-    "beta": "Live"
+    "beta": "Live",
+    "top": "Top",
+    "payAndAnalyze": "Pay $1 & Analyze"
   },
   "tabs": {
     "topic": "Dig",
@@ -56,6 +59,19 @@
     "line3": "Investors should make independent judgments and bear investment risks.",
     "line4": "By continuing to use this service, you acknowledge that you have fully understood and accepted the above risk warnings.",
     "acceptButton": "I Understand the Risks"
+  },
+  "paymentModal": {
+    "title": "Unlock Claude Model",
+    "description": "For just $1, you get one-time access to the powerful Claude model for a superior analysis report.",
+    "payButton": "Pay $1.00",
+    "processing": "Processing...",
+    "loading": "Initializing payment gateway...",
+    "close": "Close",
+    "success": "Payment successful! Starting analysis...",
+    "error": {
+      "default": "An error occurred with your payment method.",
+      "unexpected": "An unexpected payment error occurred. Please try again."
+    }
   },
   "languageSwitcher": {
     "label": "Select language"

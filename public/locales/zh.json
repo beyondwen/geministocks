@@ -20,8 +20,11 @@
   "controls": {
     "model": "分析模型",
     "deepseek": "DeepSeek",
+    "claude": "Claude",
     "gemini": "Gemini",
-    "beta": "实时"
+    "beta": "实时",
+    "top": "Top",
+    "payAndAnalyze": "支付 $1 并分析"
   },
   "tabs": {
     "topic": "挖掘",
@@ -56,6 +59,19 @@
     "line3": "投资者应独立判断并承担投资风险。",
     "line4": "继续使用即表示您已充分了解并接受上述风险提示。",
     "acceptButton": "我已了解风险"
+  },
+  "paymentModal": {
+    "title": "解锁 Claude 模型",
+    "description": "仅需支付 1 美元，即可获得一次性使用 Claude 强大模型进行分析的机会，生成更优质的报告。",
+    "payButton": "支付 $1.00",
+    "processing": "处理中...",
+    "loading": "正在初始化支付网关...",
+    "close": "关闭",
+    "success": "支付成功！正在开始分析...",
+    "error": {
+      "default": "您的支付方式出现问题。",
+      "unexpected": "发生意外的支付错误，请重试。"
+    }
   },
   "languageSwitcher": {
     "label": "选择语言"

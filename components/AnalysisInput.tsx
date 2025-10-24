@@ -7,10 +7,12 @@ interface AnalysisInputProps {
   setUserInput: (input: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
+  isClaudePaywalled: boolean;
 }
 
-const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading }) => {
+const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading, isClaudePaywalled }) => {
   const { t } = useI18n();
+  const buttonText = isClaudePaywalled ? t('controls.payAndAnalyze') : t('analysisInput.button');
 
   return (
     <div className="glass-refined p-6 animate-reveal-up">
@@ -53,7 +55,7 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
               <span className="relative z-10">{t('analysisInput.buttonLoading')}</span>
             </>
           ) : (
-            <span className="relative z-10">{t('analysisInput.button')}</span>
+            <span className="relative z-10">{buttonText}</span>
           )}
         </button>
       </div>

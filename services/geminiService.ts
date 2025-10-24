@@ -1,7 +1,7 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile } from '../types';
 import type { Locale } from '../hooks/useI18n';
 
-export type AnalysisModel = 'deepseek' | 'gemini';
+export type AnalysisModel = 'deepseek' | 'gemini' | 'claude';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -13,6 +13,9 @@ const SITE_NAME = '超级挖掘机';
 const getModelName = (model: AnalysisModel): string => {
     if (model === 'gemini') {
         return 'google/gemini-2.5-flash';
+    }
+    if (model === 'claude') {
+        return 'anthropic/claude-haiku-4.5';
     }
     // Default to deepseek
     return 'deepseek/deepseek-v3.2-exp';
