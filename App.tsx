@@ -56,12 +56,12 @@ const getClaudeCredits = (): number => {
   } catch (e) { return 0; }
 };
 
-const addClaudeCredit = (): number => {
+const addClaudeCredits = (amount: number): number => {
   try {
-    const newCredits = getClaudeCredits() + 1;
+    const newCredits = getClaudeCredits() + amount;
     localStorage.setItem(CLAUDE_CREDITS_KEY, String(newCredits));
     return newCredits;
-  } catch (e) { return 1; }
+  } catch (e) { return amount; }
 };
 
 const useClaudeCredit = (): number => {
@@ -625,7 +625,7 @@ const MainPage: React.FC = () => {
       return;
     }
 
-    if (activeModel === 'claude' && getClaudeCredits() === 0 && !bypassCreditCheck) {
+    if (activeModel === 'claude' && claudeCredits === 0 && !bypassCreditCheck) {
         setPendingAnalysis({ type: 'topic', query: topic });
         setIsPaymentModalOpen(true);
         return;
@@ -639,15 +639,15 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
+      if (activeModel === 'claude') {
+        setClaudeCredits(useClaudeCredit());
+      }
       const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
       
       const report = isPolymarketUrl 
         ? await getPolymarketAnalysis(topic, activeModel, locale)
         : await getAnalysis(topic, activeModel, locale);
       
-      if (activeModel === 'claude') {
-        setClaudeCredits(useClaudeCredit());
-      }
       setAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -663,12 +663,15 @@ const MainPage: React.FC = () => {
 
     } catch (err) {
       console.error(err);
+      if (activeModel === 'claude' && !bypassCreditCheck) {
+          setClaudeCredits(addClaudeCredits(1)); // Refund credit on failure
+      }
       const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
       setError(errorMessage);
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory, activeModel, locale, t]);
+  }, [topicHistory, activeModel, locale, t, claudeCredits]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (!stockQueryToAnalyze.trim()) {
@@ -681,7 +684,7 @@ const MainPage: React.FC = () => {
         return;
     }
 
-    if (activeModel === 'claude' && getClaudeCredits() === 0 && !bypassCreditCheck) {
+    if (activeModel === 'claude' && claudeCredits === 0 && !bypassCreditCheck) {
         setPendingAnalysis({ type: 'stock', query: stockQueryToAnalyze });
         setIsPaymentModalOpen(true);
         return;
@@ -695,11 +698,11 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
+      if (activeModel === 'claude') {
+        setClaudeCredits(useClaudeCredit());
+      }
       const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
       
-      if (activeModel === 'claude') {
-          setClaudeCredits(useClaudeCredit());
-      }
       setStockAnalysisReport(report);
       recordAnalysisTimestamp();
       incrementAnalysisCount();
@@ -715,12 +718,15 @@ const MainPage: React.FC = () => {
 
     } catch (err) {
       console.error(err);
+      if (activeModel === 'claude' && !bypassCreditCheck) {
+          setClaudeCredits(addClaudeCredits(1)); // Refund credit on failure
+      }
       const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
       setStockError(errorMessage);
     } finally {
       setIsStockLoading(false);
     }
-  }, [stockHistory, activeModel, locale, t]);
+  }, [stockHistory, activeModel, locale, t, claudeCredits]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
     if (!query.trim()) {
@@ -733,7 +739,7 @@ const MainPage: React.FC = () => {
         return;
     }
 
-    if (activeModel === 'claude' && getClaudeCredits() === 0 && !bypassCreditCheck) {
+    if (activeModel === 'claude' && claudeCredits === 0 && !bypassCreditCheck) {
         setPendingAnalysis({ type: 'positional', query });
         setIsPaymentModalOpen(true);
         return;
@@ -747,11 +753,11 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale);
-
         if (activeModel === 'claude') {
             setClaudeCredits(useClaudeCredit());
         }
+        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale);
+
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
         incrementAnalysisCount();
@@ -767,28 +773,33 @@ const MainPage: React.FC = () => {
 
     } catch (err) {
         console.error(err);
+        if (activeModel === 'claude' && !bypassCreditCheck) {
+            setClaudeCredits(addClaudeCredits(1)); // Refund credit on failure
+        }
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setPositionalWarfareError(errorMessage);
     } finally {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [positionalWarfareHistory, activeModel, locale, t]);
+  }, [positionalWarfareHistory, activeModel, locale, t, claudeCredits]);
 
-  const handlePaymentSuccess = () => {
-    setClaudeCredits(addClaudeCredit());
+  const handlePaymentSuccess = (creditsPurchased: number) => {
+    const newTotal = addClaudeCredits(creditsPurchased);
+    setClaudeCredits(newTotal);
     setIsPaymentModalOpen(false);
-    setToast({ message: t('paymentModal.success'), type: 'success' });
-
+    
     if (pendingAnalysis) {
+        setToast({ message: t('paymentModal.successMulti', { count: creditsPurchased }), type: 'success' });
         const { type, query } = pendingAnalysis;
-        // Use a timeout to allow the modal to close gracefully before starting analysis
         setTimeout(() => {
             if (type === 'topic') handleAnalyze(query, true);
             if (type === 'stock') handleStockAnalyze(query, true);
             if (type === 'positional') handlePositionalWarfareAnalyze(query, true);
         }, 300);
         setPendingAnalysis(null);
+    } else {
+        setToast({ message: t('paymentModal.successTopUp', { count: creditsPurchased }), type: 'success' });
     }
   };
 
@@ -921,7 +932,10 @@ const MainPage: React.FC = () => {
       {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
       <PaymentModal 
         isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
+        onClose={() => {
+            setIsPaymentModalOpen(false);
+            setPendingAnalysis(null);
+        }}
         onPaymentSuccess={handlePaymentSuccess}
       />
       {toast && <Toast message={toast.message} type={toast.type} />}
@@ -981,42 +995,36 @@ const MainPage: React.FC = () => {
             <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
               {/* Model Switcher */}
               <div className="flex items-center gap-x-3">
-                <label id="model-switcher-label" className="text-sm font-medium text-slate-700">
+                <label htmlFor="model-switcher" className="text-sm font-medium text-slate-700">
                   {t('controls.model')}
                 </label>
-                <div role="group" aria-labelledby="model-switcher-label" className="flex items-center gap-x-1.5 p-1 rounded-full bg-slate-200/60">
-                    <button
-                        onClick={() => handleModelChange('deepseek')}
-                        className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
-                            activeModel === 'deepseek' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
-                        }`}
+                <div className="relative">
+                    <select
+                        id="model-switcher"
+                        value={activeModel}
+                        onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
+                        className="appearance-none bg-white/60 border border-slate-200/60 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors cursor-pointer"
                     >
-                        {t('controls.deepseek')}
-                    </button>
-                    <button
-                        onClick={() => handleModelChange('gemini')}
-                        className={`inline-flex items-center gap-x-1.5 px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
-                            activeModel === 'gemini' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                        <span>{t('controls.gemini')}</span>
-                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-green-500 to-cyan-500 px-1.5 py-0.5 rounded-md leading-none">
-                          {t('controls.beta')}
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => handleModelChange('claude')}
-                        className={`inline-flex items-center gap-x-1.5 px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
-                            activeModel === 'claude' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                        <span>{t('controls.claude')}</span>
-                        <span className="text-[10px] font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 px-1.5 py-0.5 rounded-md leading-none">
-                          {t('controls.top')}
-                        </span>
-                    </button>
+                        <option value="deepseek">{t('controls.deepseek')}</option>
+                        <option value="gemini">{`${t('controls.gemini')} (${t('controls.beta')})`}</option>
+                        <option value="claude">{`${t('controls.claude')} (${t('controls.top')})`}</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                        </svg>
+                    </div>
                 </div>
               </div>
+              {/* Claude Credits Display */}
+              {activeModel === 'claude' && (
+                <div className="text-sm font-medium text-slate-700 flex items-center gap-x-2">
+                    <span>{t('controls.claudeCredits', { count: claudeCredits })}</span>
+                    <button onClick={() => setIsPaymentModalOpen(true)} className="text-purple-600 hover:text-purple-800 text-xs font-bold">
+                        ({t('controls.addCredits')})
+                    </button>
+                </div>
+              )}
             </div>
             
             {/* --- Tabs Navigation --- */}
@@ -1047,6 +1055,7 @@ const MainPage: React.FC = () => {
                           onAnalyze={() => handleAnalyze(userInput)}
                           isLoading={isLoading}
                           isClaudePaywalled={isClaudePaywalled}
+                          claudeCredits={claudeCredits}
                         />
             
                         {isLoading && <Loader />}
@@ -1088,6 +1097,7 @@ const MainPage: React.FC = () => {
                           isLoading={isStockLoading}
                           suggestions={hotStocks}
                           isClaudePaywalled={isClaudePaywalled}
+                          claudeCredits={claudeCredits}
                         />
 
                         <HotStocks 
@@ -1125,6 +1135,7 @@ const MainPage: React.FC = () => {
                           onAnalyze={() => handlePositionalWarfareAnalyze(leaderStockQuery)}
                           isLoading={isPositionalWarfareLoading}
                           isClaudePaywalled={isClaudePaywalled}
+                          claudeCredits={claudeCredits}
                         />
 
                         {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}

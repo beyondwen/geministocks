@@ -8,11 +8,14 @@ interface AnalysisInputProps {
   onAnalyze: () => void;
   isLoading: boolean;
   isClaudePaywalled: boolean;
+  claudeCredits: number;
 }
 
-const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading, isClaudePaywalled }) => {
+const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading, isClaudePaywalled, claudeCredits }) => {
   const { t } = useI18n();
-  const buttonText = isClaudePaywalled ? t('controls.payAndAnalyze') : t('analysisInput.button');
+  const buttonText = isClaudePaywalled 
+    ? t('controls.getCredits') 
+    : (claudeCredits > 0 ? t('controls.useCreditAndAnalyze') : t('analysisInput.button'));
 
   return (
     <div className="glass-refined p-6 animate-reveal-up">

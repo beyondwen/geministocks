@@ -2,7 +2,6 @@
 // This is a Vercel Serverless Function, which runs on the server.
 // It requires the Stripe SDK and an environment variable STRIPE_SECRET_KEY.
 
-// FIX: Replaced require() with an ES module import to resolve TypeScript error.
 import Stripe from 'stripe';
 
 interface VercelResponse {
@@ -15,10 +14,18 @@ interface VercelResponse {
 
 interface VercelRequest {
   method: string;
+  body: {
+    packageId?: 'pack_1' | 'pack_5' | 'pack_10';
+  };
 }
 
-// In a real Vercel environment, you would add `stripe` to your package.json.
-// The code here is written as if `require('stripe')` is available.
+// Define the pricing for each package in cents
+const packagePrices: { [key: string]: number } = {
+    'pack_1': 100,  // $1.00 for 1 credit
+    'pack_5': 450,  // $4.50 for 5 credits (10% discount)
+    'pack_10': 800, // $8.00 for 10 credits (20% discount)
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,15 +48,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const { packageId = 'pack_1' } = req.body; // Default to single pack if not provided
+    const amount = packagePrices[packageId];
+
+    if (!amount) {
+      return res.status(400).json({ error: { message: 'Invalid credit package selected.' } });
+    }
+
     const stripe = new Stripe(STRIPE_SECRET_KEY);
     
-    // Create a PaymentIntent with the order amount and currency
+    // Create a PaymentIntent with the dynamically calculated amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 100, // $1.00 USD in cents
+      amount,
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
       },
+      // Add metadata to track the purchase
+      metadata: {
+        packageId: packageId
+      }
     });
 
     res.status(200).json({

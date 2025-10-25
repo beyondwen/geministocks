@@ -24,8 +24,11 @@
     "gemini": "Gemini",
     "beta": "实时",
     "top": "Top",
-    "payAndAnalyze": "支付 $1 并分析",
-    "modelSwitched": "已切换至 {{modelName}} 模型"
+    "getCredits": "获取信用点",
+    "useCreditAndAnalyze": "使用1点信用分析",
+    "modelSwitched": "已切换至 {{modelName}} 模型",
+    "claudeCredits": "Claude 信用点: {{count}} 💎",
+    "addCredits": "充值"
   },
   "tabs": {
     "topic": "挖掘",
@@ -63,12 +66,18 @@
   },
   "paymentModal": {
     "title": "解锁 Claude 模型",
-    "description": "仅需支付 1 美元，即可获得一次性使用 Claude 强大模型进行分析的机会，生成更优质的报告。",
-    "payButton": "支付 $1.00",
+    "description": "购买信用点以使用强大的 Claude 模型，生成更优质的分析报告。",
+    "packagesTitle": "选择一个信用包：",
+    "package1": "1个信用点",
+    "package5": "5个信用点",
+    "package10": "10个信用点",
+    "bestValue": "最划算",
+    "payButton": "支付",
     "processing": "处理中...",
     "loading": "正在初始化支付网关...",
     "close": "关闭",
-    "success": "支付成功！正在开始分析...",
+    "successMulti": "成功添加 {{count}} 点信用！正在开始分析...",
+    "successTopUp": "成功充值 {{count}} 点信用！",
     "error": {
       "default": "您的支付方式出现问题。",
       "unexpected": "发生意外的支付错误，请重试。"

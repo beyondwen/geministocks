@@ -24,8 +24,11 @@
     "gemini": "Gemini",
     "beta": "Live",
     "top": "Top",
-    "payAndAnalyze": "Pay $1 & Analyze",
-    "modelSwitched": "Switched to {{modelName}} model"
+    "getCredits": "Get Claude Credits",
+    "useCreditAndAnalyze": "Use 1 Credit & Analyze",
+    "modelSwitched": "Switched to {{modelName}} model",
+    "claudeCredits": "Claude Credits: {{count}} 💎",
+    "addCredits": "Add"
   },
   "tabs": {
     "topic": "Dig",
@@ -63,12 +66,18 @@
   },
   "paymentModal": {
     "title": "Unlock Claude Model",
-    "description": "For just $1, you get one-time access to the powerful Claude model for a superior analysis report.",
-    "payButton": "Pay $1.00",
+    "description": "Purchase credits to use the powerful Claude model for superior analysis reports.",
+    "packagesTitle": "Choose a Credit Pack:",
+    "package1": "1 Credit",
+    "package5": "5 Credits",
+    "package10": "10 Credits",
+    "bestValue": "Best Value",
+    "payButton": "Pay",
     "processing": "Processing...",
     "loading": "Initializing payment gateway...",
     "close": "Close",
-    "success": "Payment successful! Starting analysis...",
+    "successMulti": "{{count}} credits added! Starting analysis...",
+    "successTopUp": "{{count}} credits added successfully!",
     "error": {
       "default": "An error occurred with your payment method.",
       "unexpected": "An unexpected payment error occurred. Please try again."

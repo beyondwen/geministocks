@@ -8,11 +8,14 @@ interface PositionalWarfareInputProps {
   onAnalyze: () => void;
   isLoading: boolean;
   isClaudePaywalled: boolean;
+  claudeCredits: number;
 }
 
-const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading, isClaudePaywalled }) => {
+const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading, isClaudePaywalled, claudeCredits }) => {
   const { t } = useI18n();
-  const buttonText = isClaudePaywalled ? t('controls.payAndAnalyze') : t('positionalWarfareInput.button');
+  const buttonText = isClaudePaywalled 
+    ? t('controls.getCredits') 
+    : (claudeCredits > 0 ? t('controls.useCreditAndAnalyze') : t('positionalWarfareInput.button'));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
