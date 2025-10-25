@@ -24,7 +24,8 @@
     "gemini": "Gemini",
     "beta": "实时",
     "top": "Top",
-    "payAndAnalyze": "支付 $1 并分析"
+    "payAndAnalyze": "支付 $1 并分析",
+    "modelSwitched": "已切换至 {{modelName}} 模型"
   },
   "tabs": {
     "topic": "挖掘",

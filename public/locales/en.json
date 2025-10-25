@@ -24,7 +24,8 @@
     "gemini": "Gemini",
     "beta": "Live",
     "top": "Top",
-    "payAndAnalyze": "Pay $1 & Analyze"
+    "payAndAnalyze": "Pay $1 & Analyze",
+    "modelSwitched": "Switched to {{modelName}} model"
   },
   "tabs": {
     "topic": "Dig",

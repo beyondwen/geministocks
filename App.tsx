@@ -602,6 +602,18 @@ const MainPage: React.FC = () => {
       }
   }
 
+  const handleModelChange = (newModel: AnalysisModel) => {
+    if (activeModel === newModel) return;
+    setActiveModel(newModel);
+    let modelName = '';
+    switch (newModel) {
+        case 'deepseek': modelName = t('controls.deepseek'); break;
+        case 'gemini': modelName = t('controls.gemini'); break;
+        case 'claude': modelName = t('controls.claude'); break;
+    }
+    setToast({ message: t('controls.modelSwitched', { modelName }), type: 'info' });
+  };
+
   const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
     if (!topic.trim()) {
       setError(t('errors.emptyTopic'));
@@ -974,7 +986,7 @@ const MainPage: React.FC = () => {
                 </label>
                 <div role="group" aria-labelledby="model-switcher-label" className="flex items-center gap-x-1.5 p-1 rounded-full bg-slate-200/60">
                     <button
-                        onClick={() => setActiveModel('deepseek')}
+                        onClick={() => handleModelChange('deepseek')}
                         className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
                             activeModel === 'deepseek' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
@@ -982,7 +994,7 @@ const MainPage: React.FC = () => {
                         {t('controls.deepseek')}
                     </button>
                     <button
-                        onClick={() => setActiveModel('gemini')}
+                        onClick={() => handleModelChange('gemini')}
                         className={`inline-flex items-center gap-x-1.5 px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
                             activeModel === 'gemini' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
@@ -993,7 +1005,7 @@ const MainPage: React.FC = () => {
                         </span>
                     </button>
                     <button
-                        onClick={() => setActiveModel('claude')}
+                        onClick={() => handleModelChange('claude')}
                         className={`inline-flex items-center gap-x-1.5 px-4 py-1 text-sm font-semibold rounded-full transition-colors duration-200 ${
                             activeModel === 'claude' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'
                         }`}
