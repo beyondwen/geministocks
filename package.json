@@ -1,15 +1,1 @@
-{
-  "name": "super-digger-ai-analysis",
-  "version": "1.0.0",
-  "private": true,
-  "description": "An intelligent investment research tool powered by AI.",
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "@stripe/react-stripe-js": "3.0.0",
-    "stripe": "^19.1.0"
-  },
-  "scripts": {
-    "build": "echo 'No build step required for this static project, dependencies are for Vercel build resolution.'"
-  }
-}
+full contents of package.json
