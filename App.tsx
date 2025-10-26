@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -108,18 +109,14 @@ const NEWS_SOURCES: NewsSource[] = [
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
-  { id: 'solidot', name: '奇客 Solidot', url: 'https://www.solidot.org/index.rss' },
-  { id: 'hackernews', name: 'Hacker News', url: 'https://www.supertechfans.com/cn/index.xml' },
-  { id: 'maobidao', name: '猫笔刀', url: 'https://wechat2rss.xlab.app/feed/33d986064f59be5263de2ca822fb3e0bdd59eb81.xml' },
+  { id: 'solidot', name: '奇客', url: 'https://www.solidot.org/index.rss' },
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '极客洞察': 'bg-indigo-100 text-indigo-800',
   '雪球': 'bg-blue-100 text-blue-800',
-  '奇客 Solidot': 'bg-slate-100 text-slate-800',
+  '奇客': 'bg-slate-100 text-slate-800',
   '36氪': 'bg-cyan-100 text-cyan-800',
-  'Hacker News': 'bg-orange-100 text-orange-800',
-  '猫笔刀': 'bg-purple-100 text-purple-800',
 };
 
 
