@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, type AnalysisModel } from './services/geminiService';
+// FIX: Import getCaseStudyData to be used when selecting a case study.
+import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
@@ -19,9 +21,9 @@ import InvestmentRiskModal from './components/InvestmentRiskModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import CaseStudyCard from './components/CaseStudyCard';
-import { getCaseStudyData } from './services/caseStudyData';
 import PaymentModal from './components/PaymentModal';
 
+// --- Constants ---
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
@@ -29,12 +31,29 @@ const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 const RISK_WARNING_ACCEPTED_KEY = 'gemini-risk-warning-accepted';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
+const USER_ID_KEY = 'gemini-user-id';
+const CREDITS_KEY = 'gemini-claude-credits'; // Keep old key for backward compatibility
+const DAILY_USAGE_KEY = 'gemini-daily-usage';
+
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
-const USER_ID_KEY = 'gemini-user-id';
-const CLAUDE_CREDITS_KEY = 'gemini-claude-credits';
 
-// --- User/Credit Helper Functions ---
+// --- Model Usage Rules ---
+const DEEPSEEK_FREE_USES_PER_DAY = 3;
+const GEMINI_FREE_USES_PER_DAY = 1;
+
+const DEEPSEEK_CREDIT_COST = 1;
+const GEMINI_CREDIT_COST = 1;
+const CLAUDE_CREDIT_COST = 2;
+
+interface DailyUsage {
+  date: string;
+  deepseek: number;
+  gemini: number;
+}
+
+
+// --- User/Credit/Usage Helper Functions ---
 const getUserId = (): string => {
   try {
     let userId = localStorage.getItem(USER_ID_KEY);
@@ -45,35 +64,53 @@ const getUserId = (): string => {
     return userId;
   } catch (e) {
     console.error("localStorage not available, using temporary ID.", e);
-    return uuidv4(); // fallback for SSR or disabled localStorage
+    return uuidv4();
   }
 };
 
-const getClaudeCredits = (): number => {
+const getCredits = (): number => {
   try {
-    const credits = localStorage.getItem(CLAUDE_CREDITS_KEY);
+    const credits = localStorage.getItem(CREDITS_KEY);
     return credits ? parseInt(credits, 10) : 0;
   } catch (e) { return 0; }
 };
 
-const addClaudeCredits = (amount: number): number => {
+const addCredits = (amount: number): number => {
   try {
-    const newCredits = getClaudeCredits() + amount;
-    localStorage.setItem(CLAUDE_CREDITS_KEY, String(newCredits));
+    const newCredits = getCredits() + amount;
+    localStorage.setItem(CREDITS_KEY, String(newCredits));
     return newCredits;
   } catch (e) { return amount; }
 };
 
-const useClaudeCredit = (): number => {
+const useCredits = (amount: number): number => {
   try {
-    const currentCredits = getClaudeCredits();
-    if (currentCredits > 0) {
-      const newCredits = currentCredits - 1;
-      localStorage.setItem(CLAUDE_CREDITS_KEY, String(newCredits));
+    const currentCredits = getCredits();
+    if (currentCredits >= amount) {
+      const newCredits = currentCredits - amount;
+      localStorage.setItem(CREDITS_KEY, String(newCredits));
       return newCredits;
     }
-    return 0;
+    return currentCredits;
   } catch (e) { return 0; }
+};
+
+const getDailyUsage = (): DailyUsage => {
+  try {
+    const storedUsage = localStorage.getItem(DAILY_USAGE_KEY);
+    const today = new Date().toISOString().split('T')[0];
+    if (storedUsage) {
+      const usage: DailyUsage = JSON.parse(storedUsage);
+      if (usage.date === today) {
+        return usage;
+      }
+    }
+    // Return fresh object if no stored usage or date is old
+    return { date: today, deepseek: 0, gemini: 0 };
+  } catch (e) {
+    console.error("Failed to read daily usage from localStorage", e);
+    return { date: new Date().toISOString().split('T')[0], deepseek: 0, gemini: 0 };
+  }
 };
 
 // --- Data & Types ---
@@ -417,15 +454,15 @@ const MainPage: React.FC = () => {
   // Common State
   const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
-  const [globalStats, setGlobalStats] = useState<{ pageViews: number; analysisCount: number }>({ pageViews: 0, analysisCount: 0 });
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<AnalysisModel>('gemini');
+  const [activeModel, setActiveModel] = useState<AnalysisModel>('deepseek');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
 
-  // Payment State
-  const [claudeCredits, setClaudeCredits] = useState<number>(0);
+  // Credit and Usage State
+  const [credits, setCredits] = useState<number>(0);
+  const [dailyUsage, setDailyUsage] = useState<DailyUsage>(() => getDailyUsage());
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   
@@ -475,10 +512,25 @@ const MainPage: React.FC = () => {
     }
   };
 
+  const recordDailyUsage = (model: AnalysisModel) => {
+    if (model !== 'deepseek' && model !== 'gemini') return;
+  
+    const currentUsage = getDailyUsage(); // Ensures we have the latest from LS
+    const newUsage = { ...currentUsage, [model]: currentUsage[model] + 1 };
+  
+    try {
+      localStorage.setItem(DAILY_USAGE_KEY, JSON.stringify(newUsage));
+      setDailyUsage(newUsage); // Update state to trigger re-render
+    } catch (e) {
+      console.error("Failed to record daily usage to localStorage", e);
+    }
+  };
+  
   useEffect(() => {
     // Initialize user ID and credits
     getUserId();
-    setClaudeCredits(getClaudeCredits());
+    setCredits(getCredits());
+    setDailyUsage(getDailyUsage());
 
     // Check if risk warning has been accepted
     const hasAcceptedRisk = localStorage.getItem(RISK_WARNING_ACCEPTED_KEY);
@@ -510,27 +562,6 @@ const MainPage: React.FC = () => {
     } catch (err) {
       console.error("Failed to load from localStorage", err);
     }
-    
-    // Load global statistics
-    const fetchGlobalStats = async () => {
-      try {
-        const response = await fetch('/api/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'pageView' }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setGlobalStats({ 
-            pageViews: data.pageViews || 0, 
-            analysisCount: data.analysisCount || 0 
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch global stats", err);
-      }
-    };
-    fetchGlobalStats();
   }, []);
 
   // Fetch dynamic hot stocks when model or language changes
@@ -566,6 +597,48 @@ const MainPage: React.FC = () => {
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', ogDescription);
   }, [locale, t]);
 
+  const { cost, isFree, isPaywalled } = useMemo(() => {
+    let calculatedCost = 0;
+    let calculatedIsFree = false;
+
+    if (activeModel === 'deepseek') {
+        if (dailyUsage.deepseek < DEEPSEEK_FREE_USES_PER_DAY) {
+            calculatedIsFree = true;
+        } else {
+            calculatedCost = DEEPSEEK_CREDIT_COST;
+        }
+    } else if (activeModel === 'gemini') {
+        if (dailyUsage.gemini < GEMINI_FREE_USES_PER_DAY) {
+            calculatedIsFree = true;
+        } else {
+            calculatedCost = GEMINI_CREDIT_COST;
+        }
+    } else { // claude
+        calculatedCost = CLAUDE_CREDIT_COST;
+    }
+    
+    const needsCredits = !calculatedIsFree && calculatedCost > 0;
+    const hasEnoughCredits = credits >= calculatedCost;
+    const calculatedIsPaywalled = needsCredits && !hasEnoughCredits;
+
+    return { cost: calculatedCost, isFree: calculatedIsFree, isPaywalled: calculatedIsPaywalled };
+  }, [activeModel, credits, dailyUsage]);
+
+  const getModelLabel = useCallback((model: AnalysisModel) => {
+    switch(model) {
+        case 'deepseek':
+            const deepseekLeft = Math.max(0, DEEPSEEK_FREE_USES_PER_DAY - dailyUsage.deepseek);
+            const deepseekLabel = deepseekLeft > 0 ? t('controls.usesLeft', {count: deepseekLeft}) : t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST});
+            return `${t('controls.deepseek')} (${deepseekLabel})`;
+        case 'gemini':
+            const geminiLeft = Math.max(0, GEMINI_FREE_USES_PER_DAY - dailyUsage.gemini);
+            const geminiLabel = geminiLeft > 0 ? t('controls.usesLeft', {count: geminiLeft}) : t('controls.costPerUse', {count: GEMINI_CREDIT_COST});
+            return `${t('controls.gemini')} (${geminiLabel})`;
+        case 'claude':
+            return `${t('controls.claude')} (${t('controls.costPerUse', {count: CLAUDE_CREDIT_COST})})`;
+    }
+  }, [dailyUsage, t]);
+
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
     setTopicHistory(newHistory);
     localStorage.setItem(TOPIC_HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
@@ -589,43 +662,16 @@ const MainPage: React.FC = () => {
     });
   };
 
-  const incrementAnalysisCount = async () => {
-     try {
-        const statsResponse = await fetch('/api/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'analysis' }),
-        });
-        if (statsResponse.ok) setGlobalStats(await statsResponse.json());
-      } catch (err) {
-        console.error("Failed to update global analysis count", err);
-      }
-  }
-
   const handleModelChange = (newModel: AnalysisModel) => {
     if (activeModel === newModel) return;
     setActiveModel(newModel);
-    let modelName = '';
-    switch (newModel) {
-        case 'deepseek': modelName = t('controls.deepseek'); break;
-        case 'gemini': modelName = t('controls.gemini'); break;
-        case 'claude': modelName = t('controls.claude'); break;
-    }
-    setToast({ message: t('controls.modelSwitched', { modelName }), type: 'info' });
+    setToast({ message: t('controls.modelSwitched', { modelName: t(`controls.${newModel}`) }), type: 'info' });
   };
 
   const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
-    if (!topic.trim()) {
-      setError(t('errors.emptyTopic'));
-      return;
-    }
-
-    if (checkRateLimit()) {
-      setError(t('errors.rateLimit'));
-      return;
-    }
-
-    if (activeModel === 'claude' && claudeCredits === 0 && !bypassCreditCheck) {
+    if (!topic.trim()) { setError(t('errors.emptyTopic')); return; }
+    if (checkRateLimit()) { setError(t('errors.rateLimit')); return; }
+    if (isPaywalled && !bypassCreditCheck) {
         setPendingAnalysis({ type: 'topic', query: topic });
         setIsPaymentModalOpen(true);
         return;
@@ -639,52 +685,35 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      if (activeModel === 'claude') {
-        setClaudeCredits(useClaudeCredit());
-      }
-      const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
-      
-      const report = isPolymarketUrl 
-        ? await getPolymarketAnalysis(topic, activeModel, locale)
-        : await getAnalysis(topic, activeModel, locale);
-      
-      setAnalysisReport(report);
-      recordAnalysisTimestamp();
-      incrementAnalysisCount();
-      incrementUserAnalysisCount();
+        if (!isFree && cost > 0) setCredits(useCredits(cost));
+        if (isFree) recordDailyUsage(activeModel);
 
-      const newEntry: TopicHistoryEntry = {
-        id: Date.now(),
-        topic: topic,
-        report: report,
-      };
-      const newHistory = [newEntry, ...topicHistory].slice(0, 20); // Limit history to 20 items
-      updateTopicHistory(newHistory);
+        const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
+        const report = isPolymarketUrl 
+            ? await getPolymarketAnalysis(topic, activeModel, locale)
+            : await getAnalysis(topic, activeModel, locale);
+        
+        setAnalysisReport(report);
+        if (!isFree) recordAnalysisTimestamp(); // Only rate limit paid uses
+        incrementUserAnalysisCount();
 
+        const newEntry: TopicHistoryEntry = { id: Date.now(), topic, report };
+        const newHistory = [newEntry, ...topicHistory].slice(0, 20);
+        updateTopicHistory(newHistory);
     } catch (err) {
-      console.error(err);
-      if (activeModel === 'claude' && !bypassCreditCheck) {
-          setClaudeCredits(addClaudeCredits(1)); // Refund credit on failure
-      }
-      const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
-      setError(errorMessage);
+        console.error(err);
+        if (!isFree && cost > 0) setCredits(addCredits(cost)); // Refund on failure
+        const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
+        setError(errorMessage);
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory, activeModel, locale, t, claudeCredits]);
+  }, [topicHistory, activeModel, locale, t, cost, isFree, isPaywalled]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
-    if (!stockQueryToAnalyze.trim()) {
-      setStockError(t('errors.emptyStock'));
-      return;
-    }
-
-    if (checkRateLimit()) {
-        setStockError(t('errors.rateLimit'));
-        return;
-    }
-
-    if (activeModel === 'claude' && claudeCredits === 0 && !bypassCreditCheck) {
+    if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
+    if (checkRateLimit()) { setStockError(t('errors.rateLimit')); return; }
+    if (isPaywalled && !bypassCreditCheck) {
         setPendingAnalysis({ type: 'stock', query: stockQueryToAnalyze });
         setIsPaymentModalOpen(true);
         return;
@@ -698,48 +727,32 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-      if (activeModel === 'claude') {
-        setClaudeCredits(useClaudeCredit());
-      }
-      const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
-      
-      setStockAnalysisReport(report);
-      recordAnalysisTimestamp();
-      incrementAnalysisCount();
-      incrementUserAnalysisCount();
+        if (!isFree && cost > 0) setCredits(useCredits(cost));
+        if (isFree) recordDailyUsage(activeModel);
 
-      const newEntry: StockHistoryEntry = {
-        id: Date.now(),
-        query: stockQueryToAnalyze,
-        report: report,
-      };
-      const newHistory = [newEntry, ...stockHistory].slice(0, 20);
-      updateStockHistory(newHistory);
+        const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
+        
+        setStockAnalysisReport(report);
+        if (!isFree) recordAnalysisTimestamp();
+        incrementUserAnalysisCount();
 
+        const newEntry: StockHistoryEntry = { id: Date.now(), query: stockQueryToAnalyze, report };
+        const newHistory = [newEntry, ...stockHistory].slice(0, 20);
+        updateStockHistory(newHistory);
     } catch (err) {
-      console.error(err);
-      if (activeModel === 'claude' && !bypassCreditCheck) {
-          setClaudeCredits(addClaudeCredits(1)); // Refund credit on failure
-      }
-      const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
-      setStockError(errorMessage);
+        console.error(err);
+        if (!isFree && cost > 0) setCredits(addCredits(cost)); // Refund credit on failure
+        const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
+        setStockError(errorMessage);
     } finally {
-      setIsStockLoading(false);
+        setIsStockLoading(false);
     }
-  }, [stockHistory, activeModel, locale, t, claudeCredits]);
+  }, [stockHistory, activeModel, locale, t, cost, isFree, isPaywalled]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
-    if (!query.trim()) {
-        setPositionalWarfareError(t('errors.emptyLeaderStock'));
-        return;
-    }
-
-    if (checkRateLimit()) {
-        setPositionalWarfareError(t('errors.rateLimit'));
-        return;
-    }
-
-    if (activeModel === 'claude' && claudeCredits === 0 && !bypassCreditCheck) {
+    if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
+    if (checkRateLimit()) { setPositionalWarfareError(t('errors.rateLimit')); return; }
+    if (isPaywalled && !bypassCreditCheck) {
         setPendingAnalysis({ type: 'positional', query });
         setIsPaymentModalOpen(true);
         return;
@@ -753,40 +766,32 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        if (activeModel === 'claude') {
-            setClaudeCredits(useClaudeCredit());
-        }
+        if (!isFree && cost > 0) setCredits(useCredits(cost));
+        if (isFree) recordDailyUsage(activeModel);
+
         const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale);
 
         setPositionalWarfareReport(report);
-        recordAnalysisTimestamp();
-        incrementAnalysisCount();
+        if (!isFree) recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
-        const newEntry: PositionalWarfareHistoryEntry = {
-          id: Date.now(),
-          leaderStockQuery: query,
-          report: report,
-        };
+        const newEntry: PositionalWarfareHistoryEntry = { id: Date.now(), leaderStockQuery: query, report };
         const newHistory = [newEntry, ...positionalWarfareHistory].slice(0, 20);
         updatePositionalWarfareHistory(newHistory);
-
     } catch (err) {
         console.error(err);
-        if (activeModel === 'claude' && !bypassCreditCheck) {
-            setClaudeCredits(addClaudeCredits(1)); // Refund credit on failure
-        }
+        if (!isFree && cost > 0) setCredits(addCredits(cost)); // Refund credit on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setPositionalWarfareError(errorMessage);
     } finally {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [positionalWarfareHistory, activeModel, locale, t, claudeCredits]);
+  }, [positionalWarfareHistory, activeModel, locale, t, cost, isFree, isPaywalled]);
 
   const handlePaymentSuccess = (creditsPurchased: number) => {
-    const newTotal = addClaudeCredits(creditsPurchased);
-    setClaudeCredits(newTotal);
+    const newTotal = addCredits(creditsPurchased);
+    setCredits(newTotal);
     setIsPaymentModalOpen(false);
     
     if (pendingAnalysis) {
@@ -925,7 +930,6 @@ const MainPage: React.FC = () => {
 
   const showLatestNews = locale === 'zh';
   const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
-  const isClaudePaywalled = activeModel === 'claude' && claudeCredits === 0;
 
   return (
     <>
@@ -964,17 +968,12 @@ const MainPage: React.FC = () => {
           </header>
           
           <div className="flex justify-center items-center gap-x-3 mb-8 -mt-4">
-            {/* Cumulative Analysis Counter */}
             <div className="text-center">
               <p className="text-xs text-slate-500">{t('stats.userAnalysisCount')}</p>
               <p className="text-2xl font-bold text-blue-600 tracking-tight">{userAnalysisCount}</p>
               <div className="w-6 h-px mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-0.5"></div>
             </div>
-
-            {/* Divider */}
             <div className="h-8 w-px bg-slate-200/60"></div>
-
-            {/* Action Buttons */}
             <div className="flex items-center gap-x-3">
               <a
                 href="https://pplx.ai/mastergo"
@@ -993,7 +992,6 @@ const MainPage: React.FC = () => {
           <main>
             {/* --- Analysis Controls --- */}
             <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
-              {/* Model Switcher */}
               <div className="flex items-center gap-x-3">
                 <label htmlFor="model-switcher" className="text-sm font-medium text-slate-700">
                   {t('controls.model')}
@@ -1005,9 +1003,9 @@ const MainPage: React.FC = () => {
                         onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
                         className="appearance-none bg-white/60 border border-slate-200/60 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors cursor-pointer"
                     >
-                        <option value="deepseek">{t('controls.deepseek')}</option>
-                        <option value="gemini">{`${t('controls.gemini')} (${t('controls.beta')})`}</option>
-                        <option value="claude">{`${t('controls.claude')} (${t('controls.top')})`}</option>
+                        <option value="deepseek">{getModelLabel('deepseek')}</option>
+                        <option value="gemini">{getModelLabel('gemini')}</option>
+                        <option value="claude">{getModelLabel('claude')}</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-700">
                         <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -1016,18 +1014,14 @@ const MainPage: React.FC = () => {
                     </div>
                 </div>
               </div>
-              {/* Claude Credits Display */}
-              {activeModel === 'claude' && (
-                <div className="text-sm font-medium text-slate-700 flex items-center gap-x-2">
-                    <span>{t('controls.claudeCredits', { count: claudeCredits })}</span>
-                    <button onClick={() => setIsPaymentModalOpen(true)} className="text-purple-600 hover:text-purple-800 text-xs font-bold">
-                        ({t('controls.addCredits')})
-                    </button>
-                </div>
-              )}
+              <div className="text-sm font-medium text-slate-700 flex items-center gap-x-2">
+                  <span>{t('controls.credits', { count: credits })}</span>
+                  <button onClick={() => setIsPaymentModalOpen(true)} className="text-purple-600 hover:text-purple-800 text-xs font-bold">
+                      ({t('controls.addCredits')})
+                  </button>
+              </div>
             </div>
             
-            {/* --- Tabs Navigation --- */}
             <div className="mb-8" role="tablist" aria-label="分析模式">
               <div className="glass-refined p-2 flex justify-center items-center gap-x-2 max-w-md mx-auto">
                 <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
@@ -1045,7 +1039,6 @@ const MainPage: React.FC = () => {
               </div>
             </div>
 
-            {/* --- Tabs Content --- */}
             <div className="space-y-8">
                 {activeTab === 'topic' && (
                     <div className="space-y-8 animate-fade-in" role="tabpanel">
@@ -1054,8 +1047,9 @@ const MainPage: React.FC = () => {
                           setUserInput={setUserInput}
                           onAnalyze={() => handleAnalyze(userInput)}
                           isLoading={isLoading}
-                          isClaudePaywalled={isClaudePaywalled}
-                          claudeCredits={claudeCredits}
+                          isPaywalled={isPaywalled}
+                          isFree={isFree}
+                          cost={cost}
                         />
             
                         {isLoading && <Loader />}
@@ -1096,8 +1090,9 @@ const MainPage: React.FC = () => {
                           onAnalyze={handleStockAnalyze}
                           isLoading={isStockLoading}
                           suggestions={hotStocks}
-                          isClaudePaywalled={isClaudePaywalled}
-                          claudeCredits={claudeCredits}
+                          isPaywalled={isPaywalled}
+                          isFree={isFree}
+                          cost={cost}
                         />
 
                         <HotStocks 
@@ -1134,8 +1129,9 @@ const MainPage: React.FC = () => {
                           setLeaderStockQuery={setLeaderStockQuery}
                           onAnalyze={() => handlePositionalWarfareAnalyze(leaderStockQuery)}
                           isLoading={isPositionalWarfareLoading}
-                          isClaudePaywalled={isClaudePaywalled}
-                          claudeCredits={claudeCredits}
+                          isPaywalled={isPaywalled}
+                          isFree={isFree}
+                          cost={cost}
                         />
 
                         {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}

@@ -22,13 +22,15 @@
     "deepseek": "DeepSeek",
     "claude": "Claude",
     "gemini": "Gemini",
-    "beta": "Live",
-    "top": "Top",
-    "getCredits": "Get Claude Credits",
-    "useCreditAndAnalyze": "Use 1 Credit & Analyze",
+    "top": "Strongest",
+    "getCredits": "Get Credits",
+    "useCreditAndAnalyzeMulti": "Use {{count}} Credits & Analyze",
+    "freeAnalysis": "Free Analysis",
     "modelSwitched": "Switched to {{modelName}} model",
-    "claudeCredits": "Claude Credits: {{count}} 💎",
-    "addCredits": "Add"
+    "credits": "Credits: {{count}} 💎",
+    "addCredits": "Add",
+    "usesLeft": "{{count}} free uses left",
+    "costPerUse": "{{count}} credits/use"
   },
   "tabs": {
     "topic": "Dig",
@@ -65,8 +67,8 @@
     "acceptButton": "I Understand the Risks"
   },
   "paymentModal": {
-    "title": "Unlock Claude Model",
-    "description": "Purchase credits to use the powerful Claude model for superior analysis reports.",
+    "title": "Get Credits",
+    "description": "Purchase credits to use premium analysis models.",
     "packagesTitle": "Choose a Credit Pack:",
     "package1": "1 Credit",
     "package5": "5 Credits",

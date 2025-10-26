@@ -13,18 +13,31 @@ interface StockAnalysisInputProps {
   onAnalyze: (stockQuery: string) => void;
   isLoading: boolean;
   suggestions: Stock[];
-  isClaudePaywalled: boolean;
-  claudeCredits: number;
+  isPaywalled: boolean;
+  isFree: boolean;
+  cost: number;
 }
 
-const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions, isClaudePaywalled, claudeCredits }) => {
+const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions, isPaywalled, isFree, cost }) => {
   const { t } = useI18n();
   const [filteredSuggestions, setFilteredSuggestions] = useState<Stock[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
-  const buttonText = isClaudePaywalled 
-    ? t('controls.getCredits') 
-    : (claudeCredits > 0 ? t('controls.useCreditAndAnalyze') : t('stockAnalysisInput.button'));
+  
+  const getButtonText = () => {
+    if (isPaywalled) {
+      return t('controls.getCredits');
+    }
+    if (isFree) {
+      return t('controls.freeAnalysis');
+    }
+    if (cost > 0) {
+      return t('controls.useCreditAndAnalyzeMulti', { count: cost });
+    }
+    return t('stockAnalysisInput.button'); // Fallback
+  };
+
+  const buttonText = getButtonText();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
