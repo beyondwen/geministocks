@@ -465,6 +465,7 @@ const MainPage: React.FC = () => {
   const [dailyUsage, setDailyUsage] = useState<DailyUsage>(() => getDailyUsage());
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+  const [redemptionCode, setRedemptionCode] = useState('');
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -665,7 +666,7 @@ const MainPage: React.FC = () => {
   const handleModelChange = (newModel: AnalysisModel) => {
     if (activeModel === newModel) return;
     setActiveModel(newModel);
-    setToast({ message: t('controls.modelSwitched', { modelName: t(`controls.${newModel}`) }), type: 'info' });
+    setToast({ message: t('controls.modelSwitched'), type: 'info' });
   };
 
   const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
@@ -847,6 +848,33 @@ const MainPage: React.FC = () => {
     }
   };
 
+  const handleRedeemCode = useCallback(() => {
+    if (redemptionCode.toLowerCase().trim() !== 'happy') {
+        setToast({ message: t('redeem.invalidCode'), type: 'info' });
+        return;
+    }
+
+    const REDEMPTION_KEY = 'gemini-redemption-date-happy';
+    const today = new Date().toISOString().split('T')[0];
+
+    try {
+        const lastRedemptionDate = localStorage.getItem(REDEMPTION_KEY);
+        if (lastRedemptionDate === today) {
+            setToast({ message: t('redeem.alreadyRedeemed'), type: 'info' });
+            return;
+        }
+
+        const newCredits = addCredits(10);
+        setCredits(newCredits);
+        localStorage.setItem(REDEMPTION_KEY, today);
+        setToast({ message: t('redeem.success'), type: 'success' });
+        setRedemptionCode(''); // Clear input after successful redemption
+
+    } catch (e) {
+        console.error("Failed to process redemption code:", e);
+    }
+  }, [redemptionCode, t]);
+
 
   // --- History Handlers ---
 
@@ -991,7 +1019,7 @@ const MainPage: React.FC = () => {
 
           <main>
             {/* --- Analysis Controls --- */}
-            <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
+            <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4 flex-wrap">
               <div className="flex items-center gap-x-3">
                 <label htmlFor="model-switcher" className="text-sm font-medium text-slate-700">
                   {t('controls.model')}
@@ -1157,28 +1185,24 @@ const MainPage: React.FC = () => {
           </main>
           
           <footer className="text-center mt-16 py-8 border-t border-slate-200/60 flex flex-col items-center gap-y-6">
-            <a
-              href="https://polymarket.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative inline-flex items-center gap-2 px-6 py-2.5 text-white text-sm font-medium rounded-xl group overflow-hidden bg-gradient-to-r from-green-500 to-cyan-500 shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-              <ChartTrendingUpIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-              <span className="relative z-10">{t('actions.marketPrediction')}</span>
-            </a>
-            <p className="text-sm text-slate-500">
-              {t('footer.developedBy')}&nbsp;
-              <a
-                href="https://t.me/lover_links"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
+            <div className="flex items-center gap-x-2">
+              <input
+                  type="text"
+                  placeholder={t('redeem.placeholder')}
+                  value={redemptionCode}
+                  onChange={(e) => setRedemptionCode(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCode(); }}
+                  className="bg-white/60 border border-slate-200/60 rounded-full pl-4 pr-2 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors w-40"
+                  aria-label={t('redeem.placeholder')}
+              />
+              <button
+                  onClick={handleRedeemCode}
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
               >
-                {t('footer.developerName')}
-              </a>
-              &nbsp;{t('footer.followUs')}
-            </p>
+                  {t('redeem.button')}
+              </button>
+            </div>
+            <LanguageSwitcher />
             <p className="text-sm text-slate-500">
               {t('footer.contact')}
               <a
@@ -1188,7 +1212,6 @@ const MainPage: React.FC = () => {
                 codes@z.org
               </a>
             </p>
-            <LanguageSwitcher />
           </footer>
         </div>
       </div>

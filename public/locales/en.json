@@ -14,8 +14,7 @@
     "userAnalysisCount": "Analyses"
   },
   "actions": {
-    "getPerplexity": "Get Perplexity Pro for Free",
-    "marketPrediction": "Market Prediction"
+    "getPerplexity": "Get Perplexity Pro for Free"
   },
   "controls": {
     "model": "Analysis Model",
@@ -26,7 +25,7 @@
     "getCredits": "Get Credits",
     "useCreditAndAnalyzeMulti": "Use {{count}} Credits & Analyze",
     "freeAnalysis": "Free Analysis",
-    "modelSwitched": "Switched to {{modelName}} model",
+    "modelSwitched": "Model switched successfully.",
     "credits": "Credits: {{count}} 💎",
     "addCredits": "Add",
     "usesLeft": "{{count}} free uses left",
@@ -47,9 +46,6 @@
     "emptyLeaderStock": "Leader stock is required."
   },
   "footer": {
-    "developedBy": "Independently developed by",
-    "developerName": "Sengseng",
-    "followUs": "",
     "accountName": "Xiaosheng Dushu",
     "accountNameEn": "Xiaosheng Dushu",
     "endText": "",
@@ -305,5 +301,12 @@
     "High": "High",
     "Medium": "Medium",
     "Low": "Low"
+  },
+  "redeem": {
+    "placeholder": "Redemption Code...",
+    "button": "Redeem",
+    "invalidCode": "Invalid redemption code.",
+    "alreadyRedeemed": "You have already redeemed this code today.",
+    "success": "Wishing you happiness. Thank you!"
   }
 }

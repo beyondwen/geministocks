@@ -14,8 +14,7 @@
     "userAnalysisCount": "累计分析"
   },
   "actions": {
-    "getPerplexity": "免费领取 Perplexity 会员",
-    "marketPrediction": "市场预测"
+    "getPerplexity": "免费领取 Perplexity 会员"
   },
   "controls": {
     "model": "分析模型",
@@ -26,7 +25,7 @@
     "getCredits": "获取信用点",
     "useCreditAndAnalyzeMulti": "使用 {{count}} 点信用分析",
     "freeAnalysis": "免费分析",
-    "modelSwitched": "已切换至 {{modelName}} 模型",
+    "modelSwitched": "切换模型成功。",
     "credits": "信用点: {{count}} 💎",
     "addCredits": "充值",
     "usesLeft": "剩 {{count}} 次免费",
@@ -47,9 +46,6 @@
     "emptyLeaderStock": "龙头股票为必填项。"
   },
   "footer": {
-    "developedBy": "由",
-    "developerName": "僧僧",
-    "followUs": "独立开发",
     "accountName": "小声读书",
     "accountNameEn": "小声读书",
     "endText": "",
@@ -305,5 +301,12 @@
     "High": "高",
     "Medium": "中",
     "Low": "低"
+  },
+  "redeem": {
+    "placeholder": "输入兑换码...",
+    "button": "兑换",
+    "invalidCode": "无效的兑换码。",
+    "alreadyRedeemed": "您今天已经兑换过了。",
+    "success": "祝你开心，谢谢。"
   }
 }
