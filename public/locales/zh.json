@@ -24,11 +24,9 @@
     "top": "最强",
     "getCredits": "获取信用点",
     "useCreditAndAnalyzeMulti": "使用 {{count}} 点信用分析",
-    "freeAnalysis": "免费分析",
     "modelSwitched": "切换模型成功。",
     "credits": "信用点: {{count}} 💎",
     "addCredits": "充值",
-    "usesLeft": "剩 {{count}} 次免费",
     "costPerUse": "{{count}}点/次"
   },
   "tabs": {
@@ -308,5 +306,8 @@
     "invalidCode": "无效的兑换码。",
     "alreadyRedeemed": "您今天已经兑换过了。",
     "success": "祝你开心，谢谢。"
+  },
+  "toasts": {
+    "dailyCreditsAwarded": "每日 {{count}} 点免费信用点已到账！✨"
   }
 }

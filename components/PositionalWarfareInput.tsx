@@ -8,24 +8,17 @@ interface PositionalWarfareInputProps {
   onAnalyze: () => void;
   isLoading: boolean;
   isPaywalled: boolean;
-  isFree: boolean;
   cost: number;
 }
 
-const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading, isPaywalled, isFree, cost }) => {
+const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderStockQuery, setLeaderStockQuery, onAnalyze, isLoading, isPaywalled, cost }) => {
   const { t } = useI18n();
   
   const getButtonText = () => {
     if (isPaywalled) {
       return t('controls.getCredits');
     }
-    if (isFree) {
-      return t('controls.freeAnalysis');
-    }
-    if (cost > 0) {
-      return t('controls.useCreditAndAnalyzeMulti', { count: cost });
-    }
-    return t('positionalWarfareInput.button'); // Fallback
+    return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 
   const buttonText = getButtonText();

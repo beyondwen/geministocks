@@ -24,11 +24,9 @@
     "top": "Strongest",
     "getCredits": "Get Credits",
     "useCreditAndAnalyzeMulti": "Use {{count}} Credits & Analyze",
-    "freeAnalysis": "Free Analysis",
     "modelSwitched": "Model switched successfully.",
     "credits": "Credits: {{count}} 💎",
     "addCredits": "Add",
-    "usesLeft": "{{count}} free uses left",
     "costPerUse": "{{count}} credits/use"
   },
   "tabs": {
@@ -308,5 +306,8 @@
     "invalidCode": "Invalid redemption code.",
     "alreadyRedeemed": "You have already redeemed this code today.",
     "success": "Wishing you happiness. Thank you!"
+  },
+  "toasts": {
+    "dailyCreditsAwarded": "You've received your {{count}} free daily credits! ✨"
   }
 }

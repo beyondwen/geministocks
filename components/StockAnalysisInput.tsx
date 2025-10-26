@@ -14,11 +14,10 @@ interface StockAnalysisInputProps {
   isLoading: boolean;
   suggestions: Stock[];
   isPaywalled: boolean;
-  isFree: boolean;
   cost: number;
 }
 
-const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions, isPaywalled, isFree, cost }) => {
+const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions, isPaywalled, cost }) => {
   const { t } = useI18n();
   const [filteredSuggestions, setFilteredSuggestions] = useState<Stock[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -28,13 +27,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
     if (isPaywalled) {
       return t('controls.getCredits');
     }
-    if (isFree) {
-      return t('controls.freeAnalysis');
-    }
-    if (cost > 0) {
-      return t('controls.useCreditAndAnalyzeMulti', { count: cost });
-    }
-    return t('stockAnalysisInput.button'); // Fallback
+    return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 
   const buttonText = getButtonText();

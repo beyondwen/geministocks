@@ -32,26 +32,19 @@ const RISK_WARNING_ACCEPTED_KEY = 'gemini-risk-warning-accepted';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
 const USER_ID_KEY = 'gemini-user-id';
-const CREDITS_KEY = 'gemini-claude-credits'; // Keep old key for backward compatibility
-const DAILY_USAGE_KEY = 'gemini-daily-usage';
+const CREDITS_KEY = 'gemini-claude-credits';
+const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
 
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 // --- Model Usage Rules ---
-const DEEPSEEK_FREE_USES_PER_DAY = 3;
-const GEMINI_FREE_USES_PER_DAY = 1;
-
 const DEEPSEEK_CREDIT_COST = 1;
 const GEMINI_CREDIT_COST = 1;
 const CLAUDE_CREDIT_COST = 2;
 
-interface DailyUsage {
-  date: string;
-  deepseek: number;
-  gemini: number;
-}
-
+// --- New Credit System Rules ---
+const DAILY_FREE_CREDITS_AWARD = 5;
 
 // --- User/Credit/Usage Helper Functions ---
 const getUserId = (): string => {
@@ -93,24 +86,6 @@ const useCredits = (amount: number): number => {
     }
     return currentCredits;
   } catch (e) { return 0; }
-};
-
-const getDailyUsage = (): DailyUsage => {
-  try {
-    const storedUsage = localStorage.getItem(DAILY_USAGE_KEY);
-    const today = new Date().toISOString().split('T')[0];
-    if (storedUsage) {
-      const usage: DailyUsage = JSON.parse(storedUsage);
-      if (usage.date === today) {
-        return usage;
-      }
-    }
-    // Return fresh object if no stored usage or date is old
-    return { date: today, deepseek: 0, gemini: 0 };
-  } catch (e) {
-    console.error("Failed to read daily usage from localStorage", e);
-    return { date: new Date().toISOString().split('T')[0], deepseek: 0, gemini: 0 };
-  }
 };
 
 // --- Data & Types ---
@@ -462,7 +437,6 @@ const MainPage: React.FC = () => {
 
   // Credit and Usage State
   const [credits, setCredits] = useState<number>(0);
-  const [dailyUsage, setDailyUsage] = useState<DailyUsage>(() => getDailyUsage());
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [redemptionCode, setRedemptionCode] = useState('');
@@ -472,7 +446,7 @@ const MainPage: React.FC = () => {
     if (toast) {
       const timer = setTimeout(() => {
         setToast(null);
-      }, 3000); // 3 seconds
+      }, 5000); // 5 seconds
       return () => clearTimeout(timer);
     }
   }, [toast]);
@@ -512,26 +486,24 @@ const MainPage: React.FC = () => {
         console.error("Failed to record analysis timestamp to localStorage", err);
     }
   };
-
-  const recordDailyUsage = (model: AnalysisModel) => {
-    if (model !== 'deepseek' && model !== 'gemini') return;
-  
-    const currentUsage = getDailyUsage(); // Ensures we have the latest from LS
-    const newUsage = { ...currentUsage, [model]: currentUsage[model] + 1 };
-  
-    try {
-      localStorage.setItem(DAILY_USAGE_KEY, JSON.stringify(newUsage));
-      setDailyUsage(newUsage); // Update state to trigger re-render
-    } catch (e) {
-      console.error("Failed to record daily usage to localStorage", e);
-    }
-  };
   
   useEffect(() => {
-    // Initialize user ID and credits
+    // Initialize user ID
     getUserId();
+
+    // Daily Credits (runs once per day)
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const lastAwardDate = localStorage.getItem(LAST_DAILY_CREDIT_AWARD_DATE_KEY);
+        if (lastAwardDate !== today) {
+            addCredits(DAILY_FREE_CREDITS_AWARD);
+            localStorage.setItem(LAST_DAILY_CREDIT_AWARD_DATE_KEY, today);
+            setToast({ message: t('toasts.dailyCreditsAwarded', { count: DAILY_FREE_CREDITS_AWARD }), type: 'success' });
+        }
+    } catch (e) { console.error("Failed to award daily credits:", e); }
+    
+    // Set credits state from the now-updated localStorage
     setCredits(getCredits());
-    setDailyUsage(getDailyUsage());
 
     // Check if risk warning has been accepted
     const hasAcceptedRisk = localStorage.getItem(RISK_WARNING_ACCEPTED_KEY);
@@ -563,7 +535,7 @@ const MainPage: React.FC = () => {
     } catch (err) {
       console.error("Failed to load from localStorage", err);
     }
-  }, []);
+  }, [t]);
 
   // Fetch dynamic hot stocks when model or language changes
   useEffect(() => {
@@ -598,47 +570,33 @@ const MainPage: React.FC = () => {
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', ogDescription);
   }, [locale, t]);
 
-  const { cost, isFree, isPaywalled } = useMemo(() => {
+  const { cost, isPaywalled } = useMemo(() => {
     let calculatedCost = 0;
-    let calculatedIsFree = false;
 
     if (activeModel === 'deepseek') {
-        if (dailyUsage.deepseek < DEEPSEEK_FREE_USES_PER_DAY) {
-            calculatedIsFree = true;
-        } else {
-            calculatedCost = DEEPSEEK_CREDIT_COST;
-        }
+        calculatedCost = DEEPSEEK_CREDIT_COST;
     } else if (activeModel === 'gemini') {
-        if (dailyUsage.gemini < GEMINI_FREE_USES_PER_DAY) {
-            calculatedIsFree = true;
-        } else {
-            calculatedCost = GEMINI_CREDIT_COST;
-        }
+        calculatedCost = GEMINI_CREDIT_COST;
     } else { // claude
         calculatedCost = CLAUDE_CREDIT_COST;
     }
     
-    const needsCredits = !calculatedIsFree && calculatedCost > 0;
     const hasEnoughCredits = credits >= calculatedCost;
-    const calculatedIsPaywalled = needsCredits && !hasEnoughCredits;
+    const calculatedIsPaywalled = !hasEnoughCredits;
 
-    return { cost: calculatedCost, isFree: calculatedIsFree, isPaywalled: calculatedIsPaywalled };
-  }, [activeModel, credits, dailyUsage]);
+    return { cost: calculatedCost, isPaywalled: calculatedIsPaywalled };
+  }, [activeModel, credits]);
 
   const getModelLabel = useCallback((model: AnalysisModel) => {
     switch(model) {
         case 'deepseek':
-            const deepseekLeft = Math.max(0, DEEPSEEK_FREE_USES_PER_DAY - dailyUsage.deepseek);
-            const deepseekLabel = deepseekLeft > 0 ? t('controls.usesLeft', {count: deepseekLeft}) : t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST});
-            return `${t('controls.deepseek')} (${deepseekLabel})`;
+            return `${t('controls.deepseek')} (${t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST})})`;
         case 'gemini':
-            const geminiLeft = Math.max(0, GEMINI_FREE_USES_PER_DAY - dailyUsage.gemini);
-            const geminiLabel = geminiLeft > 0 ? t('controls.usesLeft', {count: geminiLeft}) : t('controls.costPerUse', {count: GEMINI_CREDIT_COST});
-            return `${t('controls.gemini')} (${geminiLabel})`;
+            return `${t('controls.gemini')} (${t('controls.costPerUse', {count: GEMINI_CREDIT_COST})})`;
         case 'claude':
             return `${t('controls.claude')} (${t('controls.costPerUse', {count: CLAUDE_CREDIT_COST})})`;
     }
-  }, [dailyUsage, t]);
+  }, [t]);
 
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
     setTopicHistory(newHistory);
@@ -686,8 +644,7 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-        if (!isFree && cost > 0) setCredits(useCredits(cost));
-        if (isFree) recordDailyUsage(activeModel);
+        setCredits(useCredits(cost));
 
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
         const report = isPolymarketUrl 
@@ -695,7 +652,7 @@ const MainPage: React.FC = () => {
             : await getAnalysis(topic, activeModel, locale);
         
         setAnalysisReport(report);
-        if (!isFree) recordAnalysisTimestamp(); // Only rate limit paid uses
+        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: TopicHistoryEntry = { id: Date.now(), topic, report };
@@ -703,13 +660,13 @@ const MainPage: React.FC = () => {
         updateTopicHistory(newHistory);
     } catch (err) {
         console.error(err);
-        if (!isFree && cost > 0) setCredits(addCredits(cost)); // Refund on failure
+        setCredits(addCredits(cost)); // Refund on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setError(errorMessage);
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory, activeModel, locale, t, cost, isFree, isPaywalled]);
+  }, [topicHistory, activeModel, locale, t, cost, isPaywalled, credits]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
@@ -728,13 +685,12 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
 
     try {
-        if (!isFree && cost > 0) setCredits(useCredits(cost));
-        if (isFree) recordDailyUsage(activeModel);
+        setCredits(useCredits(cost));
 
         const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
         
         setStockAnalysisReport(report);
-        if (!isFree) recordAnalysisTimestamp();
+        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: StockHistoryEntry = { id: Date.now(), query: stockQueryToAnalyze, report };
@@ -742,13 +698,13 @@ const MainPage: React.FC = () => {
         updateStockHistory(newHistory);
     } catch (err) {
         console.error(err);
-        if (!isFree && cost > 0) setCredits(addCredits(cost)); // Refund credit on failure
+        setCredits(addCredits(cost)); // Refund credit on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setStockError(errorMessage);
     } finally {
         setIsStockLoading(false);
     }
-  }, [stockHistory, activeModel, locale, t, cost, isFree, isPaywalled]);
+  }, [stockHistory, activeModel, locale, t, cost, isPaywalled, credits]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
@@ -767,13 +723,12 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     
     try {
-        if (!isFree && cost > 0) setCredits(useCredits(cost));
-        if (isFree) recordDailyUsage(activeModel);
+        setCredits(useCredits(cost));
 
         const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale);
 
         setPositionalWarfareReport(report);
-        if (!isFree) recordAnalysisTimestamp();
+        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: PositionalWarfareHistoryEntry = { id: Date.now(), leaderStockQuery: query, report };
@@ -781,14 +736,14 @@ const MainPage: React.FC = () => {
         updatePositionalWarfareHistory(newHistory);
     } catch (err) {
         console.error(err);
-        if (!isFree && cost > 0) setCredits(addCredits(cost)); // Refund credit on failure
+        setCredits(addCredits(cost)); // Refund credit on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setPositionalWarfareError(errorMessage);
     } finally {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [positionalWarfareHistory, activeModel, locale, t, cost, isFree, isPaywalled]);
+  }, [positionalWarfareHistory, activeModel, locale, t, cost, isPaywalled, credits]);
 
   const handlePaymentSuccess = (creditsPurchased: number) => {
     const newTotal = addCredits(creditsPurchased);
@@ -1076,7 +1031,6 @@ const MainPage: React.FC = () => {
                           onAnalyze={() => handleAnalyze(userInput)}
                           isLoading={isLoading}
                           isPaywalled={isPaywalled}
-                          isFree={isFree}
                           cost={cost}
                         />
             
@@ -1119,7 +1073,6 @@ const MainPage: React.FC = () => {
                           isLoading={isStockLoading}
                           suggestions={hotStocks}
                           isPaywalled={isPaywalled}
-                          isFree={isFree}
                           cost={cost}
                         />
 
@@ -1158,7 +1111,6 @@ const MainPage: React.FC = () => {
                           onAnalyze={() => handlePositionalWarfareAnalyze(leaderStockQuery)}
                           isLoading={isPositionalWarfareLoading}
                           isPaywalled={isPaywalled}
-                          isFree={isFree}
                           cost={cost}
                         />
 
