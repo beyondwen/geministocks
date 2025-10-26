@@ -70,7 +70,7 @@
     "title": "获取信用点",
     "description": "购买信用点以使用高级分析模型。",
     "packagesTitle": "选择一个信用包：",
-    "package1": "1个信用点",
+    "package2": "2个信用点",
     "package5": "5个信用点",
     "package10": "10个信用点",
     "bestValue": "最划算",

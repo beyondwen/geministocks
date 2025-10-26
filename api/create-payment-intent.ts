@@ -15,13 +15,13 @@ interface VercelResponse {
 interface VercelRequest {
   method: string;
   body: {
-    packageId?: 'pack_1' | 'pack_5' | 'pack_10';
+    packageId?: 'pack_2' | 'pack_5' | 'pack_10';
   };
 }
 
 // Define the pricing for each package in cents
 const packagePrices: { [key: string]: number } = {
-    'pack_1': 100,  // $1.00 for 1 credit
+    'pack_2': 200,  // $2.00 for 2 credits
     'pack_5': 450,  // $4.50 for 5 credits (10% discount)
     'pack_10': 800, // $8.00 for 10 credits (20% discount)
 };
@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { packageId = 'pack_1' } = req.body; // Default to single pack if not provided
+    const { packageId = 'pack_2' } = req.body; // Default to 2-credit pack if not provided
     const amount = packagePrices[packageId];
 
     if (!amount) {

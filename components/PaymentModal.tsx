@@ -4,10 +4,10 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
 
-type PackageId = 'pack_1' | 'pack_5' | 'pack_10';
+type PackageId = 'pack_2' | 'pack_5' | 'pack_10';
 
 const creditPackages: { id: PackageId; credits: number; price: string; description: string; bestValue?: boolean }[] = [
-    { id: 'pack_1', credits: 1, price: '$1.00', description: '' },
+    { id: 'pack_2', credits: 2, price: '$2.00', description: '' },
     { id: 'pack_5', credits: 5, price: '$4.50', description: '10% OFF' },
     { id: 'pack_10', credits: 10, price: '$8.00', description: '20% OFF', bestValue: true },
 ];
