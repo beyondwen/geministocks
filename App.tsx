@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, type AnalysisModel } from './services/geminiService';
-// FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
@@ -20,9 +18,10 @@ import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import { useI18n } from './hooks/useI18n';
+import { useI18n, I18nProvider } from './hooks/useI18n';
 import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
+import { ClerkProvider, SignedIn, SignedOut, UserButton, SignInButton, SignUpButton } from '@clerk/clerk-react';
 
 // --- Constants ---
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -947,34 +946,17 @@ const MainPage: React.FC = () => {
             </p>
           </header>
           
-          <div className="flex justify-center items-center gap-x-3 mb-8 -mt-4">
-            <div className="text-center">
-              <p className="text-xs text-slate-500">{t('stats.userAnalysisCount')}</p>
-              <p className="text-2xl font-bold text-blue-600 tracking-tight">{userAnalysisCount}</p>
-              <div className="w-6 h-px mx-auto bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-0.5"></div>
-            </div>
-            <div className="h-8 w-px bg-slate-200/60"></div>
-            <div className="flex items-center gap-x-3">
-              <a
-                href="https://pplx.ai/mastergo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg group overflow-hidden btn-premium shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                <AcademicCapIcon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
-                <span className="relative z-10">{t('actions.getPerplexity')}</span>
-              </a>
-            </div>
-          </div>
-
-
           <main>
             {/* --- Analysis Controls --- */}
-            <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4 flex-wrap">
+            <div className="mb-8 -mt-4 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4 flex-wrap">
+              <div className="flex items-center gap-x-2 text-sm font-medium text-slate-700">
+                <span>{t('stats.userAnalysisCount')}:</span>
+                <span className="font-bold text-base text-slate-800">{userAnalysisCount}</span>
+              </div>
+              <div className="h-4 w-px bg-slate-200/80 hidden sm:block"></div>
               <div className="flex items-center gap-x-3">
                 <label htmlFor="model-switcher" className="text-sm font-medium text-slate-700">
-                  {t('controls.model')}
+                  {t('controls.model')}:
                 </label>
                 <div className="relative">
                     <select
@@ -994,6 +976,7 @@ const MainPage: React.FC = () => {
                     </div>
                 </div>
               </div>
+              <div className="h-4 w-px bg-slate-200/80 hidden sm:block"></div>
               <div className="text-sm font-medium text-slate-700 flex items-center gap-x-2">
                   <span>{t('controls.credits', { count: credits })}</span>
                   <button onClick={() => setIsPaymentModalOpen(true)} className="text-purple-600 hover:text-purple-800 text-xs font-bold">
@@ -1168,14 +1151,81 @@ const MainPage: React.FC = () => {
   );
 };
 
+
+const LandingPage: React.FC = () => {
+    const { t } = useI18n();
+    return (
+        <div className="min-h-screen font-sans flex flex-col items-center justify-center p-4 text-center">
+            <div className="flex justify-center items-center gap-x-4 mb-4">
+              <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
+                {t('header.title')}
+              </h1>
+               <RadarIcon className="w-12 h-12 text-blue-500" />
+            </div>
+            <p className="text-slate-600 text-lg max-w-2xl mt-4">
+              {t('meta.description')}
+            </p>
+            <div className="mt-12 flex flex-col sm:flex-row gap-4 items-center">
+                <SignInButton mode="modal">
+                    <button className="relative w-full sm:w-auto inline-flex items-center justify-center px-10 py-3 btn-premium text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95">
+                        登录
+                    </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                     <button className="w-full sm:w-auto px-10 py-3 bg-white text-slate-700 font-semibold rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95">
+                        注册
+                    </button>
+                </SignUpButton>
+            </div>
+        </div>
+    );
+};
+
+const ProtectedApp: React.FC = () => {
+    return (
+        <div className="relative">
+            <div className="absolute top-6 right-6 z-50">
+                <UserButton afterSignOutUrl="/" />
+            </div>
+            <MainPage />
+        </div>
+    );
+}
+
 const App: React.FC = () => {
+  const PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY;
+
+  if (!PUBLISHABLE_KEY) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center p-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+              <strong className="font-bold">配置错误: </strong>
+              <span className="block sm:inline">缺少 Clerk Publishable Key。请在 Vercel 环境变量中进行设置。</span>
+          </div>
+      </div>
+    );
+  }
+
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/about" element={<AboutPage />} />
-      </Routes>
-    </HashRouter>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <I18nProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={
+              <>
+                <SignedIn>
+                  <ProtectedApp />
+                </SignedIn>
+                <SignedOut>
+                  <LandingPage />
+                </SignedOut>
+              </>
+            } />
+            <Route path="/about" element={<AboutPage />} />
+          </Routes>
+        </HashRouter>
+      </I18nProvider>
+    </ClerkProvider>
   );
 };
 
