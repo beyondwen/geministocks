@@ -6,8 +6,12 @@ interface ImportMetaEnv {
   readonly VITE_CLERK_PUBLISHABLE_KEY: string;
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
+// FIX: To augment the global `ImportMeta` type from within a module, `declare global` is required.
+// The previous attempt was creating a locally-scoped interface.
+declare global {
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
 }
 
 import React from 'react';
