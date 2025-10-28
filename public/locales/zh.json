@@ -47,7 +47,8 @@
     "accountName": "小声读书",
     "accountNameEn": "小声读书",
     "endText": "",
-    "contact": "联系邮箱："
+    "contact": "联系邮箱：",
+    "status": "服务正常运行"
   },
   "imageModal": {
     "title": "欢迎关注“小声读书”"

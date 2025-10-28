@@ -616,6 +616,13 @@ const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassC
               <Link to="/about" className="text-sm font-medium text-slate-500 hover:text-purple-600 animated-underline transition-colors">使用说明</Link>
               <p className="text-sm text-slate-500">{t('footer.contact')}<a href="mailto:codes@z.org" className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors">codes@z.org</a></p>
             </div>
+            <div className="flex items-center gap-x-2 text-sm text-slate-500">
+                <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                <span>{t('footer.status')}</span>
+            </div>
           </footer>
         </div>
       </div>
