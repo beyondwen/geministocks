@@ -79,7 +79,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         metadata: { refundedTxId: lastTx.id }
       });
 
-      // FIX: Correct typo from refundedAmount to refundAmount.
       return { refundAmount, newBalance, newDailyFreeUsed };
     });
 
