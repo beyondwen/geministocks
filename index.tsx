@@ -1,4 +1,14 @@
-/// <reference types="vite/client" />
+// FIX: The /// <reference> for vite/client was not being resolved.
+// Explicitly declare the type for import.meta.env to resolve TypeScript errors
+// related to accessing environment variables. This ensures type safety without
+// relying on project-level configuration that may be missing.
+interface ImportMetaEnv {
+  readonly VITE_CLERK_PUBLISHABLE_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
