@@ -309,5 +309,22 @@
   },
   "toasts": {
     "dailyCreditsAwarded": "每日 {{count}} 点免费信用点已到账！✨"
+  },
+  "researchConsensus": {
+    "title": "机构研报洞察",
+    "epsTitle": "机构一致性 EPS 预测",
+    "noEps": "暂无机构一致性EPS预测数据。",
+    "targetPriceTitle": "机构一致性目标价",
+    "noTargetPrice": "暂无机构一致性目标价数据。",
+    "low": "最低",
+    "average": "平均",
+    "high": "最高",
+    "current": "现价",
+    "recentReportsTitle": "近期研究报告",
+    "noReports": "未找到近期研究报告。"
+  },
+  "announcementBanner": {
+    "text": "每日登录可免费领取 5 个信用点。✨",
+    "close": "关闭提示"
   }
 }

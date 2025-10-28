@@ -176,6 +176,35 @@ export interface RecentNewsItem {
   impact: 'Positive' | 'Neutral' | 'Negative';
 }
 
+// --- New Types for Institutional Research Consensus ---
+export interface EpsForecast {
+  year: string; // e.g., "2024E", "2025E", "2026E"
+  consensusEps: number | null;
+  growthRate: number | null; // as a percentage, e.g., 15.5 for 15.5%
+}
+
+export interface TargetPriceSummary {
+  high: number | null;
+  low: number | null;
+  average: number | null;
+}
+
+export interface RecentReport {
+  title: string;
+  institution: string;
+  rating: string;
+  publishDate: string; // "YYYY-MM-DD"
+  pdfUrl: string;
+}
+
+export interface ResearchReportConsensus {
+  currentPrice: number | null;
+  epsForecasts: EpsForecast[];
+  targetPriceSummary: TargetPriceSummary;
+  recentReports: RecentReport[];
+}
+
+
 export interface StockAnalysisReport {
   companyProfile: CompanyProfile;
   keyTakeaways: string[];
@@ -191,6 +220,7 @@ export interface StockAnalysisReport {
   corporateGovernance: CorporateGovernance;
   esgRating: ESGRating;
   sources?: GroundingSource[];
+  researchReportConsensus?: ResearchReportConsensus;
 }
 
 export interface StockHistoryEntry {

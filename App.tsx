@@ -1,9 +1,7 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, type AnalysisModel } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, getResearchReportAnalysis, type AnalysisModel } from './services/geminiService';
 // FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
@@ -24,6 +22,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
+import AnnouncementBanner from './components/AnnouncementBanner';
 
 // --- Constants ---
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -36,6 +35,8 @@ const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
 const USER_ID_KEY = 'gemini-user-id';
 const CREDITS_KEY = 'gemini-claude-credits';
 const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
+const BANNER_CLOSED_SESSION_KEY = 'gemini-daily-credit-banner-closed';
+
 
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
@@ -432,6 +433,7 @@ const MainPage: React.FC = () => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [activeModel, setActiveModel] = useState<AnalysisModel>('deepseek');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   // Credit and Usage State
   const [credits, setCredits] = useState<number>(0);
@@ -528,6 +530,11 @@ const MainPage: React.FC = () => {
       const isCaseStudyClosed = localStorage.getItem(CASE_STUDY_CLOSED_KEY);
       if (isCaseStudyClosed === 'true') {
           setIsCaseStudyVisible(false);
+      }
+
+      const isBannerClosed = sessionStorage.getItem(BANNER_CLOSED_SESSION_KEY);
+      if (isBannerClosed !== 'true') {
+          setIsBannerVisible(true);
       }
 
     } catch (err) {
@@ -685,13 +692,21 @@ const MainPage: React.FC = () => {
     try {
         setCredits(useCredits(cost));
 
-        const report = await getStockAnalysis(stockQueryToAnalyze, activeModel, locale);
+        const [report, researchData] = await Promise.all([
+            getStockAnalysis(stockQueryToAnalyze, activeModel, locale),
+            getResearchReportAnalysis(stockQueryToAnalyze, activeModel, locale)
+        ]);
         
-        setStockAnalysisReport(report);
+        const combinedReport: StockAnalysisReport = {
+            ...report,
+            researchReportConsensus: researchData
+        };
+
+        setStockAnalysisReport(combinedReport);
         recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
-        const newEntry: StockHistoryEntry = { id: Date.now(), query: stockQueryToAnalyze, report };
+        const newEntry: StockHistoryEntry = { id: Date.now(), query: stockQueryToAnalyze, report: combinedReport };
         const newHistory = [newEntry, ...stockHistory].slice(0, 20);
         updateStockHistory(newHistory);
     } catch (err) {
@@ -828,6 +843,15 @@ const MainPage: React.FC = () => {
     }
   }, [redemptionCode, t]);
 
+  const handleCloseBanner = () => {
+    setIsBannerVisible(false);
+    try {
+        sessionStorage.setItem(BANNER_CLOSED_SESSION_KEY, 'true');
+    } catch (e) {
+        console.error("Failed to write to sessionStorage", e);
+    }
+  };
+
 
   // --- History Handlers ---
 
@@ -914,6 +938,7 @@ const MainPage: React.FC = () => {
 
   return (
     <>
+      {isBannerVisible && <AnnouncementBanner onClose={handleCloseBanner} />}
       {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
       <PaymentModal 
         isOpen={isPaymentModalOpen}

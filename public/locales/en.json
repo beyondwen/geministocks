@@ -309,5 +309,22 @@
   },
   "toasts": {
     "dailyCreditsAwarded": "You've received your {{count}} free daily credits! ✨"
+  },
+  "researchConsensus": {
+    "title": "Institutional Insights",
+    "epsTitle": "Consensus EPS Forecast",
+    "noEps": "No consensus EPS data available.",
+    "targetPriceTitle": "Consensus Target Price",
+    "noTargetPrice": "No consensus target price data available.",
+    "low": "Low",
+    "average": "Average",
+    "high": "High",
+    "current": "Current",
+    "recentReportsTitle": "Recent Research Reports",
+    "noReports": "No recent reports found."
+  },
+  "announcementBanner": {
+    "text": "Log in daily to receive 5 free credits! ✨",
+    "close": "Close banner"
   }
 }

@@ -1,4 +1,4 @@
-import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile } from '../types';
+import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 
 export type AnalysisModel = 'deepseek' | 'gemini' | 'claude';
@@ -402,6 +402,78 @@ export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel,
     return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
+const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
+    const commonSchema = `{
+      "currentPrice": "number | null",
+      "epsForecasts": [
+        { "year": "string (e.g., '2025E')", "consensusEps": "number | null", "growthRate": "number | null (e.g., 15.5 for 15.5%)" }
+      ],
+      "targetPriceSummary": { "high": "number | null", "low": "number | null", "average": "number | null" },
+      "recentReports": [
+        { "title": "string", "institution": "string", "rating": "string", "publishDate": "string (YYYY-MM-DD)", "pdfUrl": "string" }
+      ]
+    }`;
+
+    if (locale === 'zh') {
+        return `
+        You are an expert financial data analyst AI. Your task is to scrape and process institutional research report data for a given stock based on the Chinese market. You MUST follow these steps precisely:
+        1.  From the user query, identify the 6-digit stock code. If it's a name, find its code.
+        2.  Fetch data from the URL \`https://data.eastmoney.com/report/{code}.html\`.
+        3.  Inside the page's HTML, find the JavaScript variable \`var initdata = {...};\` and parse this JSON object.
+        4.  The \`data\` key inside this object contains a list of reports. Filter this list to include only reports published within the last 3 months. If there are fewer than 2 reports in the last 3 months, use the 2 most recent ones regardless of date.
+        5.  **EPS Forecasts**: 从筛选后的研报中，收集 \`predictThisYearEps\`、\`predictNextYearEps\` 和 \`predictNextTwoYearEps\` 的所有非空值。将它们分别映射到 "2025E"、"2026E" 和 "2027E" 这三年。计算这三个字段各自的平均值。
+        6.  **EPS Growth**: Calculate the growth rate for the next year as \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`. Calculate the growth for the year after as \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`. Express growth as a percentage (e.g., 15.5 for 15.5%). If a denominator is zero or not available, the growth rate should be null.
+        7.  **Target Price**: From the filtered reports, collect all non-null values for \`targetPrice\`. Calculate the highest, lowest, and average values.
+        8.  **Current Price**: Fetch the current stock price from \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (e.g., 'sh600519'). The price is the 4th field (index 3) in the tilde-separated response string. If not available, use \`closePrice\` from the most recent report.
+        9.  **Recent Reports**: Select the 3 most recent reports from the filtered list. For each, extract \`title\`, \`orgSName\` as institution, \`publishDate\`. Attempt to find a rating (like '买入', '增持', '中性') from the \`ratingName\` field or the title. Generate the PDF URL using \`infoCode\` like so: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`.
+        10. You MUST respond strictly in the following JSON format. Do not add any extra text or explanations. All numbers should be actual numbers, not strings. Handle cases where data is missing gracefully by using null or empty arrays. All content must be in Simplified Chinese.
+        
+        JSON Schema: ${commonSchema}
+    `;
+    }
+    return `
+        You are an expert financial data analyst AI. Your task is to scrape and process institutional research report data for a given stock. You MUST follow these steps precisely:
+        1.  From the user query, identify the stock ticker.
+        2.  If it is a Chinese A-share stock, fetch data from the URL \`https://data.eastmoney.com/report/{code}.html\`. For other markets, use reliable financial data APIs.
+        3.  Inside the Eastmoney page's HTML, find the JavaScript variable \`var initdata = {...};\` and parse this JSON object.
+        4.  The \`data\` key inside this object contains a list of reports. Filter this list to include only reports published within the last 3 months. If there are fewer than 2 reports in the last 3 months, use the 2 most recent ones regardless of date.
+        5.  **EPS Forecasts**: From the filtered reports, collect all non-null values for \`predictThisYearEps\`, \`predictNextYearEps\`, and \`predictNextTwoYearEps\`. Map them to the years "2025E", "2026E", and "2027E" respectively. Calculate the average for each of these three fields.
+        6.  **EPS Growth**: Calculate the growth rate for the next year as \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`. Calculate the growth for the year after as \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`. Express growth as a percentage (e.g., 15.5 for 15.5%). If a denominator is zero or unavailable, the growth rate should be null.
+        7.  **Target Price**: From the filtered reports, collect all non-null values for \`targetPrice\`. Calculate the highest, lowest, and average values.
+        8.  **Current Price**: Fetch the current stock price from a reliable financial data source (e.g., Tencent Finance \`https://qt.gtimg.cn/q=\`, or Google Finance). If not available, use \`closePrice\` from the most recent report.
+        9.  **Recent Reports**: Select the 3 most recent reports from the filtered list. For each, extract \`title\`, \`orgSName\` as institution, \`publishDate\`. Attempt to find a rating (like 'Buy', 'Overweight', 'Neutral') from the \`ratingName\` field or the title. For Eastmoney reports, generate the PDF URL using \`infoCode\` like so: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`.
+        10. You MUST respond strictly in the following JSON format. Do not add any extra text or explanations. All numbers should be actual numbers, not strings. Handle cases where data is missing gracefully by using null or empty arrays. All content must be in English.
+        
+        JSON Schema: ${commonSchema}
+    `;
+};
+
+export const getResearchReportAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale): Promise<ResearchReportConsensus> => {
+    const modelName = getModelName(model);
+    const systemInstruction = getResearchReportAnalysisSystemInstruction(locale);
+
+    const prompt = `
+        Please provide a research report consensus analysis for the following stock:
+        ---
+        ${stockQuery}
+        ---
+    `;
+
+    try {
+        const result = await callOpenRouterAI(prompt, systemInstruction, modelName);
+        // Basic validation to ensure the AI returns a somewhat correct structure
+        if (result && Array.isArray(result.epsForecasts) && result.targetPriceSummary && Array.isArray(result.recentReports)) {
+            return result;
+        }
+        console.warn("AI returned a malformed ResearchReportConsensus object, returning a default.", result);
+        // Return a default/empty object on failure to prevent crashes
+        return { currentPrice: null, epsForecasts: [], targetPriceSummary: { high: null, low: null, average: null }, recentReports: [] };
+    } catch (error) {
+        console.error("Failed to get research report analysis:", error);
+         // Return a default/empty object on failure to prevent crashes
+        return { currentPrice: null, epsForecasts: [], targetPriceSummary: { high: null, low: null, average: null }, recentReports: [] };
+    }
+};
 
 const getHotStocksSystemInstruction = (locale: Locale): string => {
     if (locale === 'zh') {

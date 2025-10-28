@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -7,6 +5,7 @@ import type { StockAnalysisReport, InvestmentScore, SWOT } from '../types';
 import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
+import ResearchConsensus from './ResearchConsensus';
 
 // --- SVG Icons (defined locally to minimize file changes) ---
 const BuildingOfficeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -223,6 +222,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
         <div className="space-y-6">
             {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
             {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} />}
+            {report.researchReportConsensus && <ResearchConsensus consensus={report.researchReportConsensus} />}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card title={t('stockAnalysisResult.companyProfile')} icon={<BuildingOfficeIcon className="w-5 h-5" />} className="md:col-span-2">
