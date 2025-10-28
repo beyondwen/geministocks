@@ -15,15 +15,20 @@ interface VercelResponse {
 interface VercelRequest {
   method: string;
   body: {
-    packageId?: 'pack_2' | 'pack_5' | 'pack_10';
+    packageId?: 'pack_5_cny' | 'pack_15_cny' | 'pack_30_cny';
+    subscriptionId?: 'pro_monthly_cny';
   };
 }
 
-// Define the pricing for each package in cents
+// Define the pricing for each package in cents (CNY)
 const packagePrices: { [key: string]: number } = {
-    'pack_2': 200,  // $2.00 for 2 credits
-    'pack_5': 450,  // $4.50 for 5 credits (10% discount)
-    'pack_10': 800, // $8.00 for 10 credits (20% discount)
+    'pack_5_cny': 600,      // ¥6.00 for 5 credits
+    'pack_15_cny': 1500,     // ¥15.00 for 15 credits
+    'pack_30_cny': 2500,     // ¥25.00 for 30 credits
+};
+
+const subscriptionPrices: { [key: string]: number } = {
+    'pro_monthly_cny': 2500 // ¥25.00 for pro subscription
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -48,11 +53,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { packageId = 'pack_2' } = req.body; // Default to 2-credit pack if not provided
-    const amount = packagePrices[packageId];
+    const { packageId, subscriptionId } = req.body;
+    let amount: number | undefined;
+    let metadata: { [key: string]: string } = {};
+
+    if (packageId) {
+        amount = packagePrices[packageId];
+        metadata.packageId = packageId;
+    } else if (subscriptionId) {
+        amount = subscriptionPrices[subscriptionId];
+        metadata.subscriptionId = subscriptionId;
+    }
 
     if (!amount) {
-      return res.status(400).json({ error: { message: 'Invalid credit package selected.' } });
+      return res.status(400).json({ error: { message: 'Invalid package or subscription selected.' } });
     }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
@@ -60,14 +74,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Create a PaymentIntent with the dynamically calculated amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
-      currency: 'usd',
+      currency: 'cny', // Changed currency to Chinese Yuan
       automatic_payment_methods: {
         enabled: true,
       },
-      // Add metadata to track the purchase
-      metadata: {
-        packageId: packageId
-      }
+      // IMPORTANT: Add Alipay and other relevant payment methods for the Chinese market.
+      // You must enable these in your Stripe dashboard: https://dashboard.stripe.com/settings/payment_methods
+      payment_method_types: ['card', 'alipay', 'wechat_pay'],
+      metadata,
     });
 
     res.status(200).json({

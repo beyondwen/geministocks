@@ -147,9 +147,3 @@ export const BuildingStorefrontIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.75l-2.25-2.25a1.125 1.125 0 00-1.59 0l-2.25 2.25a1.125 1.125 0 000 1.59l2.25 2.25a1.125 1.125 0 001.59 0l2.25-2.25a1.125 1.125 0 000-1.59z" />
     </svg>
 );
-
-export const CloudIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.5 4.5 0 002.25 15z" />
-    </svg>
-);
