@@ -78,9 +78,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       automatic_payment_methods: {
         enabled: true,
       },
-      // IMPORTANT: Temporarily removed Alipay and WeChat Pay as the user's account does not support them.
-      // Once activated in the Stripe Dashboard, these can be re-added.
-      payment_method_types: ['card'],
       metadata,
     });
 
