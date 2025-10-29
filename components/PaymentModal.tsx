@@ -4,26 +4,9 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
 
-type PackageId = 'pack_5_cny' | 'pack_15_cny' | 'pack_30_cny';
-type SubscriptionId = 'pro_monthly_cny';
+type PackageId = 'pack_5_usd' | 'pack_18_usd' | 'pack_30_usd';
+type SubscriptionId = 'pro_monthly_usd';
 type PaymentType = 'credits' | 'subscription';
-
-const creditPackages: { id: PackageId; credits: number; price: string; description: string; bestValue?: boolean }[] = [
-    { id: 'pack_5_cny', credits: 5, price: '¥6.00', description: '' },
-    { id: 'pack_15_cny', credits: 15, price: '¥15.00', description: '赠送 20%' },
-    { id: 'pack_30_cny', credits: 30, price: '¥25.00', description: '赠送 40%', bestValue: true },
-];
-
-const subscriptionPackage = {
-    id: 'pro_monthly_cny' as SubscriptionId,
-    price: '¥25.00',
-    name: 'Pro 版会员',
-    features: [
-        '每月自动获得 50 个信用点',
-        '可使用所有分析模型',
-        '未来更多 Pro 功能优先体验'
-    ]
-};
 
 interface CheckoutFormProps {
     onPaymentSuccess: (creditsPurchased: number) => void;
@@ -54,7 +37,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onPaymentSuccess, selectedP
         if (error) {
             setMessage(error.message || t('paymentModal.error.default'));
         } else {
-            const creditsPurchased = paymentType === 'credits' && selectedPackage.credits ? selectedPackage.credits : 50;
+            const creditsPurchased = paymentType === 'credits' && selectedPackage.credits ? selectedPackage.credits : 100;
             onPaymentSuccess(creditsPurchased);
         }
 
@@ -63,6 +46,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onPaymentSuccess, selectedP
 
     return (
         <form id="payment-form" onSubmit={handleSubmit}>
+            <div className="text-center text-xs text-slate-500 bg-slate-100/80 p-2 rounded-md mb-4 flex items-center justify-center gap-x-2">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <span>{t('paymentModal.supportedMethods')}</span>
+            </div>
             <PaymentElement id="payment-element" options={{ layout: "tabs" }} />
             <button
                 disabled={isLoading || !stripe || !elements}
@@ -92,8 +81,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [paymentType, setPaymentType] = useState<PaymentType>('credits');
-  const [selectedCreditPackage, setSelectedCreditPackage] = useState(creditPackages[2]);
 
+  const creditPackages: { id: PackageId; credits: number; price: string; description: string; bestValue?: boolean }[] = [
+    { id: 'pack_5_usd', credits: 5, price: '$1.00', description: '' },
+    { id: 'pack_18_usd', credits: 18, price: '$3.00', description: t('paymentModal.package_18_desc') },
+    { id: 'pack_30_usd', credits: 30, price: '$4.00', description: t('paymentModal.package_30_desc'), bestValue: true },
+  ];
+
+  const subscriptionPackage = {
+      id: 'pro_monthly_usd' as SubscriptionId,
+      price: '$5.00',
+      name: t('paymentModal.pro_sub_name'),
+      features: t('paymentModal.pro_sub_features') as unknown as string[]
+  };
+
+  const [selectedCreditPackage, setSelectedCreditPackage] = useState(creditPackages[2]);
   const selectedPackage = paymentType === 'credits' ? selectedCreditPackage : subscriptionPackage;
 
   useEffect(() => {
@@ -141,8 +143,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         <h2 id="payment-modal-title" className="text-2xl font-bold text-slate-800 mb-6">{t('paymentModal.title')}</h2>
         
         <div className="flex bg-slate-100/80 p-1 rounded-full mb-6">
-            <button onClick={() => setPaymentType('credits')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'credits' ? 'bg-white shadow text-purple-600' : 'text-slate-600'}`}>购买信用点</button>
-            <button onClick={() => setPaymentType('subscription')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'subscription' ? 'bg-white shadow text-purple-600' : 'text-slate-600'}`}>订阅 Pro 版</button>
+            <button onClick={() => setPaymentType('credits')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'credits' ? 'bg-white shadow text-purple-600' : 'text-slate-600'}`}>{t('paymentModal.buyCreditsTab')}</button>
+            <button onClick={() => setPaymentType('subscription')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'subscription' ? 'bg-white shadow text-purple-600' : 'text-slate-600'}`}>{t('paymentModal.subscribeProTab')}</button>
         </div>
 
         {paymentType === 'credits' && (
@@ -155,8 +157,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                             onClick={() => setSelectedCreditPackage(pkg)}
                             className={`relative flex-1 p-3 text-center border-2 rounded-lg transition-all duration-200 ${selectedCreditPackage.id === pkg.id ? 'border-purple-500 bg-purple-50/80 scale-105 shadow-lg' : 'border-slate-200 bg-white/60 hover:border-purple-300'}`}
                         >
-                            {pkg.bestValue && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">最划算</div>}
-                            <p className="font-bold text-slate-800">{pkg.credits}个信用点</p>
+                            {pkg.bestValue && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{t('paymentModal.bestValue')}</div>}
+                            <p className="font-bold text-slate-800">{t('paymentModal.credits_plural', { count: pkg.credits })}</p>
                             <p className="text-sm text-slate-600">{pkg.price}</p>
                             {pkg.description && <p className="text-xs font-semibold text-green-600 mt-1">{pkg.description}</p>}
                         </button>
@@ -168,7 +170,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         {paymentType === 'subscription' && (
             <div className="animate-fade-in">
                 <div className="p-4 bg-purple-50/80 border-2 border-purple-200 rounded-lg">
-                    <p className="font-bold text-lg text-purple-800">{subscriptionPackage.name} - {subscriptionPackage.price}/月</p>
+                    <p className="font-bold text-lg text-purple-800">{subscriptionPackage.name} - {subscriptionPackage.price}{t('paymentModal.per_month')}</p>
                     <ul className="mt-2 list-disc list-inside text-sm text-slate-700 space-y-1">
                         {subscriptionPackage.features.map(f => <li key={f}>{f}</li>)}
                     </ul>

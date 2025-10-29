@@ -64,9 +64,7 @@
     "title": "Get Credits",
     "description": "Purchase credits to use premium analysis models.",
     "packagesTitle": "Choose a Credit Pack:",
-    "package2": "2 Credits",
-    "package5": "5 Credits",
-    "package10": "10 Credits",
+    "credits_plural": "{{count}} Credits",
     "bestValue": "Best Value",
     "payButton": "Pay",
     "processing": "Processing...",
@@ -74,6 +72,18 @@
     "close": "Close",
     "successMulti": "{{count}} credits added! Starting analysis...",
     "successTopUp": "{{count}} credits added successfully!",
+    "supportedMethods": "We currently support credit cards (Visa, Mastercard, etc.).",
+    "package_18_desc": "20% Bonus",
+    "package_30_desc": "50% Bonus",
+    "pro_sub_name": "Pro Subscription",
+    "pro_sub_features": [
+      "Receive 100 credits automatically each month",
+      "Access all analysis models",
+      "Priority access to future Pro features"
+    ],
+    "buyCreditsTab": "Buy Credits",
+    "subscribeProTab": "Subscribe Pro",
+    "per_month": "/month",
     "error": {
       "default": "An error occurred with your payment method.",
       "unexpected": "An unexpected payment error occurred. Please try again."

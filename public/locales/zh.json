@@ -64,9 +64,7 @@
     "title": "获取信用点",
     "description": "购买信用点以使用高级分析模型。",
     "packagesTitle": "选择一个信用包：",
-    "package2": "2个信用点",
-    "package5": "5个信用点",
-    "package10": "10个信用点",
+    "credits_plural": "{{count}}个信用点",
     "bestValue": "最划算",
     "payButton": "支付",
     "processing": "处理中...",
@@ -74,6 +72,18 @@
     "close": "关闭",
     "successMulti": "成功添加 {{count}} 点信用！正在开始分析...",
     "successTopUp": "成功充值 {{count}} 点信用！",
+    "supportedMethods": "目前我们支持信用卡（Visa, Mastercard 等）支付。",
+    "package_18_desc": "赠送 20%",
+    "package_30_desc": "赠送 50%",
+    "pro_sub_name": "Pro 版会员",
+    "pro_sub_features": [
+      "每月自动获得 100 个信用点",
+      "可使用所有分析模型",
+      "未来更多 Pro 功能优先体验"
+    ],
+    "buyCreditsTab": "购买信用点",
+    "subscribeProTab": "订阅 Pro 版",
+    "per_month": "/月",
     "error": {
       "default": "您的支付方式出现问题。",
       "unexpected": "发生意外的支付错误，请重试。"

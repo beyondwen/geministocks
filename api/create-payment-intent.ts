@@ -15,20 +15,20 @@ interface VercelResponse {
 interface VercelRequest {
   method: string;
   body: {
-    packageId?: 'pack_5_cny' | 'pack_15_cny' | 'pack_30_cny';
-    subscriptionId?: 'pro_monthly_cny';
+    packageId?: 'pack_5_usd' | 'pack_18_usd' | 'pack_30_usd';
+    subscriptionId?: 'pro_monthly_usd';
   };
 }
 
-// Define the pricing for each package in cents (CNY)
+// Define the pricing for each package in cents (USD)
 const packagePrices: { [key: string]: number } = {
-    'pack_5_cny': 600,      // ¥6.00 for 5 credits
-    'pack_15_cny': 1500,     // ¥15.00 for 15 credits
-    'pack_30_cny': 2500,     // ¥25.00 for 30 credits
+    'pack_5_usd': 100,      // $1.00 for 5 credits
+    'pack_18_usd': 300,     // $3.00 for 18 credits
+    'pack_30_usd': 400,     // $4.00 for 30 credits
 };
 
 const subscriptionPrices: { [key: string]: number } = {
-    'pro_monthly_cny': 2500 // ¥25.00 for pro subscription
+    'pro_monthly_usd': 500 // $5.00 for pro subscription
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -74,13 +74,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Create a PaymentIntent with the dynamically calculated amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
-      currency: 'cny', // Changed currency to Chinese Yuan
+      currency: 'usd', // Changed currency to US Dollars
       automatic_payment_methods: {
         enabled: true,
       },
-      // IMPORTANT: Add Alipay and other relevant payment methods for the Chinese market.
-      // You must enable these in your Stripe dashboard: https://dashboard.stripe.com/settings/payment_methods
-      payment_method_types: ['card', 'alipay', 'wechat_pay'],
+      // IMPORTANT: Temporarily removed Alipay and WeChat Pay as the user's account does not support them.
+      // Once activated in the Stripe Dashboard, these can be re-added.
+      payment_method_types: ['card'],
       metadata,
     });
 
