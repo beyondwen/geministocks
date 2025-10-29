@@ -11,12 +11,12 @@ const NodeCard: React.FC<{
 }> = ({ node, onClick, isSelected }) => (
     <button 
         onClick={onClick}
-        className={`bg-white rounded-lg border p-3 shadow-sm hover:shadow-md transition-all w-full text-left focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-cyan-500 ${
-            isSelected ? 'border-cyan-500 ring-2 ring-cyan-500/50' : 'border-gray-200'
+        className={`bg-white rounded-lg border p-3 shadow-sm hover:shadow-md transition-all w-full text-left focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-black ${
+            isSelected ? 'border-black ring-2 ring-gray-400/50' : 'border-gray-200'
         }`}
         aria-pressed={isSelected}
     >
-        <h5 className="font-semibold text-sm text-gray-800">{node.name}</h5>
+        <h5 className="font-semibold text-sm text-black">{node.name}</h5>
         <p className="text-xs text-gray-600 mt-1">{node.description}</p>
     </button>
 );
@@ -33,9 +33,9 @@ const Branch: React.FC<{
     }
 
     const branchColorStyle = {
-        'blue': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' },
-        'purple': { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800' },
-        'green': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' },
+        'blue': { bg: 'bg-gray-100', border: 'border-gray-300', text: 'text-black' },
+        'purple': { bg: 'bg-gray-100', border: 'border-gray-500', text: 'text-black' },
+        'green': { bg: 'bg-gray-100', border: 'border-black', text: 'text-black' },
     }[color] || { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-800' };
 
     return (
@@ -111,13 +111,13 @@ const IndustryChainViz: React.FC<IndustryChainVizProps> = ({ chain }) => {
         {/* Detail View Panel */}
         {selectedNode && (
             <div 
-                className="mt-4 bg-white/80 backdrop-blur-lg border border-cyan-400 rounded-xl shadow-2xl p-4 animate-fade-in"
+                className="mt-4 bg-white border border-gray-300 rounded-xl shadow-elevated p-4 animate-fade-in"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="node-details-title"
             >
                 <div className="flex justify-between items-center">
-                    <h4 id="node-details-title" className="text-lg font-bold text-cyan-800">{selectedNode.name}</h4>
+                    <h4 id="node-details-title" className="text-lg font-bold text-black">{selectedNode.name}</h4>
                     <button 
                         onClick={() => setSelectedNode(null)}
                         className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"

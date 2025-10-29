@@ -47,79 +47,73 @@ const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negati
       Positive: {
         label: t('sentiments.Positive'),
         icon: '😊',
-        colors: 'border-green-300/80 text-green-700',
-        gradient: 'from-green-500 to-emerald-500',
       },
       Neutral: {
         label: t('sentiments.Neutral'),
         icon: '😐',
-        colors: 'border-yellow-300/80 text-yellow-700',
-        gradient: 'from-yellow-500 to-orange-500',
       },
       Negative: {
         label: t('sentiments.Negative'),
         icon: '😟',
-        colors: 'border-red-300/80 text-red-700',
-        gradient: 'from-red-500 to-pink-500',
       },
     };
   
     const config = sentimentConfig[sentiment] || sentimentConfig.Neutral;
   
     return (
-       <div className={`glass-refined backdrop-blur-sm border-2 ${config.colors} rounded-xl px-4 py-3 shadow-soft inline-flex items-center gap-3 font-medium transition-all duration-300 hover:shadow-elevated hover:-translate-y-0.5`}>
-            <div className={`w-8 h-8 bg-gradient-to-r ${config.gradient} rounded-full flex items-center justify-center shadow-lg`}>
-                <span className="text-white text-sm">{config.icon}</span>
+       <div className={`border border-gray-200 bg-white rounded-xl px-4 py-3 shadow-soft inline-flex items-center gap-3 font-medium transition-all duration-300`}>
+            <div className={`w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center`}>
+                <span className="text-sm">{config.icon}</span>
             </div>
-            <span className="whitespace-nowrap">{config.label}</span>
+            <span className="whitespace-nowrap text-black">{config.label}</span>
         </div>
     );
 };
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-  <div className={`glass-refined bg-white/40 backdrop-blur-md border border-slate-200/40 rounded-2xl p-6 shadow-soft h-full ${className}`}>
+  <div className={`bg-white border border-gray-200 rounded-2xl p-6 shadow-soft h-full ${className}`}>
     <div className="flex items-center gap-3 mb-6">
-      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+      <div className="p-2 bg-black rounded-xl shadow-lg">
         <span className="w-5 h-5 text-white block">{icon}</span>
       </div>
-      <h3 className="text-xl font-semibold text-gradient-primary">{title}</h3>
+      <h3 className="text-xl font-semibold text-black">{title}</h3>
     </div>
-    <div className="text-slate-700 space-y-4 leading-relaxed">{children}</div>
+    <div className="text-gray-700 space-y-4 leading-relaxed">{children}</div>
   </div>
 );
 
 const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) => {
   const { t } = useI18n();
-  const getScoreColor = (score: number) => {
-    if (score >= 75) return { text: 'text-green-600', bg: 'bg-green-50/80', border: 'border-green-200', accent: 'from-green-500 to-emerald-500' };
-    if (score >= 50) return { text: 'text-yellow-600', bg: 'bg-yellow-50/80', border: 'border-yellow-200', accent: 'from-yellow-500 to-orange-500' };
-    return { text: 'text-red-600', bg: 'bg-red-50/80', border: 'border-red-200', accent: 'from-red-500 to-red-600' };
+  const getScoreStyle = (score: number) => {
+    if (score >= 75) return { text: 'text-black', font: 'font-bold' };
+    if (score >= 50) return { text: 'text-black', font: 'font-medium' };
+    return { text: 'text-gray-600', font: 'font-normal' };
   };
 
   const { score, reason } = scoreData;
-  const { text, bg, border, accent } = getScoreColor(score);
+  const { text, font } = getScoreStyle(score);
 
   return (
-    <div className={`glass-refined backdrop-blur-sm border-2 ${border} ${bg} rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300`}>
+    <div className={`bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center mb-4 sm:mb-0">
-          <div className={`p-2 bg-gradient-to-r ${accent} rounded-xl shadow-lg mr-3`}>
+          <div className={`p-2 bg-black rounded-xl shadow-lg mr-3`}>
             <SparklesIcon className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-2xl font-light text-gradient-primary">{t('scoreDisplay.title')}</h3>
+          <h3 className="text-2xl font-light text-black">{t('scoreDisplay.title')}</h3>
         </div>
         <div className="text-center sm:text-right">
           <div className="relative">
-            <p className={`text-5xl font-bold ${text} tracking-tight`}>
+            <p className={`text-5xl tracking-tight ${text} ${font}`}>
               {score}
               <span className="text-2xl font-medium opacity-70">/100</span>
             </p>
-            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r ${accent} rounded-full opacity-60`}></div>
+            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-black rounded-full opacity-60`}></div>
           </div>
         </div>
       </div>
-      <div className="mt-4 pt-4 border-t border-slate-200/60">
-        <p className="text-sm text-slate-600 leading-relaxed"><TextRenderer text={reason} /></p>
+      <div className="mt-4 pt-4 border-t border-gray-200/60">
+        <p className="text-sm text-gray-600 leading-relaxed"><TextRenderer text={reason} /></p>
       </div>
     </div>
   );
@@ -132,8 +126,8 @@ const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => {
             <ul className="space-y-3">
                 {takeaways.map((item, index) => (
                     <li key={index} className="flex items-start">
-                        <div className="mt-1 mr-3 w-1.5 h-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-slate-700"><TextRenderer text={item} /></span>
+                        <div className="mt-1 mr-3 w-1.5 h-1.5 bg-black rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700"><TextRenderer text={item} /></span>
                     </li>
                 ))}
             </ul>
@@ -149,24 +143,24 @@ const PolymarketInfoCard: React.FC<{ data: PolymarketData }> = ({ data }) => {
   return (
     <Card title={t('polymarketCard.title')} icon={<ChartTrendingUpIcon className="w-5 h-5"/>}>
       <div className="space-y-4">
-        <blockquote className="text-slate-800 font-semibold text-lg border-l-4 border-purple-400 pl-4 py-2 bg-purple-50/80 rounded-r-lg">
+        <blockquote className="text-black font-semibold text-lg border-l-4 border-gray-400 pl-4 py-2 bg-gray-100 rounded-r-lg">
           {data.question}
         </blockquote>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           {/* Yes Odds */}
-          <div className="p-4 bg-green-50/80 rounded-lg border border-green-200">
-            <p className="text-sm font-semibold text-green-800 mb-1">{t('polymarketCard.yesOdds')}</p>
-            <p className="text-4xl font-bold text-green-600">{yesPercentage}%</p>
+          <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-sm font-semibold text-black mb-1">{t('polymarketCard.yesOdds')}</p>
+            <p className="text-4xl font-bold text-black">{yesPercentage}%</p>
           </div>
           {/* No Odds */}
-          <div className="p-4 bg-red-50/80 rounded-lg border border-red-200">
-            <p className="text-sm font-semibold text-red-800 mb-1">{t('polymarketCard.noOdds')}</p>
-            <p className="text-4xl font-bold text-red-600">{noPercentage}%</p>
+          <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-sm font-semibold text-black mb-1">{t('polymarketCard.noOdds')}</p>
+            <p className="text-4xl font-bold text-black">{noPercentage}%</p>
           </div>
           {/* Total Volume */}
-          <div className="p-4 bg-slate-100/80 rounded-lg border border-slate-200">
-            <p className="text-sm font-semibold text-slate-800 mb-1">{t('polymarketCard.volume')}</p>
-            <p className="text-4xl font-bold text-slate-600">{data.totalVolume}</p>
+          <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-sm font-semibold text-black mb-1">{t('polymarketCard.volume')}</p>
+            <p className="text-4xl font-bold text-gray-600">{data.totalVolume}</p>
           </div>
         </div>
       </div>
@@ -258,19 +252,19 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
     return text.length > length ? text.substring(0, length) + '...' : text;
   };
 
-  const FallbackContent = <p className="text-slate-500 text-sm">{t('analysisResult.noDataAvailable')}</p>;
+  const FallbackContent = <p className="text-gray-500 text-sm">{t('analysisResult.noDataAvailable')}</p>;
 
   return (
     <div className="space-y-6 animate-reveal-scale">
       {isPreparingPdf && (
         <div className="no-print fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-2xl p-8 shadow-floating text-center">
-            <svg className="animate-spin h-10 w-10 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-10 w-10 text-black mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p className="text-xl font-semibold text-slate-800">{t('analysisResult.preparingPDF')}</p>
-            <p className="text-sm text-slate-600 mt-1">{t('analysisResult.pdfSubtext')}</p>
+            <p className="text-xl font-semibold text-gray-800">{t('analysisResult.preparingPDF')}</p>
+            <p className="text-sm text-gray-600 mt-1">{t('analysisResult.pdfSubtext')}</p>
           </div>
         </div>
       )}
@@ -278,7 +272,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
       <div className="no-print relative flex justify-end gap-x-2">
         <button
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2 glass-refined bg-white/90 backdrop-blur-sm border-2 border-slate-200/60 text-slate-700 text-sm font-medium rounded-xl shadow-soft hover:bg-white hover:border-slate-300/80 hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-soft hover:bg-gray-100 hover:border-gray-300 hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
           aria-label={t('analysisResult.exportPDF')}
         >
           <DocumentArrowDownIcon className="h-5 w-5" />
@@ -296,13 +290,13 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
         </button>
       </div>
 
-      {exportError && <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center"><p>{exportError}</p></div>}
+      {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center"><p>{exportError}</p></div>}
 
-      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-gradient-to-br from-slate-50/80 to-slate-100/80 rounded-3xl shadow-floating border border-white/80">
-        <div className="text-center mb-8 pb-6 border-b border-slate-200/60">
-          <h2 className="text-4xl font-light text-gradient-primary mb-2">{t('analysisResult.reportTitle')}</h2>
-          <p className="text-sm text-slate-600">
-            {t('analysisResult.source')}: <span className="font-mono bg-slate-200/60 px-2 py-1 rounded text-xs text-slate-700">
+      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-floating border border-gray-200">
+        <div className="text-center mb-8 pb-6 border-b border-gray-200">
+          <h2 className="text-4xl font-light text-black mb-2">{t('analysisResult.reportTitle')}</h2>
+          <p className="text-sm text-gray-600">
+            {t('analysisResult.source')}: <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-700">
               {truncateText(userInput, 80)}
             </span>
           </p>
@@ -314,8 +308,8 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
             
             {report.summary && (
               <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-gradient-primary mb-3 pl-2">{t('analysisResult.summaryTitle')}</h3>
-                   <blockquote className="text-slate-800 font-medium italic border-l-4 border-blue-400 pl-4 py-2 bg-blue-50/80 rounded-r-lg">
+                  <h3 className="text-xl font-semibold text-black mb-3 pl-2">{t('analysisResult.summaryTitle')}</h3>
+                   <blockquote className="text-gray-800 font-medium italic border-l-4 border-gray-400 pl-4 py-2 bg-gray-100 rounded-r-lg">
                       <TextRenderer text={report.summary} keywords={keywords} />
                    </blockquote>
               </div>
@@ -332,7 +326,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
                     {report.analysis?.marketSentiment ? (
                         <>
                             <div className="flex items-center space-x-4 mb-2">
-                              <span className="font-semibold text-slate-800">{t('analysisResult.sentimentLabel')}</span>
+                              <span className="font-semibold text-black">{t('analysisResult.sentimentLabel')}</span>
                               <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
                             </div>
                             <TextRenderer text={report.analysis.marketSentiment.description} keywords={keywords} />
@@ -364,16 +358,16 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
                     {report.investmentStrategy ? (
                         <>
                             <div>
-                                <h4 className="text-lg font-semibold text-slate-900 mb-2">{t('analysisResult.strategyLogic')}</h4>
-                                <p className="pl-4 border-l-4 border-blue-400"><TextRenderer text={report.investmentStrategy.logic} keywords={keywords} /></p>
+                                <h4 className="text-lg font-semibold text-black mb-2">{t('analysisResult.strategyLogic')}</h4>
+                                <p className="pl-4 border-l-4 border-gray-400"><TextRenderer text={report.investmentStrategy.logic} keywords={keywords} /></p>
                             </div>
                             <div className="mt-4">
-                                <h4 className="text-lg font-semibold text-slate-900 mb-2">{t('analysisResult.strategySuggestion')}</h4>
-                                <p className="pl-4 border-l-4 border-green-400"><TextRenderer text={report.investmentStrategy.suggestion} keywords={keywords} /></p>
+                                <h4 className="text-lg font-semibold text-black mb-2">{t('analysisResult.strategySuggestion')}</h4>
+                                <p className="pl-4 border-l-4 border-gray-400"><TextRenderer text={report.investmentStrategy.suggestion} keywords={keywords} /></p>
                             </div>
                             <div className="mt-4">
-                                <h4 className="text-lg font-semibold text-slate-900 mb-2">{t('analysisResult.strategyRisks')}</h4>
-                                <p className="pl-4 border-l-4 border-red-400"><TextRenderer text={report.investmentStrategy.risks} keywords={keywords} /></p>
+                                <h4 className="text-lg font-semibold text-black mb-2">{t('analysisResult.strategyRisks')}</h4>
+                                <p className="pl-4 border-l-4 border-gray-400"><TextRenderer text={report.investmentStrategy.risks} keywords={keywords} /></p>
                             </div>
                         </>
                     ) : FallbackContent}
@@ -406,7 +400,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
                                     href={source.uri}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-purple-600 hover:underline transition-colors animated-underline"
+                                    className="text-black hover:text-gray-700 animated-underline transition-colors"
                                     title={source.title}
                                 >
                                     {source.title}
@@ -417,8 +411,8 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
                 </Card>
             )}
         </div>
-        <footer className="text-center mt-8 pt-4 border-t border-slate-200/60">
-          <p className="text-xs text-slate-500">
+        <footer className="text-center mt-8 pt-4 border-t border-gray-200">
+          <p className="text-xs text-gray-500">
             {t('analysisResult.footer')}<br />{t('analysisResult.disclaimer')}
           </p>
         </footer>

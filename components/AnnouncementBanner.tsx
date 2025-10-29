@@ -10,7 +10,7 @@ const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onClose }) => {
   const { t } = useI18n();
 
   return (
-    <div className="relative bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-4 sm:px-6 lg:px-8 shadow-md animate-fade-in">
+    <div className="relative bg-gray-900 text-white py-3 px-4 sm:px-6 lg:px-8 shadow-md animate-fade-in">
       <div className="text-center text-sm font-medium">
         <span>{t('announcementBanner.text')}</span>
       </div>

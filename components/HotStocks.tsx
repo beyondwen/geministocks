@@ -25,12 +25,12 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
   const { t } = useI18n();
 
   return (
-    <div className="glass-refined p-6">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-lg">
+        <div className="p-2 bg-black rounded-xl shadow-lg">
           <FireIcon className="h-5 w-5 text-white" />
         </div>
-        <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">{t('hotStocks.title')}</h3>
+        <h3 className="text-xl font-semibold text-black">{t('hotStocks.title')}</h3>
       </div>
       {isLoading ? (
         <HotStockSkeleton />
@@ -40,7 +40,7 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
             <button
               key={stock.ticker}
               onClick={() => onSelect(stock.name)}
-              className="px-4 py-2 bg-white/60 text-slate-800 text-sm font-medium rounded-full hover:bg-white/80 hover:text-cyan-700 transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+              className="px-4 py-2 bg-gray-100 text-black text-sm font-medium rounded-full hover:bg-gray-200 hover:text-black transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
             >
               {stock.name}
             </button>

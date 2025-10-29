@@ -115,10 +115,10 @@ const NEWS_SOURCES: NewsSource[] = [
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
-  '极客洞察': 'bg-indigo-100 text-indigo-800',
-  '雪球': 'bg-blue-100 text-blue-800',
-  '奇客': 'bg-slate-100 text-slate-800',
-  '36氪': 'bg-cyan-100 text-cyan-800',
+  '极客洞察': 'bg-gray-100 text-gray-800',
+  '雪球': 'bg-gray-100 text-gray-800',
+  '奇客': 'bg-gray-100 text-gray-800',
+  '36氪': 'bg-gray-100 text-gray-800',
 };
 
 
@@ -222,23 +222,23 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   }, [activeSourceId, sources, t]);
 
   return (
-    <div className="glass-refined bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-soft hover:bg-white/80 hover:border-slate-300/80 hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 h-full">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 h-full">
       <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+          <div className="p-2 bg-black rounded-xl shadow-lg">
               <NewspaperIcon className="w-5 h-5 text-white"/>
           </div>
           <h3 className="text-xl font-semibold text-gradient-primary">{t('latestNews.title')}</h3>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-slate-200/60 pb-4 mb-4">
+      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-4">
         {sources.map(source => (
           <button
             key={source.id}
             onClick={() => setActiveSourceId(source.id)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
+            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
               activeSourceId === source.id
-                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md'
-                : 'bg-white/60 text-slate-700 hover:bg-white/80'
+                ? 'bg-black text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {source.name}
@@ -250,22 +250,22 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         <NewsSkeleton />
       ) : error ? (
         <div className="text-center py-4">
-          <p className="text-red-600 bg-red-50/80 p-3 rounded-lg border border-red-200">{error}</p>
+          <p className="text-black bg-gray-100 p-3 rounded-lg border border-gray-200">{error}</p>
         </div>
       ) : (
         <ul className="space-y-4">
           {articles.length > 0 ? articles.map((article, index) => (
-            <li key={`${article.link}-${index}`} className="group border-b border-slate-200/60 pb-4 last:border-b-0">
+            <li key={`${article.link}-${index}`} className="group border-b border-gray-200 pb-4 last:border-b-0">
               <div className="flex items-center gap-x-2 mb-1 flex-wrap">
-                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-black hover:text-gray-700 transition-colors">
                     {article.title}
                   </a>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-slate-100 text-slate-800'}`}>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-gray-100 text-gray-800'}`}>
                     {article.sourceName}
                   </span>
               </div>
               
-              <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+              <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                 {truncateText(stripHtml(article.description), 140)}
               </p>
 
@@ -279,7 +279,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
               </button>
             </li>
           )) : (
-            <p className="text-center text-slate-500 py-4">{t('latestNews.noNews')}</p>
+            <p className="text-center text-gray-500 py-4">{t('latestNews.noNews')}</p>
           )}
         </ul>
       )}
@@ -295,9 +295,9 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      borderColor: 'border-green-400/80',
-      iconBg: 'bg-green-100/80',
-      iconColor: 'text-green-600',
+      borderColor: 'border-gray-800',
+      iconBg: 'bg-gray-100',
+      iconColor: 'text-gray-800',
     },
     info: {
       icon: (
@@ -305,9 +305,9 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
         </svg>
       ),
-      borderColor: 'border-blue-400/80',
-      iconBg: 'bg-blue-100/80',
-      iconColor: 'text-blue-600',
+      borderColor: 'border-gray-800',
+      iconBg: 'bg-gray-100',
+      iconColor: 'text-gray-800',
     },
   };
 
@@ -316,13 +316,13 @@ const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ messag
   return (
     <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
       <div
-        className={`flex items-center gap-x-2.5 max-w-sm px-4 py-2.5 rounded-2xl border-l-4 shadow-floating bg-white/80 backdrop-blur-lg animate-toast-in ${config.borderColor}`}
+        className={`flex items-center gap-x-2.5 max-w-sm px-4 py-2.5 rounded-2xl border-l-4 shadow-floating bg-white animate-toast-in ${config.borderColor}`}
         role="alert"
       >
         <div className={`flex-shrink-0 rounded-full p-1 ${config.iconBg} ${config.iconColor}`}>
           {config.icon}
         </div>
-        <div className="text-sm font-medium text-slate-800">
+        <div className="text-sm font-medium text-gray-800">
           {message}
         </div>
       </div>
@@ -339,18 +339,18 @@ const ImageModal: React.FC<{ imageUrl: string; onClose: () => void; title: strin
     aria-labelledby="image-modal-title"
   >
     <div
-      className="glass-refined bg-white/80 p-6 max-w-sm w-full text-center relative animate-reveal-scale"
+      className="bg-white p-6 max-w-sm w-full text-center relative animate-reveal-scale"
       onClick={(e) => e.stopPropagation()}
     >
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 p-2 rounded-full text-slate-500 hover:bg-slate-100/80 transition-colors"
+        className="absolute top-3 right-3 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
         aria-label="关闭"
       >
         <XIcon className="w-6 h-6" />
       </button>
-      <h2 id="image-modal-title" className="text-xl font-bold text-slate-800 mb-4">{title}</h2>
-      <div className="p-2 border-4 border-slate-100/80 rounded-lg inline-block">
+      <h2 id="image-modal-title" className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
+      <div className="p-2 border-4 border-gray-100 rounded-lg inline-block">
         <img
           src={imageUrl}
           alt="公众号二维码"
@@ -383,10 +383,10 @@ type TabButtonProps = {
 const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`flex-1 flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 ${
+    className={`flex-1 flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-500/30 ${
       isActive
-        ? 'bg-white shadow-md text-slate-800'
-        : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
+        ? 'bg-white shadow-md text-black'
+        : 'text-gray-500 hover:bg-gray-100 hover:text-black'
     }`}
     role="tab"
     aria-selected={isActive}
@@ -963,12 +963,12 @@ const MainPage: React.FC = () => {
               <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
                 {t('header.title')}
               </h1>
-              <RadarIcon className="w-12 h-12 text-blue-500" />
+              <RadarIcon className="w-12 h-12 text-black" />
             </div>
-            <p className="text-slate-600 text-lg">
+            <p className="text-gray-600 text-lg">
                 {t('header.subtitle')}
             </p>
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-gray-500 mt-2">
               {t('header.markets')}
             </p>
           </header>
@@ -976,13 +976,13 @@ const MainPage: React.FC = () => {
           <main>
             {/* --- Analysis Controls --- */}
             <div className="mb-8 -mt-4 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4 flex-wrap">
-              <div className="flex items-center gap-x-2 text-sm font-medium text-slate-700">
+              <div className="flex items-center gap-x-2 text-sm font-medium text-gray-700">
                 <span>{t('stats.userAnalysisCount')}:</span>
-                <span className="font-bold text-base text-slate-800">{userAnalysisCount}</span>
+                <span className="font-bold text-base text-black">{userAnalysisCount}</span>
               </div>
-              <div className="h-4 w-px bg-slate-200/80 hidden sm:block"></div>
+              <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
               <div className="flex items-center gap-x-3">
-                <label htmlFor="model-switcher" className="text-sm font-medium text-slate-700">
+                <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700">
                   {t('controls.model')}:
                 </label>
                 <div className="relative">
@@ -990,30 +990,30 @@ const MainPage: React.FC = () => {
                         id="model-switcher"
                         value={activeModel}
                         onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
-                        className="appearance-none bg-white/60 border border-slate-200/60 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors cursor-pointer"
+                        className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
                     >
                         <option value="deepseek">{getModelLabel('deepseek')}</option>
                         <option value="gemini">{getModelLabel('gemini')}</option>
                         <option value="claude">{getModelLabel('claude')}</option>
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-700">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                         <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                             <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
                         </svg>
                     </div>
                 </div>
               </div>
-              <div className="h-4 w-px bg-slate-200/80 hidden sm:block"></div>
-              <div className="text-sm font-medium text-slate-700 flex items-center gap-x-2">
+              <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
+              <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
                   <span>{t('controls.credits', { count: credits })}</span>
-                  <button onClick={() => setIsPaymentModalOpen(true)} className="text-purple-600 hover:text-purple-800 text-xs font-bold">
+                  <button onClick={() => setIsPaymentModalOpen(true)} className="text-black hover:text-gray-700 text-xs font-bold underline">
                       ({t('controls.addCredits')})
                   </button>
               </div>
             </div>
             
             <div className="mb-8" role="tablist" aria-label="分析模式">
-              <div className="glass-refined p-2 flex justify-center items-center gap-x-2 max-w-md mx-auto">
+              <div className="bg-gray-100 p-2 flex justify-center items-center gap-x-2 max-w-md mx-auto rounded-xl">
                 <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                    <DocumentTextIcon className="w-5 h-5" />
                    <span>{t('tabs.topic')}</span>
@@ -1044,7 +1044,7 @@ const MainPage: React.FC = () => {
                         {isLoading && <Loader />}
             
                         {error && (
-                          <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
+                          <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center">
                             <p className="font-semibold">{t('errors.title')}</p>
                             <p className="text-sm mt-1">{error}</p>
                           </div>
@@ -1092,7 +1092,7 @@ const MainPage: React.FC = () => {
                         {isStockLoading && <Loader />}
             
                         {stockError && (
-                          <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
+                          <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center">
                             <p className="font-semibold">{t('errors.title')}</p>
                             <p className="text-sm mt-1">{stockError}</p>
                           </div>
@@ -1124,7 +1124,7 @@ const MainPage: React.FC = () => {
                         {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}
 
                         {positionalWarfareError && (
-                          <div role="alert" className="glass-refined bg-red-50/80 border-2 border-red-200 text-red-700 px-6 py-4 text-center">
+                          <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center">
                             <p className="font-semibold">{t('errors.title')}</p>
                             <p className="text-sm mt-1">{positionalWarfareError}</p>
                           </div>
@@ -1143,7 +1143,7 @@ const MainPage: React.FC = () => {
             </div>
           </main>
           
-          <footer className="text-center mt-16 py-8 border-t border-slate-200/60 flex flex-col items-center gap-y-6">
+          <footer className="text-center mt-16 py-8 border-t border-gray-200 flex flex-col items-center gap-y-6">
             <div className="flex items-center gap-x-2">
               <input
                   type="text"
@@ -1151,22 +1151,22 @@ const MainPage: React.FC = () => {
                   value={redemptionCode}
                   onChange={(e) => setRedemptionCode(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCode(); }}
-                  className="bg-white/60 border border-slate-200/60 rounded-full pl-4 pr-2 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors w-40"
+                  className="bg-white border border-gray-200 rounded-full pl-4 pr-2 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors w-40"
                   aria-label={t('redeem.placeholder')}
               />
               <button
                   onClick={handleRedeemCode}
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                  className="px-4 py-2 bg-white text-black border border-gray-300 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
               >
                   {t('redeem.button')}
               </button>
             </div>
             <LanguageSwitcher />
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-gray-500">
               {t('footer.contact')}
               <a
                 href="mailto:codes@z.org"
-                className="font-medium text-blue-600 hover:text-purple-600 animated-underline transition-colors"
+                className="font-medium text-black hover:text-gray-700 animated-underline transition-colors"
               >
                 codes@z.org
               </a>

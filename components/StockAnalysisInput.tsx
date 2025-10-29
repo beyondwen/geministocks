@@ -76,15 +76,15 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
   }, []);
 
   return (
-    <div className="glass-refined p-6 animate-reveal-up">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft animate-reveal-up">
       <form onSubmit={handleSubmit}>
         <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 bg-gradient-to-r from-green-500 to-cyan-500 rounded-xl shadow-lg flex items-center justify-center">
+            <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">
                 <ChartBarIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-cyan-500">{t('stockAnalysisInput.title')}</h3>
-              <p id="stock-input-description" className="text-sm text-slate-600">
+              <h3 className="text-xl font-semibold text-black">{t('stockAnalysisInput.title')}</h3>
+              <p id="stock-input-description" className="text-sm text-gray-600">
                 {t('stockAnalysisInput.description')}
               </p>
             </div>
@@ -95,7 +95,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
             <input
               id="stock-input"
               type="text"
-              className="w-full bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/80 transition-all duration-300 placeholder:text-slate-400"
+              className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-black focus:outline-none focus:ring-4 focus:ring-gray-400/20 focus:border-black/80 transition-all duration-300 placeholder:text-gray-400"
               placeholder={t('stockAnalysisInput.placeholder')}
               value={stockQuery}
               onChange={handleInputChange}
@@ -111,14 +111,14 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
               <ul
                 id="stock-suggestions"
                 role="listbox"
-                className="absolute z-10 w-full mt-2 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-fade-in"
+                className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto animate-fade-in"
               >
                 {filteredSuggestions.map((stock) => (
                   <li
                     key={stock.ticker}
                     role="option"
                     aria-selected="false"
-                    className="px-4 py-2 text-slate-800 cursor-pointer hover:bg-cyan-100/80 transition-colors"
+                    className="px-4 py-2 text-black cursor-pointer hover:bg-gray-100 transition-colors"
                     onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(stock.name); }}
                   >
                     {stock.name}
@@ -130,7 +130,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
           <button
             type="submit"
             disabled={isLoading || !stockQuery.trim()}
-            className="relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 bg-gradient-to-r from-green-500 to-cyan-500 text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg whitespace-nowrap"
+            className="relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 bg-black text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg whitespace-nowrap"
           >
              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
             {isLoading ? (

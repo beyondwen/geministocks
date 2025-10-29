@@ -46,7 +46,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onPaymentSuccess, selectedP
 
     return (
         <form id="payment-form" onSubmit={handleSubmit}>
-            <div className="text-center text-xs text-slate-500 bg-slate-100/80 p-2 rounded-md mb-4 flex items-center justify-center gap-x-2">
+            <div className="text-center text-xs text-gray-500 bg-gray-100 p-2 rounded-md mb-4 flex items-center justify-center gap-x-2">
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
@@ -125,7 +125,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
 
   const appearance: StripeElementsOptions['appearance'] = {
     theme: 'stripe',
-    variables: { colorPrimary: '#8B5CF6', borderRadius: '8px' },
+    variables: { colorPrimary: '#111111', borderRadius: '8px' },
   };
   const options: StripeElementsOptions = { clientSecret, appearance };
 
@@ -135,32 +135,32 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
       onClick={onClose} role="dialog" aria-modal="true"
     >
       <div
-        className="glass-refined bg-white/80 p-8 max-w-md w-full text-left relative animate-reveal-scale rounded-2xl shadow-floating"
+        className="bg-white p-8 max-w-md w-full text-left relative animate-reveal-scale rounded-2xl shadow-floating"
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full text-slate-500 hover:bg-slate-100/80" aria-label={t('paymentModal.close')}><XIcon className="w-6 h-6" /></button>
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-100" aria-label={t('paymentModal.close')}><XIcon className="w-6 h-6" /></button>
 
-        <h2 id="payment-modal-title" className="text-2xl font-bold text-slate-800 mb-6">{t('paymentModal.title')}</h2>
+        <h2 id="payment-modal-title" className="text-2xl font-bold text-black mb-6">{t('paymentModal.title')}</h2>
         
-        <div className="flex bg-slate-100/80 p-1 rounded-full mb-6">
-            <button onClick={() => setPaymentType('credits')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'credits' ? 'bg-white shadow text-purple-600' : 'text-slate-600'}`}>{t('paymentModal.buyCreditsTab')}</button>
-            <button onClick={() => setPaymentType('subscription')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'subscription' ? 'bg-white shadow text-purple-600' : 'text-slate-600'}`}>{t('paymentModal.subscribeProTab')}</button>
+        <div className="flex bg-gray-100 p-1 rounded-full mb-6">
+            <button onClick={() => setPaymentType('credits')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'credits' ? 'bg-white shadow text-black' : 'text-gray-600'}`}>{t('paymentModal.buyCreditsTab')}</button>
+            <button onClick={() => setPaymentType('subscription')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'subscription' ? 'bg-white shadow text-black' : 'text-gray-600'}`}>{t('paymentModal.subscribeProTab')}</button>
         </div>
 
         {paymentType === 'credits' && (
             <div className="animate-fade-in">
-                <p className="text-slate-600 mb-4">{t('paymentModal.packagesTitle')}</p>
+                <p className="text-gray-600 mb-4">{t('paymentModal.packagesTitle')}</p>
                 <div className="flex justify-center gap-2 mb-6">
                     {creditPackages.map(pkg => (
                         <button
                             key={pkg.id}
                             onClick={() => setSelectedCreditPackage(pkg)}
-                            className={`relative flex-1 p-3 text-center border-2 rounded-lg transition-all duration-200 ${selectedCreditPackage.id === pkg.id ? 'border-purple-500 bg-purple-50/80 scale-105 shadow-lg' : 'border-slate-200 bg-white/60 hover:border-purple-300'}`}
+                            className={`relative flex-1 p-3 text-center border-2 rounded-lg transition-all duration-200 ${selectedCreditPackage.id === pkg.id ? 'border-black bg-gray-100 scale-105 shadow-lg' : 'border-gray-200 bg-white hover:border-gray-400'}`}
                         >
-                            {pkg.bestValue && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{t('paymentModal.bestValue')}</div>}
-                            <p className="font-bold text-slate-800">{t('paymentModal.credits_plural', { count: pkg.credits })}</p>
-                            <p className="text-sm text-slate-600">{pkg.price}</p>
-                            {pkg.description && <p className="text-xs font-semibold text-green-600 mt-1">{pkg.description}</p>}
+                            {pkg.bestValue && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-black text-white text-xs font-bold px-2 py-0.5 rounded-full">{t('paymentModal.bestValue')}</div>}
+                            <p className="font-bold text-black">{t('paymentModal.credits_plural', { count: pkg.credits })}</p>
+                            <p className="text-sm text-gray-600">{pkg.price}</p>
+                            {pkg.description && <p className="text-xs font-semibold text-gray-700 mt-1">{pkg.description}</p>}
                         </button>
                     ))}
                 </div>
@@ -169,9 +169,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
 
         {paymentType === 'subscription' && (
             <div className="animate-fade-in">
-                <div className="p-4 bg-purple-50/80 border-2 border-purple-200 rounded-lg">
-                    <p className="font-bold text-lg text-purple-800">{subscriptionPackage.name} - {subscriptionPackage.price}{t('paymentModal.per_month')}</p>
-                    <ul className="mt-2 list-disc list-inside text-sm text-slate-700 space-y-1">
+                <div className="p-4 bg-gray-100 border-2 border-gray-200 rounded-lg">
+                    <p className="font-bold text-lg text-black">{subscriptionPackage.name} - {subscriptionPackage.price}{t('paymentModal.per_month')}</p>
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-700 space-y-1">
                         {subscriptionPackage.features.map(f => <li key={f}>{f}</li>)}
                     </ul>
                 </div>

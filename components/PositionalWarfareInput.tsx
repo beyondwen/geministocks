@@ -29,15 +29,15 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
   };
 
   return (
-    <div className="glass-refined p-6 animate-reveal-up">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft animate-reveal-up">
       <form onSubmit={handleSubmit}>
         <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-lg flex items-center justify-center">
+            <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">
                 <SwordsIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">{t('positionalWarfareInput.title')}</h3>
-              <p id="leader-stock-description" className="text-sm text-slate-600">
+              <h3 className="text-xl font-semibold text-black">{t('positionalWarfareInput.title')}</h3>
+              <p id="leader-stock-description" className="text-sm text-gray-600">
                 {t('positionalWarfareInput.description')}
               </p>
             </div>
@@ -47,7 +47,7 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
             <input
               id="leader-stock-input"
               type="text"
-              className="w-full flex-grow bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500/80 transition-all duration-300 placeholder:text-slate-400"
+              className="w-full flex-grow bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-black focus:outline-none focus:ring-4 focus:ring-gray-400/20 focus:border-black/80 transition-all duration-300 placeholder:text-gray-400"
               placeholder={t('positionalWarfareInput.placeholder')}
               value={leaderStockQuery}
               onChange={(e) => setLeaderStockQuery(e.target.value)}
@@ -58,7 +58,7 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
             <button
               type="submit"
               disabled={isLoading || !leaderStockQuery.trim()}
-              className="relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg whitespace-nowrap"
+              className="relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 bg-black text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg whitespace-nowrap"
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
               {isLoading ? (

@@ -24,14 +24,14 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
   const buttonText = getButtonText();
 
   return (
-    <div className="glass-refined p-6 animate-reveal-up">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft animate-reveal-up">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg flex items-center justify-center">
+        <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">
           <SparklesIcon className="w-6 h-6 text-white" />
         </div>
         <div>
           <h3 className="text-xl font-semibold text-gradient-primary">{t('analysisInput.title')}</h3>
-          <p id="input-description" className="text-sm text-slate-600">
+          <p id="input-description" className="text-sm text-gray-600">
             {t('analysisInput.description')}
           </p>
         </div>
@@ -40,7 +40,7 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
       <textarea
         id="news-input"
         rows={8}
-        className="w-full bg-white/70 border-2 border-slate-200/80 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/80 transition-all duration-300 placeholder:text-slate-400"
+        className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 text-black focus:outline-none focus:ring-4 focus:ring-gray-400/20 focus:border-black/80 transition-all duration-300 placeholder:text-gray-400"
         placeholder={t('analysisInput.placeholder')}
         value={userInput}
         onChange={(e) => setUserInput(e.target.value)}

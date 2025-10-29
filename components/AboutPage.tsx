@@ -20,27 +20,27 @@ const AboutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 animate-fade-in">
-      <div className="w-full max-w-3xl mx-auto glass-refined bg-white/60 p-8 sm:p-10 space-y-8">
+      <div className="w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-8 sm:p-10 space-y-8 shadow-soft">
         
-        <header className="text-center border-b border-slate-200/60 pb-6">
+        <header className="text-center border-b border-gray-200 pb-6">
           <h1 className="text-4xl sm:text-5xl font-light text-gradient-primary">
             {t('aboutPage.title')}
           </h1>
-          <p className="text-slate-600 mt-2">
+          <p className="text-gray-600 mt-2">
             {t('aboutPage.subtitle')}
           </p>
         </header>
 
         <section aria-labelledby="app-purpose">
-          <h2 id="app-purpose" className="text-2xl font-semibold text-slate-900 mb-4">{t('aboutPage.purposeTitle')}</h2>
-          <p className="text-slate-700 leading-relaxed">
+          <h2 id="app-purpose" className="text-2xl font-semibold text-black mb-4">{t('aboutPage.purposeTitle')}</h2>
+          <p className="text-gray-700 leading-relaxed">
             {t('aboutPage.purposeText')}
           </p>
         </section>
 
         <section aria-labelledby="app-features">
-          <h2 id="app-features" className="text-2xl font-semibold text-slate-900 mb-4">{t('aboutPage.featuresTitle')}</h2>
-          <ul className="list-disc list-inside space-y-3 text-slate-700">
+          <h2 id="app-features" className="text-2xl font-semibold text-black mb-4">{t('aboutPage.featuresTitle')}</h2>
+          <ul className="list-disc list-inside space-y-3 text-gray-700">
             <li>
               <strong>{t('aboutPage.feature1').split(':')[0]}:</strong> 
               {t('aboutPage.feature1').split(':')[1]}
@@ -64,7 +64,7 @@ const AboutPage: React.FC = () => {
           </ul>
         </section>
         
-        <footer className="text-center pt-6 border-t border-slate-200/60">
+        <footer className="text-center pt-6 border-t border-gray-200">
             <Link 
                 to="/"
                 className="relative inline-flex items-center gap-2 px-8 py-3 btn-premium text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95"

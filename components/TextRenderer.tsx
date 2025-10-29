@@ -59,7 +59,7 @@ const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
                   href={cleanUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-purple-600 animated-underline transition-colors"
+                  className="text-black hover:text-gray-700 animated-underline transition-colors"
                 >
                   {hostname.replace(/^www\./, '')}
                 </a>
@@ -77,7 +77,7 @@ const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
         if (glossaryDefinition) {
           const isKeyword = keywords.some(k => k.toLowerCase() === lowerPart);
           const content = isKeyword ? (
-            <mark className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
+            <mark className="bg-gray-200 text-black rounded-sm px-1 mx-px font-semibold">
               {part}
             </mark>
           ) : (
@@ -94,7 +94,7 @@ const TextRenderer: React.FC<TextRendererProps> = ({ text, keywords = [] }) => {
         const isKeyword = keywords.some(k => k.toLowerCase() === lowerPart);
         if (isKeyword) {
           return (
-            <mark key={index} className="bg-cyan-100 text-cyan-800 rounded-sm px-1 mx-px font-semibold">
+            <mark key={index} className="bg-gray-200 text-black rounded-sm px-1 mx-px font-semibold">
               {part}
             </mark>
           );

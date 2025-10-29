@@ -33,21 +33,21 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
   const relevanceConfig = {
     High: {
       label: t('relevance.High'),
-      borderColor: 'border-green-500',
-      bgColor: 'bg-green-100',
-      textColor: 'text-green-800'
+      borderColor: 'border-black',
+      bgColor: 'bg-gray-200',
+      textColor: 'text-black'
     },
     Medium: {
       label: t('relevance.Medium'),
-      borderColor: 'border-yellow-500',
-      bgColor: 'bg-yellow-100',
-      textColor: 'text-yellow-800'
+      borderColor: 'border-gray-500',
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-800'
     },
     Low: {
       label: t('relevance.Low'),
-      borderColor: 'border-red-500',
-      bgColor: 'bg-red-100',
-      textColor: 'text-red-800'
+      borderColor: 'border-gray-300',
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-800'
     },
   };
 
@@ -59,7 +59,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
       <div>
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h5 className="font-bold text-gray-800 pr-2">{stock.name}</h5>
+            <h5 className="font-bold text-black pr-2">{stock.name}</h5>
             <p className="text-xs text-gray-500">({stock.market})</p>
           </div>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.bgColor} ${config.textColor} flex-shrink-0`}>
@@ -76,7 +76,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
                 href="https://mystonks.org/?code=v1B021"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-xs font-semibold text-purple-600 hover:text-purple-700 transition-colors"
+                className="inline-flex items-center text-xs font-semibold text-black hover:text-gray-700 transition-colors"
                 aria-label={t('stockCard.onchainStockAria', { stockName: stock.name })}
             >
                 {t('stockCard.onchainStock')}
@@ -87,7 +87,7 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
           href={link} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="inline-flex items-center text-xs font-semibold text-cyan-600 hover:text-cyan-700 transition-colors"
+          className="inline-flex items-center text-xs font-semibold text-black hover:text-gray-700 transition-colors"
           aria-label={t('stockCard.viewDetailsAria', { stockName: stock.name })}
         >
           {t('stockCard.viewDetails')}
@@ -145,21 +145,21 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         icon="🎯"
         stocks={coreHoldings}
         keywords={keywords}
-        colorClasses="bg-blue-100 text-blue-800"
+        colorClasses="bg-gray-200 text-black"
       />
       <TierDisplay
         title={t('tieredSuggestions.satellite')}
         icon="🛰️"
         stocks={strategicSatellites}
         keywords={keywords}
-        colorClasses="bg-purple-100 text-purple-800"
+        colorClasses="bg-gray-100 text-black"
       />
       <TierDisplay
         title={t('tieredSuggestions.watchlist')}
         icon="🔭"
         stocks={watchlist}
         keywords={keywords}
-        colorClasses="bg-gray-200 text-gray-800"
+        colorClasses="bg-gray-100 text-black"
       />
     </div>
   );
