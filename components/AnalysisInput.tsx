@@ -18,9 +18,6 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
     if (isPaywalled) {
       return t('controls.getCredits');
     }
-    if (cost === 0) {
-      return t('analysisInput.button');
-    }
     return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 

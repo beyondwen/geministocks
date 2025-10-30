@@ -42,7 +42,6 @@ const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 // --- Model Usage Rules ---
-const MINIMAX_CREDIT_COST = 0;
 const DEEPSEEK_CREDIT_COST = 1;
 const GEMINI_CREDIT_COST = 2;
 const CLAUDE_CREDIT_COST = 4;
@@ -493,7 +492,7 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<AnalysisModel>('minimax');
+  const [activeModel, setActiveModel] = useState<AnalysisModel>('deepseek');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
 
@@ -640,9 +639,7 @@ const MainPage: React.FC = () => {
   const { cost, isPaywalled } = useMemo(() => {
     let calculatedCost = 0;
 
-    if (activeModel === 'minimax') {
-        calculatedCost = MINIMAX_CREDIT_COST;
-    } else if (activeModel === 'deepseek') {
+    if (activeModel === 'deepseek') {
         calculatedCost = DEEPSEEK_CREDIT_COST;
     } else if (activeModel === 'gemini') {
         calculatedCost = GEMINI_CREDIT_COST;
@@ -658,8 +655,6 @@ const MainPage: React.FC = () => {
 
   const getModelLabel = useCallback((model: AnalysisModel) => {
     switch(model) {
-        case 'minimax':
-            return `${t('controls.minimax')} (${t('controls.costFree')})`;
         case 'deepseek':
             return `${t('controls.deepseek')} (${t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST})})`;
         case 'gemini':
@@ -1033,7 +1028,7 @@ const MainPage: React.FC = () => {
                     {/* Left side: Logo & Title */}
                     <div className="flex items-center gap-x-3">
                         <RadarIcon className="w-8 h-8 text-black" />
-                        <h1 className="text-xl font-semibold text-gray-800 hidden sm:block">
+                        <h1 className="text-xl font-semibold text-gray-800">
                             {t('header.title')}
                         </h1>
                     </div>
@@ -1083,7 +1078,6 @@ const MainPage: React.FC = () => {
                             onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
                             className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
                         >
-                            <option value="minimax">{getModelLabel('minimax')}</option>
                             <option value="deepseek">{getModelLabel('deepseek')}</option>
                             <option value="gemini">{getModelLabel('gemini')}</option>
                             <option value="claude">{getModelLabel('claude')}</option>

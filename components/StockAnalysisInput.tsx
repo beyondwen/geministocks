@@ -27,9 +27,6 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
     if (isPaywalled) {
       return t('controls.getCredits');
     }
-    if (cost === 0) {
-      return t('stockAnalysisInput.button');
-    }
     return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 

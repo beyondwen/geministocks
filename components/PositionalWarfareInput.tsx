@@ -18,9 +18,6 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
     if (isPaywalled) {
       return t('controls.getCredits');
     }
-    if (cost === 0) {
-      return t('positionalWarfareInput.button');
-    }
     return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 

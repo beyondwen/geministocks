@@ -1,7 +1,7 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 
-export type AnalysisModel = 'deepseek' | 'gemini' | 'claude' | 'minimax';
+export type AnalysisModel = 'deepseek' | 'gemini' | 'claude';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -17,14 +17,8 @@ const getModelName = (model: AnalysisModel): string => {
     if (model === 'claude') {
         return 'anthropic/claude-haiku-4.5';
     }
-    if (model === 'deepseek') {
-        return 'deepseek/deepseek-v3.2-exp';
-    }
-    if (model === 'minimax') {
-        return 'minimax/minimax-m2:free';
-    }
-    // Fallback to the new default model if type is somehow invalid
-    return 'minimax/minimax-m2:free';
+    // Default to deepseek
+    return 'deepseek/deepseek-v3.2-exp';
 };
 
 /**
@@ -50,9 +44,9 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         };
 
         // Handle model-specific parameters for JSON output.
-        // Some models like Grok or Minimax have issues with `response_format`.
-        // By NOT setting it, we rely on their instruction-following capability from the system prompt.
-        if (!modelName.startsWith('x-ai/grok') && !modelName.startsWith('minimax/')) {
+        // The Grok model via OpenRouter has issues with `tool_choice` and `response_format`.
+        // By NOT setting either, we rely on its instruction-following capability from the system prompt.
+        if (!modelName.startsWith('x-ai/grok')) {
             // For other models like Gemini, use the standard `response_format` for reliable JSON mode.
             requestBody.response_format = { type: "json_object" };
         }
@@ -90,17 +84,20 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             jsonString = jsonString.substring(firstBraceIndex, lastBraceIndex + 1);
         }
 
-        // FIX: The Gemini model can sometimes generate malformed JSON arrays by omitting commas
-        // between objects. This attempts to parse the JSON, and if it fails with a specific
-        // syntax error, it tries to fix the common comma issue and re-parses.
+        // FIX: The AI model can sometimes generate malformed JSON by omitting commas.
+        // This block attempts to parse, and on failure, applies fixes and retries.
         try {
             return JSON.parse(jsonString);
         } catch (e) {
             if (e instanceof SyntaxError && (e.message.includes("Unexpected token") || e.message.includes("expected ',' or ']"))) {
                 console.warn("Initial JSON parsing failed with a suspected missing comma. Attempting to auto-correct.", e);
                 try {
-                    // This regex finds `}` followed by `{` (with optional whitespace) and inserts a comma.
-                    const correctedJson = jsonString.replace(/}(?=\s*\{)/g, '},');
+                    // Correction attempt 1: Add missing commas between properties ending with quotes, brackets, or braces.
+                    let correctedJson = jsonString.replace(/([}\]"])\s*(")/g, "$1,$2");
+                    
+                    // Correction attempt 2: Add missing commas between array elements (objects).
+                    correctedJson = correctedJson.replace(/}(?=\s*\{)/g, '},');
+                    
                     return JSON.parse(correctedJson);
                 } catch (correctionError) {
                     console.error("Auto-correction of JSON failed. The error is likely more complex.", correctionError);

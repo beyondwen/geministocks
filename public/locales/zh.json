@@ -22,15 +22,13 @@
     "deepseek": "DeepSeek",
     "claude": "Claude",
     "gemini": "Gemini",
-    "minimax": "Minimax",
     "top": "最强",
     "getCredits": "获取信用点",
     "useCreditAndAnalyzeMulti": "使用 {{count}} 点信用分析",
     "modelSwitched": "切换模型成功。",
     "credits": "信用点: {{count}} 💎",
     "addCredits": "充值",
-    "costPerUse": "{{count}}点/次",
-    "costFree": "免费"
+    "costPerUse": "{{count}}点/次"
   },
   "tabs": {
     "topic": "挖掘",

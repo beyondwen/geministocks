@@ -22,15 +22,13 @@
     "deepseek": "DeepSeek",
     "claude": "Claude",
     "gemini": "Gemini",
-    "minimax": "Minimax",
     "top": "Strongest",
     "getCredits": "Get Credits",
     "useCreditAndAnalyzeMulti": "Use {{count}} Credits & Analyze",
     "modelSwitched": "Model switched successfully.",
     "credits": "Credits: {{count}} 💎",
     "addCredits": "Add",
-    "costPerUse": "{{count}} credits/use",
-    "costFree": "Free"
+    "costPerUse": "{{count}} credits/use"
   },
   "tabs": {
     "topic": "Dig",
