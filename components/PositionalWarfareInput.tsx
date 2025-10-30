@@ -18,6 +18,9 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
     if (isPaywalled) {
       return t('controls.getCredits');
     }
+    if (cost === 0) {
+      return t('positionalWarfareInput.button');
+    }
     return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 
@@ -29,7 +32,7 @@ const PositionalWarfareInput: React.FC<PositionalWarfareInputProps> = ({ leaderS
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft animate-reveal-up">
+    <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm animate-reveal-up">
       <form onSubmit={handleSubmit}>
         <div className="flex items-center gap-3 mb-4">
             <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">

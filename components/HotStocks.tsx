@@ -25,7 +25,7 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
   const { t } = useI18n();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-black rounded-xl shadow-lg">
           <FireIcon className="h-5 w-5 text-white" />

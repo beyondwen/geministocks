@@ -27,6 +27,9 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
     if (isPaywalled) {
       return t('controls.getCredits');
     }
+    if (cost === 0) {
+      return t('stockAnalysisInput.button');
+    }
     return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 
@@ -76,7 +79,7 @@ const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, set
   }, []);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm animate-reveal-up">
+    <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm animate-reveal-up">
       <form onSubmit={handleSubmit}>
         <div className="flex items-center gap-3 mb-4">
             <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">

@@ -68,15 +68,15 @@
 </script>
     <style>
       :focus-visible {
-        outline: 2px solid #111111;
+        outline: 2px solid #ED702E;
         outline-offset: 2px;
         border-radius: 8px;
       }
       
       /* New Base Styles from UI Spec */
       body {
-        background-color: #F9FAFB;
-        color: #1F2937;
+        background-color: #FBFBFA; /* Perplexity-like warm off-white */
+        color: #1A1A1A; /* Slightly softer black for text */
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
       }
 
@@ -91,12 +91,15 @@
       }
       
       .text-gradient-primary {
-        color: #111111;
+        color: #ED702E;
       }
 
       .btn-premium {
-         background-color: #111111;
+         background-color: #ED702E;
          color: #ffffff;
+      }
+      .btn-premium:hover {
+        background-color: #D46124;
       }
 
       /* Animations from UI Spec */
@@ -146,7 +149,7 @@
         height: 2px;
         bottom: -3px;
         left: 0;
-        background-color: #111111;
+        background-color: #ED702E;
         transform-origin: bottom right;
         transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
       }

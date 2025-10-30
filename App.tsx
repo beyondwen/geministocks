@@ -13,7 +13,7 @@ import Loader from './components/Loader';
 import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
@@ -42,6 +42,7 @@ const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 // --- Model Usage Rules ---
+const MINIMAX_CREDIT_COST = 0;
 const DEEPSEEK_CREDIT_COST = 1;
 const GEMINI_CREDIT_COST = 2;
 const CLAUDE_CREDIT_COST = 4;
@@ -108,6 +109,7 @@ interface NewsSource {
 }
 
 const NEWS_SOURCES: NewsSource[] = [
+  { id: 'kagi', name: 'Kagi 新闻', url: 'https://news.kagi.com/world_zh-Hans.xml' },
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
@@ -115,6 +117,7 @@ const NEWS_SOURCES: NewsSource[] = [
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
+  'Kagi 新闻': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
   '奇客': 'bg-gray-100 text-gray-800',
@@ -123,6 +126,58 @@ const SOURCE_COLORS: { [key: string]: string } = {
 
 
 // --- Helper Components ---
+const NewsDetailModal: React.FC<{ article: NewsArticle | null; onClose: () => void; }> = ({ article, onClose }) => {
+  if (!article) return null;
+
+  const createMarkup = (htmlString: string) => {
+    return { __html: htmlString };
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="news-modal-title"
+    >
+      <div
+        className="bg-white p-6 max-w-2xl w-full h-[80vh] flex flex-col text-left relative animate-reveal-scale rounded-2xl shadow-floating"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start pb-4 border-b border-gray-200">
+          <h2 id="news-modal-title" className="text-xl font-bold text-gray-800 pr-8">
+            {article.title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+            aria-label="关闭"
+          >
+            <XIcon className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="mt-4 flex-grow overflow-y-auto pr-4 text-gray-700 leading-relaxed prose prose-sm max-w-none" style={{ scrollbarWidth: 'thin' }}>
+          <div dangerouslySetInnerHTML={createMarkup(article.description)} />
+        </div>
+        <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-gray-100 text-gray-800`}>
+                {article.sourceName}
+            </span>
+            <a 
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-xl shadow-sm hover:bg-gray-800 transition-all"
+            >
+                <ExternalLinkIcon className="w-4 h-4" />
+                查看原文
+            </a>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const stripHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -159,7 +214,8 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSourceId, setActiveSourceId] = useState<string>('geekinsight'); // Default to Geek Insight
+  const [activeSourceId, setActiveSourceId] = useState<string>('kagi'); // Default to Kagi News
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const { t } = useI18n();
 
   useEffect(() => {
@@ -222,68 +278,74 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   }, [activeSourceId, sources, t]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-full">
-      <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-black rounded-xl shadow-lg">
-              <NewspaperIcon className="w-5 h-5 text-white"/>
-          </div>
-          <h3 className="text-xl font-semibold text-gradient-primary">{t('latestNews.title')}</h3>
-      </div>
-
-      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-4">
-        {sources.map(source => (
-          <button
-            key={source.id}
-            onClick={() => setActiveSourceId(source.id)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
-              activeSourceId === source.id
-                ? 'bg-black text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {source.name}
-          </button>
-        ))}
-      </div>
-      
-      {isLoading ? (
-        <NewsSkeleton />
-      ) : error ? (
-        <div className="text-center py-4">
-          <p className="text-black bg-gray-100 p-3 rounded-lg border border-gray-200">{error}</p>
+    <>
+      <NewsDetailModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+      <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-full">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-black rounded-xl shadow-lg">
+                <NewspaperIcon className="w-5 h-5 text-white"/>
+            </div>
+            <h3 className="text-xl font-semibold text-black">{t('latestNews.title')}</h3>
         </div>
-      ) : (
-        <ul className="space-y-4">
-          {articles.length > 0 ? articles.map((article, index) => (
-            <li key={`${article.link}-${index}`} className="group border-b border-gray-200 pb-4 last:border-b-0">
-              <div className="flex items-center gap-x-2 mb-1 flex-wrap">
-                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="font-semibold text-black hover:text-gray-700 transition-colors">
-                    {article.title}
-                  </a>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-gray-100 text-gray-800'}`}>
-                    {article.sourceName}
-                  </span>
-              </div>
-              
-              <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                {truncateText(stripHtml(article.description), 140)}
-              </p>
 
-              <button
-                onClick={() => onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`)}
-                className="mt-3 relative inline-flex items-center gap-2 px-4 py-1.5 text-white text-xs font-medium rounded-full group overflow-hidden btn-premium opacity-80 group-hover:opacity-100 group-hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                <SparklesIcon className="w-4 h-4" />
-                <span className="relative z-10">{t('latestNews.analyzeButton')}</span>
-              </button>
-            </li>
-          )) : (
-            <p className="text-center text-gray-500 py-4">{t('latestNews.noNews')}</p>
-          )}
-        </ul>
-      )}
-    </div>
+        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-4">
+          {sources.map(source => (
+            <button
+              key={source.id}
+              onClick={() => setActiveSourceId(source.id)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
+                activeSourceId === source.id
+                  ? 'bg-black text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {source.name}
+            </button>
+          ))}
+        </div>
+        
+        {isLoading ? (
+          <NewsSkeleton />
+        ) : error ? (
+          <div className="text-center py-4">
+            <p className="text-black bg-gray-100 p-3 rounded-lg border border-gray-200">{error}</p>
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {articles.length > 0 ? articles.map((article, index) => (
+              <li key={`${article.link}-${index}`} className="group border-b border-gray-200 pb-4 last:border-b-0">
+                <div className="flex items-center gap-x-2 mb-1 flex-wrap">
+                    <button 
+                      onClick={() => setSelectedArticle(article)} 
+                      className="font-semibold text-black hover:text-gray-700 transition-colors text-left focus:outline-none focus-visible:underline"
+                    >
+                      {article.title}
+                    </button>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-gray-100 text-gray-800'}`}>
+                      {article.sourceName}
+                    </span>
+                </div>
+                
+                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                  {truncateText(stripHtml(article.description), 140)}
+                </p>
+
+                <button
+                  onClick={() => onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`)}
+                  className="mt-3 relative inline-flex items-center gap-2 px-4 py-1.5 text-white text-xs font-medium rounded-full group overflow-hidden btn-premium opacity-80 group-hover:opacity-100 group-hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                  <SparklesIcon className="w-4 h-4" />
+                  <span className="relative z-10">{t('latestNews.analyzeButton')}</span>
+                </button>
+              </li>
+            )) : (
+              <p className="text-center text-gray-500 py-4">{t('latestNews.noNews')}</p>
+            )}
+          </ul>
+        )}
+      </div>
+    </>
   );
 };
 
@@ -381,18 +443,18 @@ type TabButtonProps = {
 };
 
 const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center justify-center gap-x-2 px-3 py-2 text-sm font-semibold transition-colors duration-200 border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-t-md ${
-        isActive
-        ? 'border-black text-black'
-        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-black'
-    }`}
-    role="tab"
-    aria-selected={isActive}
-  >
-    {children}
-  </button>
+    <button
+        onClick={onClick}
+        className={`flex items-center justify-center gap-x-2 px-4 py-1.5 text-sm font-semibold transition-colors duration-200 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black border ${
+            isActive
+            ? 'bg-white text-black shadow-sm border-stone-300'
+            : 'text-gray-600 border-stone-200/90 hover:bg-stone-100/80 hover:border-stone-300'
+        }`}
+        role="tab"
+        aria-selected={isActive}
+    >
+        {children}
+    </button>
 );
 
 type PendingAnalysis = { type: 'topic' | 'stock' | 'positional'; query: string };
@@ -431,7 +493,7 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<AnalysisModel>('deepseek');
+  const [activeModel, setActiveModel] = useState<AnalysisModel>('minimax');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
 
@@ -578,7 +640,9 @@ const MainPage: React.FC = () => {
   const { cost, isPaywalled } = useMemo(() => {
     let calculatedCost = 0;
 
-    if (activeModel === 'deepseek') {
+    if (activeModel === 'minimax') {
+        calculatedCost = MINIMAX_CREDIT_COST;
+    } else if (activeModel === 'deepseek') {
         calculatedCost = DEEPSEEK_CREDIT_COST;
     } else if (activeModel === 'gemini') {
         calculatedCost = GEMINI_CREDIT_COST;
@@ -594,6 +658,8 @@ const MainPage: React.FC = () => {
 
   const getModelLabel = useCallback((model: AnalysisModel) => {
     switch(model) {
+        case 'minimax':
+            return `${t('controls.minimax')} (${t('controls.costFree')})`;
         case 'deepseek':
             return `${t('controls.deepseek')} (${t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST})})`;
         case 'gemini':
@@ -961,7 +1027,7 @@ const MainPage: React.FC = () => {
           />
       )}
       <div className="min-h-screen">
-         <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-sm border-b border-gray-200">
+         <header className="sticky top-0 z-30 w-full bg-[#FBFBFA]/80 backdrop-blur-sm border-b border-stone-200/90">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Left side: Logo & Title */}
@@ -972,29 +1038,12 @@ const MainPage: React.FC = () => {
                         </h1>
                     </div>
 
-                    {/* Center: Search (Placeholder) */}
-                    <div className="hidden md:flex flex-1 justify-center px-8">
-                        <div className="relative w-full max-w-lg">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </div>
-                            <input
-                                type="search"
-                                name="search"
-                                id="search"
-                                className="block w-full bg-gray-100 border-transparent rounded-full py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:outline-none focus:bg-white focus:border-gray-300 focus:ring-gray-300 transition"
-                                placeholder={t('header.searchPlaceholder')}
-                                disabled
-                            />
-                        </div>
-                    </div>
-
                     {/* Right side: Controls */}
                     <div className="flex items-center gap-x-4">
                         <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
                             <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
                             <span className="sm:hidden">💎 {credits}</span>
-                            <button onClick={() => setIsPaymentModalOpen(true)} className="text-black hover:text-gray-700 text-xs font-bold underline">
+                            <button onClick={() => setIsPaymentModalOpen(true)} className="font-semibold text-gray-800 hover:text-black text-xs animated-underline">
                                 ({t('controls.addCredits')})
                             </button>
                         </div>
@@ -1008,37 +1057,8 @@ const MainPage: React.FC = () => {
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
-             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{t('header.subtitle')}</h2>
-                    <p className="text-sm text-gray-500 mt-1">{t('header.markets')}</p>
-                </div>
-                <div className="flex items-center gap-x-3 shrink-0">
-                    <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700">
-                      {t('controls.model')}:
-                    </label>
-                    <div className="relative">
-                        <select
-                            id="model-switcher"
-                            value={activeModel}
-                            onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
-                            className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
-                        >
-                            <option value="deepseek">{getModelLabel('deepseek')}</option>
-                            <option value="gemini">{getModelLabel('gemini')}</option>
-                            <option value="claude">{getModelLabel('claude')}</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <nav className="border-b border-gray-200 mb-8" role="tablist" aria-label="分析模式">
-                <div className="-mb-px flex space-x-8" aria-label="Tabs">
+            <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
+                <div className="flex space-x-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                        <DocumentTextIcon className="w-5 h-5" />
                        <span>{t('tabs.topic')}</span>
@@ -1052,7 +1072,30 @@ const MainPage: React.FC = () => {
                       <span>{t('tabs.positional')}</span>
                     </TabButton>
                 </div>
-            </nav>
+                <div className="flex items-center gap-x-2">
+                    <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700 shrink-0">
+                      {t('controls.model')}:
+                    </label>
+                    <div className="relative">
+                        <select
+                            id="model-switcher"
+                            value={activeModel}
+                            onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
+                            className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
+                        >
+                            <option value="minimax">{getModelLabel('minimax')}</option>
+                            <option value="deepseek">{getModelLabel('deepseek')}</option>
+                            <option value="gemini">{getModelLabel('gemini')}</option>
+                            <option value="claude">{getModelLabel('claude')}</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="space-y-8">
                 {/* --- INPUTS --- */}

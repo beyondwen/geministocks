@@ -71,7 +71,7 @@ const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negati
 };
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-  <div className={`bg-white border border-gray-200 rounded-2xl p-6 shadow-sm h-full ${className}`}>
+  <div className={`bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm h-full ${className}`}>
     <div className="flex items-center gap-3 mb-6">
       <div className="p-2 bg-black rounded-xl shadow-lg">
         <span className="w-5 h-5 text-white block">{icon}</span>
@@ -84,17 +84,10 @@ const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.Rea
 
 const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) => {
   const { t } = useI18n();
-  const getScoreStyle = (score: number) => {
-    if (score >= 75) return { text: 'text-black', font: 'font-bold' };
-    if (score >= 50) return { text: 'text-black', font: 'font-medium' };
-    return { text: 'text-gray-600', font: 'font-normal' };
-  };
-
   const { score, reason } = scoreData;
-  const { text, font } = getScoreStyle(score);
 
   return (
-    <div className={`bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300`}>
+    <div className={`bg-white border-2 border-stone-200/90 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center mb-4 sm:mb-0">
           <div className={`p-2 bg-black rounded-xl shadow-lg mr-3`}>
@@ -104,11 +97,11 @@ const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) =
         </div>
         <div className="text-center sm:text-right">
           <div className="relative">
-            <p className={`text-5xl tracking-tight ${text} ${font}`}>
+            <p className={`text-5xl tracking-tight font-bold`} style={{ color: '#ED702E' }}>
               {score}
-              <span className="text-2xl font-medium opacity-70">/100</span>
+              <span className="text-2xl font-medium opacity-70 text-gray-500">/100</span>
             </p>
-            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-black rounded-full opacity-60`}></div>
+            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 rounded-full opacity-60`} style={{ backgroundColor: '#ED702E' }}></div>
           </div>
         </div>
       </div>
@@ -150,7 +143,7 @@ const PolymarketInfoCard: React.FC<{ data: PolymarketData }> = ({ data }) => {
           {/* Yes Odds */}
           <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
             <p className="text-sm font-semibold text-black mb-1">{t('polymarketCard.yesOdds')}</p>
-            <p className="text-4xl font-bold text-black">{yesPercentage}%</p>
+            <p className="text-4xl font-bold" style={{ color: '#ED702E' }}>{yesPercentage}%</p>
           </div>
           {/* No Odds */}
           <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
@@ -292,7 +285,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
 
       {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center"><p>{exportError}</p></div>}
 
-      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-lg border border-gray-200">
+      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-lg border border-stone-200/90">
         <div className="text-center mb-8 pb-6 border-b border-gray-200">
           <h2 className="text-4xl font-light text-black mb-2">{t('analysisResult.reportTitle')}</h2>
           <p className="text-sm text-gray-600">

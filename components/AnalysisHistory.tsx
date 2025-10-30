@@ -33,7 +33,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-soft">
+    <div className="bg-white border border-stone-200/90 rounded-2xl shadow-sm">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex justify-between items-center p-6 text-left focus:outline-none"
@@ -44,7 +44,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
           <div className="p-2 bg-black rounded-xl shadow-lg">
             <ClockIcon className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gradient-primary">{t('analysisHistory.title')}</h3>
+          <h3 className="text-xl font-semibold text-black">{t('analysisHistory.title')}</h3>
         </div>
         <svg
           aria-hidden="true"

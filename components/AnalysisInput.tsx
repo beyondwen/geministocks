@@ -18,19 +18,22 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
     if (isPaywalled) {
       return t('controls.getCredits');
     }
+    if (cost === 0) {
+      return t('analysisInput.button');
+    }
     return t('controls.useCreditAndAnalyzeMulti', { count: cost });
   };
 
   const buttonText = getButtonText();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm animate-reveal-up">
+    <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm animate-reveal-up">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">
           <SparklesIcon className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-gradient-primary">{t('analysisInput.title')}</h3>
+          <h3 className="text-xl font-semibold text-black">{t('analysisInput.title')}</h3>
           <p id="input-description" className="text-sm text-gray-600">
             {t('analysisInput.description')}
           </p>

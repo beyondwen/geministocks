@@ -405,7 +405,7 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
 
         {exportError && <div role="alert" className="bg-gray-100 border-gray-400 text-black px-4 py-3 rounded text-center"><p>{exportError}</p></div>}
 
-        <div ref={exportRef} className="printable-area p-4 sm:p-6 bg-white rounded-lg shadow-lg border border-gray-200">
+        <div ref={exportRef} className="printable-area p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-stone-200/90">
             <div className="mb-8 pb-6 border-b border-gray-300">
                 <h2 className="text-3xl font-bold text-black mb-2">{t('positionalWarfareResult.reportTitle')}</h2>
                 <p className="text-gray-600">{t('positionalWarfareResult.subtitle')}</p>
