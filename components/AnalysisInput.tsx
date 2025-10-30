@@ -24,7 +24,7 @@ const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, 
   const buttonText = getButtonText();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft animate-reveal-up">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm animate-reveal-up">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2.5 bg-black rounded-xl shadow-lg flex items-center justify-center">
           <SparklesIcon className="w-6 h-6 text-white" />

@@ -222,7 +222,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   }, [activeSourceId, sources, t]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 h-full">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-full">
       <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-black rounded-xl shadow-lg">
               <NewspaperIcon className="w-5 h-5 text-white"/>
@@ -383,10 +383,10 @@ type TabButtonProps = {
 const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`flex-1 flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-500/30 ${
-      isActive
-        ? 'bg-white shadow-md text-black'
-        : 'text-gray-500 hover:bg-gray-100 hover:text-black'
+    className={`flex items-center justify-center gap-x-2 px-3 py-2 text-sm font-semibold transition-colors duration-200 border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black rounded-t-md ${
+        isActive
+        ? 'border-black text-black'
+        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-black'
     }`}
     role="tab"
     aria-selected={isActive}
@@ -935,6 +935,10 @@ const MainPage: React.FC = () => {
 
   const showLatestNews = locale === 'zh';
   const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
+  
+  const noReportLoaded = !analysisReport && !stockAnalysisReport && !positionalWarfareReport;
+  const notLoading = !isLoading && !isStockLoading && !isPositionalWarfareLoading;
+  const showDashboard = noReportLoaded && notLoading;
 
   return (
     <>
@@ -956,80 +960,102 @@ const MainPage: React.FC = () => {
               title={t('imageModal.title')}
           />
       )}
-      <div className="min-h-screen font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-6xl mx-auto">
-          <header className="text-center mb-12">
-            <div className="flex justify-center items-center gap-x-4 mb-4">
-              <h1 className="text-5xl sm:text-6xl font-extralight text-gradient-primary">
-                {t('header.title')}
-              </h1>
-              <RadarIcon className="w-12 h-12 text-black" />
-            </div>
-            <p className="text-gray-600 text-lg">
-                {t('header.subtitle')}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              {t('header.markets')}
-            </p>
-          </header>
-          
-          <main>
-            {/* --- Analysis Controls --- */}
-            <div className="mb-8 -mt-4 flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4 flex-wrap">
-              <div className="flex items-center gap-x-2 text-sm font-medium text-gray-700">
-                <span>{t('stats.userAnalysisCount')}:</span>
-                <span className="font-bold text-base text-black">{userAnalysisCount}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
-              <div className="flex items-center gap-x-3">
-                <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700">
-                  {t('controls.model')}:
-                </label>
-                <div className="relative">
-                    <select
-                        id="model-switcher"
-                        value={activeModel}
-                        onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
-                        className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
-                    >
-                        <option value="deepseek">{getModelLabel('deepseek')}</option>
-                        <option value="gemini">{getModelLabel('gemini')}</option>
-                        <option value="claude">{getModelLabel('claude')}</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                        </svg>
+      <div className="min-h-screen">
+         <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-sm border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    {/* Left side: Logo & Title */}
+                    <div className="flex items-center gap-x-3">
+                        <RadarIcon className="w-8 h-8 text-black" />
+                        <h1 className="text-xl font-semibold text-gray-800 hidden sm:block">
+                            {t('header.title')}
+                        </h1>
+                    </div>
+
+                    {/* Center: Search (Placeholder) */}
+                    <div className="hidden md:flex flex-1 justify-center px-8">
+                        <div className="relative w-full max-w-lg">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                            <input
+                                type="search"
+                                name="search"
+                                id="search"
+                                className="block w-full bg-gray-100 border-transparent rounded-full py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:outline-none focus:bg-white focus:border-gray-300 focus:ring-gray-300 transition"
+                                placeholder={t('header.searchPlaceholder')}
+                                disabled
+                            />
+                        </div>
+                    </div>
+
+                    {/* Right side: Controls */}
+                    <div className="flex items-center gap-x-4">
+                        <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
+                            <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
+                            <span className="sm:hidden">💎 {credits}</span>
+                            <button onClick={() => setIsPaymentModalOpen(true)} className="text-black hover:text-gray-700 text-xs font-bold underline">
+                                ({t('controls.addCredits')})
+                            </button>
+                        </div>
+                        <div className="hidden sm:block">
+                            <LanguageSwitcher />
+                        </div>
                     </div>
                 </div>
-              </div>
-              <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
-              <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
-                  <span>{t('controls.credits', { count: credits })}</span>
-                  <button onClick={() => setIsPaymentModalOpen(true)} className="text-black hover:text-gray-700 text-xs font-bold underline">
-                      ({t('controls.addCredits')})
-                  </button>
-              </div>
+            </div>
+        </header>
+
+        <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+          <main>
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('header.subtitle')}</h2>
+                    <p className="text-sm text-gray-500 mt-1">{t('header.markets')}</p>
+                </div>
+                <div className="flex items-center gap-x-3 shrink-0">
+                    <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700">
+                      {t('controls.model')}:
+                    </label>
+                    <div className="relative">
+                        <select
+                            id="model-switcher"
+                            value={activeModel}
+                            onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
+                            className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
+                        >
+                            <option value="deepseek">{getModelLabel('deepseek')}</option>
+                            <option value="gemini">{getModelLabel('gemini')}</option>
+                            <option value="claude">{getModelLabel('claude')}</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <div className="mb-8" role="tablist" aria-label="分析模式">
-              <div className="bg-gray-100 p-2 flex justify-center items-center gap-x-2 max-w-md mx-auto rounded-xl">
-                <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
-                   <DocumentTextIcon className="w-5 h-5" />
-                   <span>{t('tabs.topic')}</span>
-                </TabButton>
-                <TabButton isActive={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
-                  <ChartBarIcon className="w-5 h-5" />
-                  <span>{t('tabs.stock')}</span>
-                </TabButton>
-                <TabButton isActive={activeTab === 'positional'} onClick={() => setActiveTab('positional')}>
-                  <SwordsIcon className="w-5 h-5" />
-                  <span>{t('tabs.positional')}</span>
-                </TabButton>
-              </div>
-            </div>
+            <nav className="border-b border-gray-200 mb-8" role="tablist" aria-label="分析模式">
+                <div className="-mb-px flex space-x-8" aria-label="Tabs">
+                    <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
+                       <DocumentTextIcon className="w-5 h-5" />
+                       <span>{t('tabs.topic')}</span>
+                    </TabButton>
+                    <TabButton isActive={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
+                      <ChartBarIcon className="w-5 h-5" />
+                      <span>{t('tabs.stock')}</span>
+                    </TabButton>
+                    <TabButton isActive={activeTab === 'positional'} onClick={() => setActiveTab('positional')}>
+                      <SwordsIcon className="w-5 h-5" />
+                      <span>{t('tabs.positional')}</span>
+                    </TabButton>
+                </div>
+            </nav>
 
             <div className="space-y-8">
+                {/* --- INPUTS --- */}
                 {activeTab === 'topic' && (
                     <div className="space-y-8 animate-fade-in" role="tabpanel">
                         <AnalysisInput
@@ -1040,35 +1066,6 @@ const MainPage: React.FC = () => {
                           isPaywalled={isPaywalled}
                           cost={cost}
                         />
-            
-                        {isLoading && <Loader />}
-            
-                        {error && (
-                          <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center">
-                            <p className="font-semibold">{t('errors.title')}</p>
-                            <p className="text-sm mt-1">{error}</p>
-                          </div>
-                        )}
-            
-                        {analysisReport && !isLoading && <AnalysisResult report={analysisReport} userInput={userInput} />}
-                        
-                        <AnalysisHistory
-                          history={topicHistory.map(h => ({ id: h.id, text: h.topic }))}
-                          onSelect={handleSelectTopicHistory}
-                          onDelete={handleDeleteTopicHistory}
-                          onClear={handleClearTopicHistory}
-                        />
-
-                        <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
-                          {isCaseStudyVisible && (
-                            <CaseStudyCard onSelect={handleSelectCaseStudy} onClose={handleCloseCaseStudy} />
-                          )}
-                          {showLatestNews && <LatestNews 
-                            onAnalyze={handleNewsSelect} 
-                            sources={NEWS_SOURCES}
-                          />}
-                        </div>
-                        <AdSenseAd />
                     </div>
                 )}
                 {activeTab === 'stock' && (
@@ -1082,32 +1079,6 @@ const MainPage: React.FC = () => {
                           isPaywalled={isPaywalled}
                           cost={cost}
                         />
-
-                        <HotStocks 
-                          onSelect={handleHotStockSelect} 
-                          stocks={hotStocks} 
-                          isLoading={isHotStocksLoading} 
-                        />
-                        
-                        {isStockLoading && <Loader />}
-            
-                        {stockError && (
-                          <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center">
-                            <p className="font-semibold">{t('errors.title')}</p>
-                            <p className="text-sm mt-1">{stockError}</p>
-                          </div>
-                        )}
-            
-                        {stockAnalysisReport && !isStockLoading && <StockAnalysisResult report={stockAnalysisReport} />}
-                        
-                        <AnalysisHistory
-                          history={stockHistory.map(h => ({ id: h.id, text: h.query }))}
-                          onSelect={handleSelectStockHistory}
-                          onDelete={handleDeleteStockHistory}
-                          onClear={handleClearStockHistory}
-                        />
-
-                        <AdSenseAd />
                     </div>
                 )}
                 {activeTab === 'positional' && (
@@ -1120,57 +1091,112 @@ const MainPage: React.FC = () => {
                           isPaywalled={isPaywalled}
                           cost={cost}
                         />
-
-                        {isPositionalWarfareLoading && <Loader progressMessage={positionalWarfareProgress} />}
-
-                        {positionalWarfareError && (
-                          <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center">
-                            <p className="font-semibold">{t('errors.title')}</p>
-                            <p className="text-sm mt-1">{positionalWarfareError}</p>
-                          </div>
-                        )}
-                        
-                        {positionalWarfareReport && !isPositionalWarfareLoading && <PositionalWarfareResult report={positionalWarfareReport} />}
-
-                        <AnalysisHistory
-                          history={positionalWarfareHistory.map(h => ({ id: h.id, text: h.leaderStockQuery }))}
-                          onSelect={handleSelectPositionalWarfareHistory}
-                          onDelete={handleDeletePositionalWarfareHistory}
-                          onClear={handleClearPositionalWarfareHistory}
-                        />
                     </div>
+                )}
+                
+                {/* --- RESULTS / DASHBOARD --- */}
+                {isLoading || isStockLoading || isPositionalWarfareLoading ? (
+                  <Loader progressMessage={isPositionalWarfareLoading ? positionalWarfareProgress : undefined} />
+                ) : error ? (
+                    <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
+                        <p className="font-semibold">{t('errors.title')}</p>
+                        <p className="text-sm mt-1">{error}</p>
+                    </div>
+                ) : stockError ? (
+                    <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
+                        <p className="font-semibold">{t('errors.title')}</p>
+                        <p className="text-sm mt-1">{stockError}</p>
+                    </div>
+                ) : positionalWarfareError ? (
+                    <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
+                        <p className="font-semibold">{t('errors.title')}</p>
+                        <p className="text-sm mt-1">{positionalWarfareError}</p>
+                    </div>
+                ) : analysisReport ? (
+                    <AnalysisResult report={analysisReport} userInput={userInput} />
+                ) : stockAnalysisReport ? (
+                    <StockAnalysisResult report={stockAnalysisReport} />
+                ) : positionalWarfareReport ? (
+                    <PositionalWarfareResult report={positionalWarfareReport} />
+                ) : (
+                  // DASHBOARD VIEW
+                  <div className="space-y-8 animate-fade-in">
+                    {activeTab === 'stock' && (
+                       <HotStocks 
+                          onSelect={handleHotStockSelect} 
+                          stocks={hotStocks} 
+                          isLoading={isHotStocksLoading} 
+                        />
+                    )}
+                    
+                    {activeTab === 'topic' && (
+                       <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
+                          {isCaseStudyVisible && (
+                            <CaseStudyCard onSelect={handleSelectCaseStudy} onClose={handleCloseCaseStudy} />
+                          )}
+                          {showLatestNews && <LatestNews 
+                            onAnalyze={handleNewsSelect} 
+                            sources={NEWS_SOURCES}
+                          />}
+                        </div>
+                    )}
+                     <AnalysisHistory
+                        history={
+                          activeTab === 'topic' ? topicHistory.map(h => ({ id: h.id, text: h.topic })) :
+                          activeTab === 'stock' ? stockHistory.map(h => ({ id: h.id, text: h.query })) :
+                          positionalWarfareHistory.map(h => ({ id: h.id, text: h.leaderStockQuery }))
+                        }
+                        onSelect={
+                          activeTab === 'topic' ? handleSelectTopicHistory :
+                          activeTab === 'stock' ? handleSelectStockHistory :
+                          handleSelectPositionalWarfareHistory
+                        }
+                        onDelete={
+                          activeTab === 'topic' ? handleDeleteTopicHistory :
+                          activeTab === 'stock' ? handleDeleteStockHistory :
+                          handleDeletePositionalWarfareHistory
+                        }
+                        onClear={
+                          activeTab === 'topic' ? handleClearTopicHistory :
+                          activeTab === 'stock' ? handleClearStockHistory :
+                          handleClearPositionalWarfareHistory
+                        }
+                      />
+                      <AdSenseAd />
+                  </div>
                 )}
             </div>
           </main>
           
-          <footer className="text-center mt-16 py-8 border-t border-gray-200 flex flex-col items-center gap-y-6">
-            <div className="flex items-center gap-x-2">
-              <input
-                  type="text"
-                  placeholder={t('redeem.placeholder')}
-                  value={redemptionCode}
-                  onChange={(e) => setRedemptionCode(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCode(); }}
-                  className="bg-white border border-gray-200 rounded-full pl-4 pr-2 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors w-40"
-                  aria-label={t('redeem.placeholder')}
-              />
-              <button
-                  onClick={handleRedeemCode}
-                  className="px-4 py-2 bg-white text-black border border-gray-300 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
-              >
-                  {t('redeem.button')}
-              </button>
-            </div>
-            <LanguageSwitcher />
-            <p className="text-sm text-gray-500">
-              {t('footer.contact')}
-              <a
-                href="mailto:codes@z.org"
-                className="font-medium text-black hover:text-gray-700 animated-underline transition-colors"
-              >
-                codes@z.org
-              </a>
-            </p>
+          <footer className="text-center mt-16 py-8 border-t border-gray-200">
+             <div className="flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
+                <div className="flex items-center gap-x-2">
+                  <input
+                      type="text"
+                      placeholder={t('redeem.placeholder')}
+                      value={redemptionCode}
+                      onChange={(e) => setRedemptionCode(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCode(); }}
+                      className="bg-white border border-gray-300 rounded-full pl-4 pr-2 py-1.5 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors w-36"
+                      aria-label={t('redeem.placeholder')}
+                  />
+                  <button
+                      onClick={handleRedeemCode}
+                      className="px-3 py-1.5 bg-white text-black border border-gray-300 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-px active:scale-95"
+                  >
+                      {t('redeem.button')}
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500">
+                  {t('footer.contact')}
+                  <a
+                    href="mailto:codes@z.org"
+                    className="font-medium text-black hover:text-gray-700 animated-underline transition-colors"
+                  >
+                    codes@z.org
+                  </a>
+                </p>
+             </div>
           </footer>
         </div>
       </div>

@@ -61,7 +61,7 @@ const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negati
     const config = sentimentConfig[sentiment] || sentimentConfig.Neutral;
   
     return (
-       <div className={`border border-gray-200 bg-white rounded-xl px-4 py-3 shadow-soft inline-flex items-center gap-3 font-medium transition-all duration-300`}>
+       <div className={`border border-gray-200 bg-white rounded-xl px-4 py-3 shadow-sm inline-flex items-center gap-3 font-medium transition-all duration-300`}>
             <div className={`w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center`}>
                 <span className="text-sm">{config.icon}</span>
             </div>
@@ -71,7 +71,7 @@ const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negati
 };
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-  <div className={`bg-white border border-gray-200 rounded-2xl p-6 shadow-soft h-full ${className}`}>
+  <div className={`bg-white border border-gray-200 rounded-2xl p-6 shadow-sm h-full ${className}`}>
     <div className="flex items-center gap-3 mb-6">
       <div className="p-2 bg-black rounded-xl shadow-lg">
         <span className="w-5 h-5 text-white block">{icon}</span>
@@ -94,7 +94,7 @@ const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) =
   const { text, font } = getScoreStyle(score);
 
   return (
-    <div className={`bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300`}>
+    <div className={`bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center mb-4 sm:mb-0">
           <div className={`p-2 bg-black rounded-xl shadow-lg mr-3`}>
@@ -272,7 +272,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
       <div className="no-print relative flex justify-end gap-x-2">
         <button
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-soft hover:bg-gray-100 hover:border-gray-300 hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
           aria-label={t('analysisResult.exportPDF')}
         >
           <DocumentArrowDownIcon className="h-5 w-5" />
@@ -292,7 +292,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
 
       {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center"><p>{exportError}</p></div>}
 
-      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-floating border border-gray-200">
+      <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-lg border border-gray-200">
         <div className="text-center mb-8 pb-6 border-b border-gray-200">
           <h2 className="text-4xl font-light text-black mb-2">{t('analysisResult.reportTitle')}</h2>
           <p className="text-sm text-gray-600">

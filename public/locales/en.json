@@ -8,7 +8,8 @@
   "header": {
     "title": "Super Digger",
     "subtitle": "Intelligently analyze hotspots, accurately seize opportunities",
-    "markets": "Supports US, A-share, HK stocks, crypto, and commodity futures markets"
+    "markets": "Supports US, A-share, HK stocks, crypto, and commodity futures markets",
+    "searchPlaceholder": "Search topics, stocks..."
   },
   "stats": {
     "userAnalysisCount": "Analyses"

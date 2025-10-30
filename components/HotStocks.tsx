@@ -25,7 +25,7 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
   const { t } = useI18n();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-soft">
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-black rounded-xl shadow-lg">
           <FireIcon className="h-5 w-5 text-white" />
@@ -40,7 +40,7 @@ const HotStocks: React.FC<HotStocksProps> = ({ stocks, isLoading, onSelect }) =>
             <button
               key={stock.ticker}
               onClick={() => onSelect(stock.name)}
-              className="px-4 py-2 bg-gray-100 text-black text-sm font-medium rounded-full hover:bg-gray-200 hover:text-black transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+              className="px-4 py-2 bg-gray-100 text-gray-800 text-sm font-medium rounded-full hover:bg-gray-200 transition-all duration-200 hover:shadow-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
             >
               {stock.name}
             </button>
