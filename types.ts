@@ -54,6 +54,7 @@ export interface AssociationTopicNode {
 
 export interface AssociationAnalysis {
   relatedStocks: AssociationStockNode[];
+  // FIX: Corrected type `AssociationNode` to `AssociationTopicNode`
   relatedTopics: AssociationTopicNode[];
 }
 
@@ -64,9 +65,83 @@ export interface PolymarketData {
   totalVolume: string;
 }
 
+// --- New Types for Deepened Analysis ---
+
+export interface TAM_SAM_SOM {
+  TAM: string;
+  SAM: string;
+  SOM: string;
+  sourceOrMethodology: string;
+}
+
+export interface Scenario {
+  scenario: 'Bull Case' | 'Base Case' | 'Bear Case';
+  description: string;
+  probability: number; // e.g., 0.2 for 20%
+  keyDrivers: string[];
+}
+
+export interface TimeHorizonStrategy {
+  shortTerm: string; // 1-3 months
+  mediumTerm: string; // 3-12 months
+  longTerm: string; // >1 year
+}
+
+export interface RiskFactor {
+  risk: string;
+  probability: 'High' | 'Medium' | 'Low';
+  impact: 'High' | 'Medium' | 'Low';
+  mitigation: string;
+}
+
+// --- New Types for Topic Analysis Enhancement ---
+export interface KeyPlayer {
+  name: string;
+  marketShare: string;
+  techAdvantage: string;
+  revenueGrowth: string;
+  grossMargin: string;
+  stockPerformance: string;
+}
+
+export interface CompetitiveLandscape {
+  keyPlayers: KeyPlayer[];
+  summary: string;
+}
+
+export interface RecentEvent {
+  date: string; // "YYYY-MM-DD"
+  description: string;
+  impact: 'Positive' | 'Negative' | 'Neutral';
+}
+
+export interface UpcomingCatalyst {
+  date: string; // "YYYY-MM-DD" or "Q3 2024"
+  event: string;
+}
+
+export interface CatalystTracker {
+  recentNews: RecentEvent[];
+  upcomingCatalysts: UpcomingCatalyst[];
+}
+
+export interface PolicyAnalysis {
+  keyBodies: string[];
+  currentPolicies: string;
+  assessment: 'Headwind' | 'Tailwind' | 'Neutral';
+  potentialChanges: string;
+}
+
+export interface TechTrajectory {
+  coreTech: string;
+  maturity: 'Emerging' | 'Maturing' | 'Mainstream';
+  innovationTrends: string[];
+  moatAnalysis: string;
+}
+
+
 export interface AnalysisReport {
   summary: string;
-  keyTakeaways: string[];
   investmentScore: InvestmentScore;
   analysis: {
     macroPolicy: string;
@@ -74,18 +149,30 @@ export interface AnalysisReport {
     companyFundamentals: string;
     marketSentiment: MarketSentiment;
   };
-  marketSizeAndOutlook: string;
+  marketSizeAndOutlook: {
+    narrative: string;
+    tamSamSom: TAM_SAM_SOM;
+  };
+  // New Enhanced Modules
+  competitiveLandscape?: CompetitiveLandscape;
+  catalystTracker?: CatalystTracker;
+  policyAnalysis?: PolicyAnalysis;
+  techTrajectory?: TechTrajectory;
+  // ---
+  scenarioAnalysis: Scenario[];
   investmentStrategy: {
     logic: string;
     suggestion: string;
-    risks: string;
+    timeHorizons: TimeHorizonStrategy;
   };
+  riskMatrix: RiskFactor[];
   allocationCadenceAndOutlook: string;
   tieredSuggestions: TieredSuggestions;
   associationAnalysis?: AssociationAnalysis;
   sources?: GroundingSource[];
   polymarketData?: PolymarketData;
 }
+
 
 export interface TopicHistoryEntry {
   id: number;
@@ -101,7 +188,6 @@ export interface CompanyProfile {
   exchange: string;
   sector: string;
   industry: string;
-  summary: string;
 }
 
 export interface SWOT {
@@ -121,15 +207,6 @@ export interface RiskAnalysis {
   level: 'High' | 'Medium' | 'Low';
   description: string;
   factors: string[];
-}
-
-export interface CorporateGovernance {
-    summary: string;
-}
-
-export interface ESGRating {
-    rating: string;
-    summary: string;
 }
 
 // --- New Types for Stock Analysis Enhancement ---
@@ -154,26 +231,6 @@ export interface PeerCompetitor {
   peRatio: string;
   revenueGrowth: string;
   grossMargin: string;
-}
-
-export interface ResearchReportSummary {
-  title: string;
-  source: string;
-  publishDate: string;
-  rating: string;
-  summary: string;
-}
-
-export interface ResearchAnalysis {
-  consensusRating: string;
-  targetPriceSummary: string;
-  recentReports: ResearchReportSummary[];
-}
-
-export interface RecentNewsItem {
-  title: string;
-  summary: string;
-  impact: 'Positive' | 'Neutral' | 'Negative';
 }
 
 // --- New Types for Institutional Research Consensus ---
@@ -204,21 +261,75 @@ export interface ResearchReportConsensus {
   recentReports: RecentReport[];
 }
 
+export interface MarketSentimentAnalysis {
+  sentiment: 'Positive' | 'Neutral' | 'Negative';
+  description: string;
+  strategyImpact: string;
+}
+
+// --- New Types for Professional-Grade Stock Analysis ---
+export interface KeyExecutive {
+  name: string;
+  title: string;
+  summary: string;
+}
+
+export interface ManagementAnalysis {
+  keyExecutives: KeyExecutive[];
+  insiderTradingSummary: string;
+}
+
+export interface TechnicalAnalysis {
+  summary: string;
+  rsi: {
+    value: number;
+    interpretation: 'Overbought' | 'Oversold' | 'Neutral';
+  };
+  movingAverages: {
+    '50-day': 'Above' | 'Below';
+    '200-day': 'Above' | 'Below';
+  };
+}
+
+export interface FinancialRatio {
+  value: string;
+  industryAverage: string;
+}
+
+export interface FinancialHealthAnalysis {
+  solvency: FinancialRatio; // Debt-to-Equity
+  efficiency: FinancialRatio; // ROE
+  liquidity: FinancialRatio; // Current Ratio
+}
+
+export interface EarningsCallHighlight {
+  question: string;
+  answer: string;
+}
+
+export interface EarningsCallAnalysis {
+  managementTone: 'Optimistic' | 'Cautious' | 'Pessimistic' | 'Neutral';
+  keyHighlights: EarningsCallHighlight[];
+  futureGuidance: string;
+}
+
 
 export interface StockAnalysisReport {
   companyProfile: CompanyProfile;
-  keyTakeaways: string[];
   investmentScore: InvestmentScore;
+  marketSentimentAnalysis: MarketSentimentAnalysis;
   financialTrends: FinancialTrend[];
   valuationAnalysis: ValuationAnalysis;
   peerComparison: PeerCompetitor[];
-  researchAnalysis: ResearchAnalysis;
-  recentNews: RecentNewsItem[];
   swotAnalysis: SWOT;
   investmentThesis: InvestmentThesis;
   riskAnalysis: RiskAnalysis;
-  corporateGovernance: CorporateGovernance;
-  esgRating: ESGRating;
+  // Professional-Grade Modules
+  managementAnalysis: ManagementAnalysis;
+  technicalAnalysis: TechnicalAnalysis;
+  financialHealth: FinancialHealthAnalysis;
+  earningsCallAnalysis: EarningsCallAnalysis;
+  // ---
   sources?: GroundingSource[];
   researchReportConsensus?: ResearchReportConsensus;
 }

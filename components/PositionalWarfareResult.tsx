@@ -2,8 +2,9 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { toPng } from 'html-to-image';
 import type { PositionalWarfareReport, LeaderStockProfile, FollowerCandidate, StockFinancialMetrics } from '../types';
 import TextRenderer from './TextRenderer';
-import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, XIcon } from './icons/Icons';
+import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, XIcon, MarkdownIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
+import { positionalWarfareReportToMarkdown } from '../services/markdownService';
 
 const generateStockLink = (ticker: string, market: string): string => {
     if (!market) return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
@@ -135,7 +136,7 @@ const FollowerCandidateCard: React.FC<{
     const { t } = useI18n();
     const link = generateStockLink(candidate.ticker, candidate.market);
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-black transition-shadow hover:shadow-xl flex flex-col h-full">
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-black transition-shadow hover:shadow-xl flex flex-col">
             <div className="flex-grow">
                 <div className="flex justify-between items-start mb-4">
                     <div>
@@ -348,6 +349,20 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
     }, 50);
   }, []);
 
+  const handleExportMarkdown = useCallback(() => {
+    const markdownContent = positionalWarfareReportToMarkdown(report);
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+    const link = document.createElement('a');
+    const topic = report.leaderStock.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+    link.download = `Positional_Warfare_Report_${topic || 'report'}.md`;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+}, [report]);
+
+
   useEffect(() => {
     const handleAfterPrint = () => {
       setIsPreparingPdf(false);
@@ -385,6 +400,14 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
 
         <div className="no-print relative flex justify-end gap-x-2">
             <button
+                onClick={handleExportMarkdown}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+                aria-label={t('analysisResult.exportMarkdown')}
+                >
+                <MarkdownIcon className="h-5 w-5" />
+                <span>{t('analysisResult.exportMarkdown')}</span>
+            </button>
+            <button
                 onClick={handlePrint}
                 className="inline-flex items-center px-4 py-2 border-2 border-gray-200 text-sm font-medium rounded-xl shadow-sm text-black bg-white hover:bg-gray-100 transition-all"
                 aria-label={t('analysisResult.exportPDF')}
@@ -414,16 +437,18 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
                 {report.strategistSummary && <StrategistSummaryCard summary={report.strategistSummary} keywords={keywords} />}
                 <LeaderStockCard leader={report.leaderStock} keywords={keywords} />
                 
-                {report.followerCandidates.map((candidate, index) => (
-                    <FollowerCandidateCard 
-                        key={candidate.ticker} 
-                        candidate={candidate} 
-                        leaderMetrics={report.leaderStock.metrics} 
-                        index={index} 
-                        keywords={keywords}
-                        onCompare={setComparisonTarget}
-                    />
-                ))}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {report.followerCandidates.map((candidate, index) => (
+                        <FollowerCandidateCard 
+                            key={candidate.ticker} 
+                            candidate={candidate} 
+                            leaderMetrics={report.leaderStock.metrics} 
+                            index={index} 
+                            keywords={keywords}
+                            onCompare={setComparisonTarget}
+                        />
+                    ))}
+                </div>
             </div>
             <footer className="text-center mt-8 pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500">

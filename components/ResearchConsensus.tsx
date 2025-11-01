@@ -4,7 +4,7 @@ import { useI18n } from '../hooks/useI18n';
 import { ChartTrendingUpIcon, TagIcon, DocumentTextIcon, ExternalLinkIcon } from './icons/Icons';
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-    <div className={`bg-white border border-gray-200 rounded-2xl p-6 shadow-soft h-full ${className}`}>
+    <div className={`bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm ${className}`}>
         <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-black rounded-xl shadow-lg">
                 <span className="w-5 h-5 text-white block">{icon}</span>

@@ -15,12 +15,6 @@ const CASE_STUDY_DATA_ZH: CaseStudy = {
 - macOS 版现已可用，其他平台仍在开发`,
     report: {
         summary: "OpenAI 发布的 ChatGPT Atlas 浏览器，深度集成了 ChatGPT 功能，通过 Agent 模式和记忆功能，预示着浏览器将从信息获取工具向智能操作平台演变，可能重塑浏览器市场格局，对谷歌等现有巨头构成挑战。",
-        keyTakeaways: [
-            "浏览器成为 AI 的新入口：AI 正在从聊天框走向更广泛的应用场景，浏览器是其落地并与用户交互的关键平台。",
-            "Agent 模式潜力巨大：通过模拟用户操作网页，AI Agent 能够自动化复杂任务，为生产力工具和新商业模式带来想象空间。",
-            "挑战现有巨头：Atlas 浏览器直接对标 Google Chrome 和 Microsoft Edge，意图通过 AI 功能争夺用户和市场份额。",
-            "利好 AI 基础设施供应商：AI 应用的普及将进一步推高对算力（如 GPU）和云服务的需求。"
-        ],
         investmentScore: {
             score: 88,
             reason: "该产品代表了 AI 应用演进的重要方向，市场想象空间巨大，且由行业领导者 OpenAI 推出，成功概率较高。但仍面临技术、生态和监管挑战。"
@@ -47,12 +41,64 @@ const CASE_STUDY_DATA_ZH: CaseStudy = {
                 description: "市场普遍对此持积极态度，认为这是 AI 应用落地的重大创新。Agent 模式和记忆功能被视为核心亮点，引发了对“AI原生浏览器”的广泛讨论和期待。催化剂包括 Windows 版本的发布、Agent 功能的增强以及与 ChatGPT Plus 订阅的深度绑定。"
             }
         },
-        marketSizeAndOutlook: "全球浏览器市场由少数巨头主导，但 AI 的出现带来了新的变量。AI 浏览器不仅是信息入口，更是个人智能助理。未来，浏览器可能成为管理个人数字生活和工作的核心中枢，市场规模巨大。其前景取决于 Agent 功能的成熟度、生态系统的建立以及用户习惯的迁移。",
+        marketSizeAndOutlook: {
+            narrative: "全球浏览器市场由少数巨头主导，但 AI 的出现带来了新的变量。AI 浏览器不仅是信息入口，更是个人智能助理。未来，浏览器可能成为管理个人数字生活和工作的核心中枢，市场规模巨大。其前景取决于 Agent 功能的成熟度、生态系统的建立以及用户习惯的迁移。",
+            tamSamSom: {
+                TAM: "约3000亿美元 (全球数字广告市场)",
+                SAM: "约500亿美元 (AI 驱动的生产力软件市场)",
+                SOM: "约50亿美元 (初期 AI 浏览器及插件市场)",
+                sourceOrMethodology: "基于现有市场报告和增长预测的估算"
+            }
+        },
+        scenarioAnalysis: [
+            {
+                scenario: "Bull Case",
+                description: "Agent 功能大获成功，形成强大的插件生态，迅速抢占 20% 以上的浏览器市场份额，成为新的流量入口。",
+                probability: 0.25,
+                keyDrivers: ["Agent 技术实现突破", "Windows 版本顺利推出", "开发者社区积极响应"]
+            },
+            {
+                scenario: "Base Case",
+                description: "Atlas 浏览器在特定用户群（如开发者、内容创作者）中获得欢迎，占据 5-10% 的市场份额，迫使竞争对手加速整合 AI。",
+                probability: 0.60,
+                keyDrivers: ["AI 功能稳定迭代", "与付费订阅模式结合良好", "市场营销有效"]
+            },
+            {
+                scenario: "Bear Case",
+                description: "用户体验不佳，Agent 功能受限，谷歌等巨头迅速推出功能更强、整合更深的产品，Atlas 浏览器最终边缘化。",
+                probability: 0.15,
+                keyDrivers: ["技术瓶颈", "用户隐私担忧", "竞争对手的强力反击"]
+            }
+        ],
         investmentStrategy: {
             logic: "核心逻辑是投资于“AI淘金热中的卖铲人”。无论哪个 AI 应用最终胜出，提供底层算力和平台的公司都将受益。同时，关注现有浏览器巨头为应对竞争所采取的防御性创新。",
             suggestion: "建议重点关注 AI 基础设施的核心供应商，并适度配置浏览器市场的现有领导者，以对冲其潜在的被颠覆风险和其自身的 AI 转型潜力。",
-            risks: "主要风险包括：Agent 技术成熟度不及预期、用户接受度低、强大的竞争对手（如谷歌、微软）迅速模仿并利用其现有优势进行反击、以及潜在的监管风险。"
+            timeHorizons: {
+                shortTerm: "关注产品发布和用户反馈带来的市场情绪波动，相关概念股可能有交易性机会。",
+                mediumTerm: "观察用户增长数据和开发者生态的形成情况，验证其市场潜力。",
+                longTerm: "长期持有 AI 基础设施的核心资产，并根据市场格局变化调整对浏览器厂商的配置。"
+            }
         },
+        riskMatrix: [
+            {
+                risk: "技术成熟度风险",
+                probability: "Medium",
+                impact: "High",
+                mitigation: "关注 OpenAI 的技术发布和产品迭代速度，技术领先是其核心护城河。"
+            },
+            {
+                risk: "竞争风险",
+                probability: "High",
+                impact: "High",
+                mitigation: "分散投资，同时配置谷歌等现有巨头，对冲单一公司被颠覆的风险。"
+            },
+            {
+                risk: "监管风险",
+                probability: "Medium",
+                impact: "Medium",
+                mitigation: "关注全球主要经济体对 AI Agent 和数据隐私的监管政策动向。"
+            }
+        ],
         allocationCadenceAndOutlook: "短期内，市场热情较高，相关概念股可能有溢价。建议在产品发布更多平台版本、用户数据初步验证后分批建仓。长期来看，AI 与各类终端的结合是大势所趋，浏览器是其中的关键一环，值得长期关注和配置。",
         tieredSuggestions: {
             coreHoldings: [
@@ -88,12 +134,6 @@ const CASE_STUDY_DATA_EN: CaseStudy = {
 - macOS version is now available, other platforms are under development`,
     report: {
         summary: "OpenAI's release of the ChatGPT Atlas browser, which deeply integrates ChatGPT features, signals a shift for browsers from information access tools to intelligent operating platforms. Through its Agent mode and memory function, it could reshape the browser market and challenge existing giants like Google.",
-        keyTakeaways: [
-            "Browsers as a new entry point for AI: AI is moving beyond chatbots to broader applications, with browsers being a key platform for user interaction.",
-            "Huge potential in Agent mode: By simulating user actions, AI Agents can automate complex tasks, opening up possibilities for productivity tools and new business models.",
-            "Challenging existing giants: Atlas directly competes with Google Chrome and Microsoft Edge, aiming to capture users and market share through AI features.",
-            "Beneficial for AI infrastructure providers: The proliferation of AI applications will further drive demand for computing power (like GPUs) and cloud services."
-        ],
         investmentScore: {
             score: 88,
             reason: "This product represents a significant direction in the evolution of AI applications with vast market potential. Launched by industry leader OpenAI, it has a high probability of success, but still faces technical, ecological, and regulatory challenges."
@@ -120,12 +160,64 @@ const CASE_STUDY_DATA_EN: CaseStudy = {
                 description: "The market is generally positive, viewing this as a major innovation in AI application deployment. The Agent mode and memory function are seen as core highlights, sparking widespread discussion and anticipation for 'AI-native browsers'. Catalysts include the release of a Windows version, enhancement of Agent capabilities, and deep integration with the ChatGPT Plus subscription."
             }
         },
-        marketSizeAndOutlook: "The global browser market is dominated by a few giants, but AI introduces new variables. An AI browser is not just an information portal but a personal intelligent assistant. In the future, browsers could become the central hub for managing personal digital life and work, representing a massive market size. Its outlook depends on the maturity of Agent functionality, the establishment of an ecosystem, and the migration of user habits.",
+        marketSizeAndOutlook: {
+            narrative: "The global browser market is dominated by a few giants, but AI introduces new variables. An AI browser is not just an information portal but a personal intelligent assistant. In the future, browsers could become the central hub for managing personal digital life and work, representing a massive market size. Its outlook depends on the maturity of Agent functionality, the establishment of an ecosystem, and the migration of user habits.",
+            tamSamSom: {
+                TAM: " ~$300 Billion (Global Digital Advertising Market)",
+                SAM: "~$50 Billion (AI-driven Productivity Software Market)",
+                SOM: "~$5 Billion (Initial AI Browser & Plugin Market)",
+                sourceOrMethodology: "Estimation based on existing market reports and growth forecasts"
+            }
+        },
+        scenarioAnalysis: [
+            {
+                scenario: "Bull Case",
+                description: "The Agent feature is a massive success, forming a strong plugin ecosystem and quickly capturing over 20% of the browser market share, becoming a new traffic gateway.",
+                probability: 0.25,
+                keyDrivers: ["Breakthrough in Agent technology", "Successful launch of Windows version", "Positive response from the developer community"]
+            },
+            {
+                scenario: "Base Case",
+                description: "The Atlas browser gains popularity among specific user groups (like developers, content creators), capturing 5-10% market share and forcing competitors to accelerate AI integration.",
+                probability: 0.60,
+                keyDrivers: ["Stable iteration of AI features", "Good integration with the paid subscription model", "Effective marketing"]
+            },
+            {
+                scenario: "Bear Case",
+                description: "Poor user experience, limited Agent functionality, and rapid counter-moves by giants like Google with more powerful and deeply integrated products lead to the marginalization of the Atlas browser.",
+                probability: 0.15,
+                keyDrivers: ["Technical bottlenecks", "User privacy concerns", "Strong counter-attacks from competitors"]
+            }
+        ],
         investmentStrategy: {
             logic: "The core logic is to invest in the 'picks and shovels' of the AI gold rush. Regardless of which AI application ultimately wins, the companies providing the underlying computing power and platforms will benefit. At the same time, pay attention to the defensive innovations of existing browser giants.",
             suggestion: "It is recommended to focus on core AI infrastructure suppliers and moderately allocate to existing leaders in the browser market to hedge against potential disruption and capitalize on their own AI transformation potential.",
-            risks: "Key risks include: Agent technology not maturing as expected, low user adoption, strong competitors (like Google, Microsoft) quickly imitating and leveraging their existing advantages to counter, and potential regulatory risks."
+            timeHorizons: {
+                shortTerm: "Focus on market sentiment fluctuations from product launches and user feedback; there may be trading opportunities in related concept stocks.",
+                mediumTerm: "Observe user growth data and the formation of the developer ecosystem to validate its market potential.",
+                longTerm: "Hold core assets in AI infrastructure for the long term and adjust allocations to browser manufacturers based on market landscape changes."
+            }
         },
+        riskMatrix: [
+            {
+                risk: "Technology Maturity Risk",
+                probability: "Medium",
+                impact: "High",
+                mitigation: "Monitor OpenAI's tech releases and product iteration speed; technological leadership is its core moat."
+            },
+            {
+                risk: "Competitive Risk",
+                probability: "High",
+                impact: "High",
+                mitigation: "Diversify investments by also allocating to existing giants like Google to hedge against the risk of a single company being disrupted."
+            },
+            {
+                risk: "Regulatory Risk",
+                probability: "Medium",
+                impact: "Medium",
+                mitigation: "Stay informed about regulatory policy trends regarding AI Agents and data privacy in major global economies."
+            }
+        ],
         allocationCadenceAndOutlook: "In the short term, market enthusiasm is high, and related concept stocks may be at a premium. It is advisable to build positions in batches after more platform versions are released and initial user data is validated. In the long term, the integration of AI with various terminals is a major trend, and the browser is a key part of it, deserving long-term attention and allocation.",
         tieredSuggestions: {
             coreHoldings: [

@@ -47,7 +47,7 @@ const GEMINI_CREDIT_COST = 2;
 const CLAUDE_CREDIT_COST = 4;
 
 // --- New Credit System Rules ---
-const DAILY_FREE_CREDITS_AWARD = 5;
+const DAILY_FREE_CREDITS_AWARD = 1;
 
 // --- User/Credit/Usage Helper Functions ---
 const getUserId = (): string => {
@@ -213,7 +213,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSourceId, setActiveSourceId] = useState<string>('kagi'); // Default to Kagi News
+  const [activeSourceId, setActiveSourceId] = useState<string>('36kr'); // Default to 36kr
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const { t } = useI18n();
 

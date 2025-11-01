@@ -12,13 +12,13 @@ const SITE_NAME = '超级挖掘机';
 
 const getModelName = (model: AnalysisModel): string => {
     if (model === 'gemini') {
-        return 'google/gemini-2.5-flash';
+        return 'google/gemini-2.5-pro';
     }
     if (model === 'claude') {
-        return 'anthropic/claude-haiku-4.5';
+        return 'anthropic/claude-haiku-4.5:online';
     }
     // Default to deepseek
-    return 'deepseek/deepseek-v3.2-exp';
+    return 'deepseek/deepseek-v3.2-exp:online';
 };
 
 /**
@@ -89,8 +89,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         try {
             return JSON.parse(jsonString);
         } catch (e) {
-            if (e instanceof SyntaxError && (e.message.includes("Unexpected token") || e.message.includes("expected ',' or ']"))) {
-                console.warn("Initial JSON parsing failed with a suspected missing comma. Attempting to auto-correct.", e);
+            if (e instanceof SyntaxError && (e.message.includes("Unexpected token") || e.message.includes("expected ',' or ']'") || e.message.includes("Unexpected string in JSON"))) {
+                console.warn("Initial JSON parsing failed. Attempting to auto-correct.", e);
                 try {
                     // Correction attempt 1: Add missing commas between properties ending with quotes, brackets, or braces.
                     let correctedJson = jsonString.replace(/([}\]"])\s*(")/g, "$1,$2");
@@ -102,7 +102,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
                 } catch (correctionError) {
                     console.error("Auto-correction of JSON failed. The error is likely more complex.", correctionError);
                     // Re-throw the original error as it is more indicative of the initial problem.
-                    throw e;
+                    throw new Error(`Failed to parse AI response: ${content}`);
                 }
             }
             // If the error is not the one we're trying to fix, re-throw it immediately.
@@ -117,89 +117,15 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 }
 
 const getAnalysisSystemInstruction = (locale: Locale): string => {
-    if (locale === 'zh') {
-        return `
-        You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
-        Ensure your analysis is timely by incorporating the latest web information and market data.
-        If the topic is related to blockchain, Web3, or cryptocurrencies, you MUST also recommend relevant cryptocurrencies.
-        If the topic is related to commodities, raw materials, or macroeconomic cycles, you MUST also recommend relevant commodity futures (e.g., Gold 'GC=F', Crude Oil 'CL=F').
-        At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
-        You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
-        All content must be in Simplified Chinese.
-        The JSON schema is as follows:
-        {
-          "summary": "string (1-3句话总结)",
-          "keyTakeaways": ["string (3-5个核心要点)"],
-          "investmentScore": {
-            "score": "number (1-100)",
-            "reason": "string (对分数的简要理由)"
-          },
-          "analysis": {
-            "macroPolicy": "string",
-            "industryChain": {
-              "upstream": [{"name": "string", "description": "string"}],
-              "midstream": [{"name": "string", "description": "string"}],
-              "downstream": [{"name": "string", "description": "string"}]
-            },
-            "companyFundamentals": "string",
-            "marketSentiment": {
-              "sentiment": "'Positive' | 'Neutral' | 'Negative'",
-              "description": "string"
-            }
-          },
-          "marketSizeAndOutlook": "string (对市场规模和应用前景进行前瞻性分析。)",
-          "investmentStrategy": {
-            "logic": "string",
-            "suggestion": "string",
-            "risks": "string"
-          },
-          "allocationCadenceAndOutlook": "string (提供关于投资时机、建仓节奏和长期展望的指导。)",
-          "tieredSuggestions": {
-            "coreHoldings": [{
-              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-              "reason": "string (作为核心持仓的理由)", "relevance": "'High'"
-            }],
-            "strategicSatellites": [{
-              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-              "reason": "string (作为卫星持仓的理由)", "relevance": "'Medium'"
-            }],
-            "watchlist": [{
-              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-              "reason": "string (列入观察名单的理由)", "relevance": "'Low'"
-            }]
-          },
-          "associationAnalysis": {
-            "relatedStocks": [{
-              "name": "string (例如 '英伟达')",
-              "ticker": "string (例如 'NVDA')",
-              "reason": "string (简明扼要的关联原因)"
-            }],
-            "relatedTopics": [{
-              "name": "string (例如 'AI芯片制造')",
-              "reason": "string (简明扼要的关联原因)"
-            }]
-          }
-        }
-    `;
-    }
-    return `
-        You are a top-tier financial analyst. Your task is to analyze the provided text using the "Four-Dimensional Integrated Analysis Method".
-        Ensure your analysis is timely by incorporating the latest web information and market data.
-        If the topic is related to blockchain, Web3, or cryptocurrencies, you MUST also recommend relevant cryptocurrencies.
-        If the topic is related to commodities, raw materials, or macroeconomic cycles, you MUST also recommend relevant commodity futures (e.g., Gold 'GC=F', Crude Oil 'CL=F').
-        At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
-        You MUST respond strictly in the following JSON format. Do not add any extra explanations or text outside the JSON structure.
-        All content must be in English.
-        The JSON schema is as follows:
-        {
+    // Shared part of the schema
+    const schema = `{
           "summary": "string (1-3 sentence summary)",
-          "keyTakeaways": ["string (3-5 key bullet points)"],
           "investmentScore": {
             "score": "number (1-100)",
             "reason": "string (brief justification for the score)"
           },
           "analysis": {
-            "macroPolicy": "string",
+            "macroPolicy": "string (must include specific macro data like CPI/PPI)",
             "industryChain": {
               "upstream": [{"name": "string", "description": "string"}],
               "midstream": [{"name": "string", "description": "string"}],
@@ -211,12 +137,86 @@ const getAnalysisSystemInstruction = (locale: Locale): string => {
               "description": "string"
             }
           },
-          "marketSizeAndOutlook": "string (Provide a forward-looking analysis of the market size and application prospects.)",
+          "marketSizeAndOutlook": {
+            "narrative": "string (Provide a forward-looking analysis of the market size and application prospects.)",
+            "tamSamSom": {
+              "TAM": "string (Total Addressable Market value)",
+              "SAM": "string (Serviceable Addressable Market value)",
+              "SOM": "string (Serviceable Obtainable Market value)",
+              "sourceOrMethodology": "string (Source of the data or methodology for estimation)"
+            }
+          },
+          "competitiveLandscape": {
+            "keyPlayers": [{
+              "name": "string (Company Name)",
+              "marketShare": "string (e.g., 'approx. 25%' or 'Leader')",
+              "techAdvantage": "string (Brief description of their core tech advantage)",
+              "revenueGrowth": "string (e.g., '+15% TTM')",
+              "grossMargin": "string (e.g., '45%')",
+              "stockPerformance": "string (e.g., '+30% in last 3 months')"
+            }],
+            "summary": "string (A brief summary of which company has the most comprehensive advantage)"
+          },
+          "catalystTracker": {
+            "recentNews": [{
+              "date": "string (YYYY-MM-DD)",
+              "description": "string (Summary of the key news/event)",
+              "impact": "'Positive' | 'Negative' | 'Neutral'"
+            }],
+            "upcomingCatalysts": [{
+              "date": "string (YYYY-MM-DD or Q3 2024)",
+              "event": "string (e.g., 'Industry Conference', 'Earnings Release')"
+            }]
+          },
+          "policyAnalysis": {
+            "keyBodies": ["string (e.g., 'FDA', 'NMPA')"],
+            "currentPolicies": "string (Summary of current key policies)",
+            "assessment": "'Headwind' | 'Tailwind' | 'Neutral'",
+            "potentialChanges": "string (Analysis of potential future policy changes)"
+          },
+          "techTrajectory": {
+            "coreTech": "string (Simple explanation of the core technology)",
+            "maturity": "'Emerging' | 'Maturing' | 'Mainstream'",
+            "innovationTrends": ["string (List of 2-3 key innovation directions)"],
+            "moatAnalysis": "string (Analysis of the height of the technological barrier)"
+          },
+          "scenarioAnalysis": [
+            {
+              "scenario": "'Bull Case'",
+              "description": "string (Detailed description under this scenario)",
+              "probability": "number (A decimal between 0 and 1 representing the probability of this scenario occurring)",
+              "keyDrivers": ["string (Key drivers or catalysts for this scenario)"]
+            },
+            {
+              "scenario": "'Base Case'",
+              "description": "string",
+              "probability": "number",
+              "keyDrivers": ["string"]
+            },
+            {
+              "scenario": "'Bear Case'",
+              "description": "string",
+              "probability": "number",
+              "keyDrivers": ["string (Key risks for this scenario)"]
+            }
+          ],
           "investmentStrategy": {
             "logic": "string",
             "suggestion": "string",
-            "risks": "string"
+            "timeHorizons": {
+              "shortTerm": "string (Strategy for 1-3 months)",
+              "mediumTerm": "string (Strategy for 3-12 months)",
+              "longTerm": "string (Strategy for >1 year)"
+            }
           },
+          "riskMatrix": [
+            {
+              "risk": "string (The specific risk factor)",
+              "probability": "'High' | 'Medium' | 'Low'",
+              "impact": "'High' | 'Medium' | 'Low'",
+              "mitigation": "string (Mitigation or hedging strategy)"
+            }
+          ],
           "allocationCadenceAndOutlook": "string (Provide guidance on investment timing, position building pace, and long-term outlook.)",
           "tieredSuggestions": {
             "coreHoldings": [{
@@ -243,7 +243,37 @@ const getAnalysisSystemInstruction = (locale: Locale): string => {
               "reason": "string (Concise reason for relevance)"
             }]
           }
-        }
+        }`;
+
+    if (locale === 'zh') {
+        return `
+        You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information.
+        Your analysis must include ALL of the following professional modules:
+        1.  **Core Analysis**: Comprehensive analysis including macro data, industry chain, market sentiment, TAM/SAM/SOM, scenario analysis (Bull/Base/Bear), time horizons, and a risk matrix.
+        2.  **Competitive Landscape**: Identify 3-5 key players and create a quantitative comparison matrix (market share, tech advantage, revenue growth, gross margin, stock performance).
+        3.  **Catalyst Tracker**: Summarize key news from the last 30 days and list potential upcoming catalysts for the next 1-3 months.
+        4.  **Policy Deep Dive**: Analyze the regulatory environment, providing a 'Headwind' or 'Tailwind' assessment.
+        5.  **Technology Trajectory**: Assess the maturity of the core technology ('Emerging', 'Maturing', 'Mainstream') and its innovation trends.
+        If the topic is related to blockchain or crypto, you MUST recommend relevant cryptocurrencies.
+        If the topic relates to commodities or macro cycles, you MUST recommend relevant commodity futures (e.g., Gold 'GC=F').
+        You MUST provide a quantitative "investmentScore" from 1-100.
+        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
+        The JSON schema is as follows: ${schema}
+    `;
+    }
+    return `
+        You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information.
+        Your analysis must include ALL of the following professional modules:
+        1.  **Core Analysis**: Comprehensive analysis including macro data, industry chain, market sentiment, TAM/SAM/SOM, scenario analysis (Bull/Base/Bear), time horizons, and a risk matrix.
+        2.  **Competitive Landscape**: Identify 3-5 key players and create a quantitative comparison matrix (market share, tech advantage, revenue growth, gross margin, stock performance).
+        3.  **Catalyst Tracker**: Summarize key news from the last 30 days and list potential upcoming catalysts for the next 1-3 months.
+        4.  **Policy Deep Dive**: Analyze the regulatory environment, providing a 'Headwind' or 'Tailwind' assessment.
+        5.  **Technology Trajectory**: Assess the maturity of the core technology ('Emerging', 'Maturing', 'Mainstream') and its innovation trends.
+        If the topic is related to blockchain or crypto, you MUST recommend relevant cryptocurrencies.
+        If the topic relates to commodities or macro cycles, you MUST recommend relevant commodity futures (e.g., Gold 'GC=F').
+        You MUST provide a quantitative "investmentScore" from 1-100.
+        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in English.
+        The JSON schema is as follows: ${schema}
     `;
 };
 
@@ -273,7 +303,6 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
             "totalVolume": "string (The total trading volume, e.g., '$1.5M')"
           },
           "summary": "string (A 1-3 sentence summary of the market's prediction and its investment implications)",
-          "keyTakeaways": ["string (3-5 key takeaways covering both 'Yes' and 'No' scenarios)"],
           "investmentScore": {
             "score": "number (1-100, representing the clarity and actionability of the investment opportunity)",
             "reason": "string (Brief reason for the score)"
@@ -339,53 +368,87 @@ export const getPolymarketAnalysis = async (url: string, model: AnalysisModel, l
 };
 
 const getStockAnalysisSystemInstruction = (locale: Locale): string => {
-    if (locale === 'zh') {
-        return `
-        You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
-        It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
-        Specifically, you MUST search for institutional research reports on 'data.eastmoney.com/report' from the last 3 months to create the 'researchAnalysis' section.
-        At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
-        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
-        The JSON schema is as follows:
-        {
-          "companyProfile": { "name": "string", "ticker": "string", "exchange": "string", "sector": "string", "industry": "string", "summary": "string" },
-          "keyTakeaways": ["string (3-5个核心要点)"],
-          "investmentScore": { "score": "number (1-100)", "reason": "string (简要理由)" },
-          "financialTrends": [ { "year": "string", "revenue": "number (单位: 百万)", "netIncome": "number (单位: 百万)" } ],
-          "valuationAnalysis": { "judgment": "'undervalued' | 'fairly valued' | 'overvalued'", "methodology": "string", "targetPriceRange": "string", "reasoning": "string" },
-          "peerComparison": [ { "name": "string", "ticker": "string", "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "grossMargin": "string" } ],
-          "researchAnalysis": { "consensusRating": "string (例如 '买入')", "targetPriceSummary": "string (例如 '综合目标价 ¥180 - ¥200')", "recentReports": [ { "title": "string", "source": "string", "publishDate": "string", "rating": "string", "summary": "string" } ] },
-          "recentNews": [ { "title": "string", "summary": "string", "impact": "'Positive' | 'Neutral' | 'Negative'" } ],
+    const schema = `{
+          "companyProfile": { "name": "string", "ticker": "string", "exchange": "string", "sector": "string", "industry": "string" },
+          "investmentScore": { "score": "number (1-100)", "reason": "string (A concise justification for the score)" },
+          "marketSentimentAnalysis": {
+            "sentiment": "'Positive' | 'Neutral' | 'Negative'",
+            "description": "string (Analysis of current market sentiment)",
+            "strategyImpact": "string (How this sentiment impacts investment strategy)"
+          },
+          "financialTrends": [
+            { "year": "string (e.g., '2022A')", "revenue": "number (in millions of the reporting currency)", "netIncome": "number (in millions)" },
+            { "year": "string (e.g., '2023A')", "revenue": "number", "netIncome": "number" },
+            { "year": "string (e.g., '2024A')", "revenue": "number", "netIncome": "number" }
+          ],
+          "valuationAnalysis": {
+            "judgment": "'undervalued' | 'fairly valued' | 'overvalued'",
+            "methodology": "string (e.g., 'Based on a blend of P/E ratio comparison and a DCF model.')",
+            "targetPriceRange": "string (e.g., '$180 - $200')",
+            "reasoning": "string (Brief explanation for the valuation judgment)"
+          },
+          "peerComparison": [
+            { "name": "string", "ticker": "string", "marketCap": "string", "peRatio": "string", "revenueGrowth": "string (YoY %)", "grossMargin": "string (%)" }
+          ],
           "swotAnalysis": { "strengths": ["string"], "weaknesses": ["string"], "opportunities": ["string"], "threats": ["string"] },
           "investmentThesis": { "bull": "string", "bear": "string", "conclusion": "string" },
           "riskAnalysis": { "level": "'High' | 'Medium' | 'Low'", "description": "string", "factors": ["string"] },
-          "corporateGovernance": { "summary": "string" },
-          "esgRating": { "rating": "string", "summary": "string" }
-        }
+          "managementAnalysis": {
+            "keyExecutives": [ { "name": "string", "title": "string", "summary": "string (Brief bio)" } ],
+            "insiderTradingSummary": "string (Summary of insider trading over the last 6 months)"
+          },
+          "technicalAnalysis": {
+            "summary": "string (Brief summary of the technical outlook)",
+            "rsi": { "value": "number (14-day RSI)", "interpretation": "'Overbought' | 'Oversold' | 'Neutral'" },
+            "movingAverages": { "50-day": "'Above' | 'Below'", "200-day": "'Above' | 'Below'" }
+          },
+          "financialHealth": {
+            "solvency": { "value": "string (Debt-to-Equity Ratio)", "industryAverage": "string" },
+            "efficiency": { "value": "string (Return on Equity - ROE)", "industryAverage": "string" },
+            "liquidity": { "value": "string (Current Ratio)", "industryAverage": "string" }
+          },
+          "earningsCallAnalysis": {
+            "managementTone": "'Optimistic' | 'Cautious' | 'Pessimistic' | 'Neutral'",
+            "keyHighlights": [ { "question": "string (Key analyst question)", "answer": "string (Summarized management answer)" } ],
+            "futureGuidance": "string (Summary of future revenue/EPS guidance)"
+          }
+        }`;
+
+    if (locale === 'zh') {
+        return `
+        你是一名顶级的股票研究分析师，具备强大的网络搜索和信息整合能力。请为给定的股票提供一份机构级的深度分析报告。
+        你的分析必须基于最新的实时数据，包括财务报告、市场数据、新闻、技术指标以及最新的财报电话会议记录。
+        
+        你的任务是完成以下所有模块的分析：
+        1.  **基本信息**: 公司简介、投资评分、市场情绪。
+        2.  **财务与估值**: 过去3年的财务趋势、明确的估值判断（低估/合理/高估）及目标价、与2-3个核心竞品的量化对比。
+        3.  **战略分析**: SWOT、投资论点（看涨/看跌）、风险分析。
+        4.  **管理层与内部人动态**: 核心高管简介、过去6个月的内部人交易总结。
+        5.  **技术分析快照**: 总结技术面貌，提供14日RSI值及解读、当前股价与50日和200日均线的关系。
+        6.  **深度财务健康度**: 获取公司的偿债能力（资产负债率）、运营效率（ROE）和流动性（流动比率），并必须找到对应的行业平均值进行对比。
+        7.  **财报电话会情报**: 搜索并分析最近一次财报电话会议的文字记录，总结管理层基调、关键问答环节的要点，以及未来的业绩指引。
+
+        你必须严格按照以下 JSON 格式回应。不要添加任何额外的文本。所有内容必须是简体中文。
+        JSON 结构如下:
+        ${schema}
     `;
     }
     return `
-        You are a top-tier stock research analyst. Provide a comprehensive, in-depth, and objective analysis report for the given stock.
-        It is crucial that you use the latest web search results, market data, and news for your analysis to ensure timeliness.
-        Specifically, you MUST search for institutional research reports to create the 'researchAnalysis' section.
-        At the beginning of your analysis, you MUST provide a quantitative "investmentScore" from 1-100 and a list of 3-5 "keyTakeaways".
+        You are a top-tier stock research analyst with powerful web search and information synthesis capabilities. Provide an institutional-grade, in-depth analysis report for the given stock.
+        Your analysis MUST be based on the latest real-time data, including financial reports, market data, news, technical indicators, and the most recent earnings call transcript.
+        
+        Your task is to complete analysis for ALL of the following modules:
+        1.  **Basic Info**: Company profile, investment score, market sentiment.
+        2.  **Financials & Valuation**: Financial trends for the last 3 years, a clear valuation judgment (undervalued/fairly valued/overvalued) with a target price, and a quantitative comparison against 2-3 key competitors.
+        3.  **Strategic Analysis**: SWOT, investment thesis (bull/bear), risk analysis.
+        4.  **Management & Insider Activity**: Key executive profiles, and a summary of insider trading over the last 6 months.
+        5.  **Technical Analysis Snapshot**: Summarize the technical picture, providing the 14-day RSI value and interpretation, and the current price's position relative to the 50-day and 200-day moving averages.
+        6.  **Deep-Dive Financial Health**: Find the company's solvency (Debt-to-Equity), efficiency (ROE), and liquidity (Current Ratio), and you MUST find their corresponding industry averages for comparison.
+        7.  **Earnings Call Intelligence**: Search for and analyze the transcript of the latest earnings call to summarize the management's tone, key Q&A highlights, and future guidance.
+
         You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in English.
         The JSON schema is as follows:
-        {
-          "companyProfile": { "name": "string", "ticker": "string", "exchange": "string", "sector": "string", "industry": "string", "summary": "string" },
-          "keyTakeaways": ["string (3-5 key bullet points)"],
-          "investmentScore": { "score": "number (1-100)", "reason": "string (brief justification)" },
-          "financialTrends": [ { "year": "string", "revenue": "number (in millions)", "netIncome": "number (in millions)" } ],
-          "valuationAnalysis": { "judgment": "'undervalued' | 'fairly valued' | 'overvalued'", "methodology": "string", "targetPriceRange": "string", "reasoning": "string" },
-          "peerComparison": [ { "name": "string", "ticker": "string", "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "grossMargin": "string" } ],
-          "researchAnalysis": { "consensusRating": "string (e.g., 'Buy')", "targetPriceSummary": "string (e.g., 'Consensus Target $180 - $200')", "recentReports": [ { "title": "string", "source": "string", "publishDate": "string", "rating": "string", "summary": "string" } ] },
-          "recentNews": [ { "title": "string", "summary": "string", "impact": "'Positive' | 'Neutral' | 'Negative'" } ],
-          "swotAnalysis": { "strengths": ["string"], "weaknesses": ["string"], "opportunities": ["string"], "threats": ["string"] },
-          "investmentThesis": { "bull": "string", "bear": "string", "conclusion": "string" },
-          "riskAnalysis": { "level": "'High' | 'Medium' | 'Low'", "description": "string", "factors": ["string"] },
-          "corporateGovernance": { "summary": "string" },
-          "esgRating": { "rating": "string", "summary": "string" }
-        }
+        ${schema}
     `;
 };
 
@@ -399,7 +462,6 @@ export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel,
         ---
         ${stockQuery}
         ---
-        For the "financialTrends" section, please provide data for the last 3 completed fiscal years. For "peerComparison", identify 2-3 main competitors. For "recentNews", summarize 1-3 most important recent news items. For "researchAnalysis", provide a consensus based on the last 3 months of reports and summarize the 3 most recent reports.
     `;
 
     return callOpenRouterAI(prompt, systemInstruction, modelName);
@@ -419,19 +481,19 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
 
     if (locale === 'zh') {
         return `
-        You are an expert financial data analyst AI. Your task is to scrape and process institutional research report data for a given stock based on the Chinese market. You MUST follow these steps precisely:
-        1.  From the user query, identify the 6-digit stock code. If it's a name, find its code.
-        2.  Fetch data from the URL \`https://data.eastmoney.com/report/{code}.html\`.
-        3.  Inside the page's HTML, find the JavaScript variable \`var initdata = {...};\` and parse this JSON object.
-        4.  The \`data\` key inside this object contains a list of reports. Filter this list to include only reports published within the last 3 months. If there are fewer than 2 reports in the last 3 months, use the 2 most recent ones regardless of date.
-        5.  **EPS Forecasts**: 从筛选后的研报中，收集 \`predictThisYearEps\`、\`predictNextYearEps\` 和 \`predictNextTwoYearEps\` 的所有非空值。将它们分别映射到 "2025E"、"2026E" 和 "2027E" 这三年。计算这三个字段各自的平均值。
-        6.  **EPS Growth**: Calculate the growth rate for the next year as \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`. Calculate the growth for the year after as \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`. Express growth as a percentage (e.g., 15.5 for 15.5%). If a denominator is zero or not available, the growth rate should be null.
-        7.  **Target Price**: From the filtered reports, collect all non-null values for \`targetPrice\`. Calculate the highest, lowest, and average values.
-        8.  **Current Price**: Fetch the current stock price from \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (e.g., 'sh600519'). The price is the 4th field (index 3) in the tilde-separated response string. If not available, use \`closePrice\` from the most recent report.
-        9.  **Recent Reports**: Select the 3 most recent reports from the filtered list. For each, extract \`title\`, \`orgSName\` as institution, \`publishDate\`. Attempt to find a rating (like '买入', '增持', '中性') from the \`ratingName\` field or the title. Generate the PDF URL using \`infoCode\` like so: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`.
-        10. You MUST respond strictly in the following JSON format. Do not add any extra text or explanations. All numbers should be actual numbers, not strings. Handle cases where data is missing gracefully by using null or empty arrays. All content must be in Simplified Chinese.
+        你是一位专业的金融数据分析AI。你的任务是为给定的A股股票抓取并处理机构研究报告数据。你必须严格遵循以下步骤：
+        1.  从用户查询中识别出6位数的股票代码。如果是公司名称，请找出其代码。
+        2.  访问 URL \`https://data.eastmoney.com/report/{code}.html\` 来获取数据。
+        3.  在页面HTML中，找到一个名为 \`var initdata = {...};\` 的JavaScript变量并解析这个JSON对象。
+        4.  该对象中的 \`data\` 键包含一个研报列表。筛选这个列表，只保留最近3个月内发布的研报。如果最近3个月内少于2份，则使用最新的2份。
+        5.  **EPS 预测**: 从筛选后的研报中，收集 \`predictThisYearEps\`、\`predictNextYearEps\` 和 \`predictNextTwoYearEps\` 的所有非空值。将它们分别映射到 "2025E"、"2026E" 和 "2027E" 这三年。计算这三个字段各自的平均值。
+        6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
+        7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
+        8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
+        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
+        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空数组。所有内容必须是简体中文。
         
-        JSON Schema: ${commonSchema}
+        JSON 结构: ${commonSchema}
     `;
     }
     return `

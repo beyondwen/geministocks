@@ -1,31 +1,15 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
-import type { StockAnalysisReport, InvestmentScore, SWOT } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon } from './icons/Icons';
+import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, ManagementAnalysis, TechnicalAnalysis, FinancialHealthAnalysis, EarningsCallAnalysis } from '../types';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon, SpeakerWaveIcon, LightBulbIcon, MarkdownIcon, ChartTrendingUpIcon, ShieldCheckIcon, UsersIcon, PresentationChartLineIcon, BanknotesIcon, MicrophoneIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
 import ResearchConsensus from './ResearchConsensus';
-
-// --- SVG Icons (defined locally to minimize file changes) ---
-const BuildingOfficeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6M9 11.25h6M9 15.75h6M4.5 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0-3.375v-3.375m0 0h3.75m-3.75 0h3.75m-3.75 0V21m0-6.375v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m-3.75-6.375h3.75" />
-    </svg>
-);
-const ChartBarIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-    </svg>
-);
-const LightBulbIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.184m-1.5.184a6.01 6.01 0 01.316-1.532m-.316 1.532l2.648-5.302A6.002 6.002 0 005.501 6.25a6 6 0 00-4.032 9.688 6 6 0 0010.533-3.611m-1.032 3.611a6 6 0 01-.316-1.532m0 0l2.648-5.302m-2.648 5.302a6.002 6.002 0 001.5-.184m-1.5.184a6.001 6.001 0 01.316-1.532m0 0l-2.648-5.302m.001-4.182a5.962 5.962 0 01-3.36 1.018 5.962 5.962 0 01-3.36-1.018" />
-    </svg>
-);
+import { stockAnalysisReportToMarkdown } from '../services/markdownService';
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-  <div className={`bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm h-full ${className}`}>
+  <div className={`bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm ${className}`}>
     <div className="flex items-center gap-3 mb-6">
       <div className="p-2 bg-black rounded-xl shadow-lg">
         <span className="w-5 h-5 text-white block">{icon}</span>
@@ -64,22 +48,6 @@ const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) =
       </div>
     </div>
   );
-};
-
-const KeyTakeaways: React.FC<{ takeaways: string[] }> = ({ takeaways }) => {
-    const { t } = useI18n();
-    return (
-        <Card title={t('stockAnalysisResult.takeawaysTitle')} icon={<CheckCircleIcon className="w-5 h-5"/>}>
-            <ul className="space-y-3">
-                {takeaways.map((item, index) => (
-                    <li key={index} className="flex items-start">
-                        <div className="mt-1 mr-3 w-1.5 h-1.5 bg-black rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700"><TextRenderer text={item} /></span>
-                    </li>
-                ))}
-            </ul>
-        </Card>
-    );
 };
 
 const FinancialTrendsChart: React.FC<{ data?: StockAnalysisReport['financialTrends'] }> = ({ data }) => {
@@ -145,7 +113,6 @@ const SwotDisplay: React.FC<{ swot?: SWOT }> = ({ swot }) => {
           <div key={section.title}>
             <h4 className="font-semibold text-black mb-2 flex items-center gap-2">{section.icon} {section.title}</h4>
             <ul className="space-y-2 text-sm">
-              {/* FIX: The file was corrupted here. Reconstructed the list item. */}
               {section.items.map((item, index) => <li key={index} className="flex items-start"><span className="mr-2 mt-1.5 w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></span><TextRenderer text={item} /></li>)}
             </ul>
           </div>
@@ -155,7 +122,223 @@ const SwotDisplay: React.FC<{ swot?: SWOT }> = ({ swot }) => {
   );
 };
 
-// FIX: This component was missing from the corrupted file. Reconstructed it and added the default export.
+const SentimentIndicator: React.FC<{ sentiment: 'Positive' | 'Neutral' | 'Negative' }> = ({ sentiment }) => {
+    const { t } = useI18n();
+    const sentimentConfig = {
+      Positive: {
+        label: t('sentiments.Positive'),
+        icon: '😊',
+      },
+      Neutral: {
+        label: t('sentiments.Neutral'),
+        icon: '😐',
+      },
+      Negative: {
+        label: t('sentiments.Negative'),
+        icon: '😟',
+      },
+    };
+  
+    const config = sentimentConfig[sentiment] || sentimentConfig.Neutral;
+  
+    return (
+       <div className={`border border-gray-200 bg-white rounded-xl px-4 py-3 shadow-sm inline-flex items-center gap-3 font-medium transition-all duration-300`}>
+            <div className={`w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center`}>
+                <span className="text-sm">{config.icon}</span>
+            </div>
+            <span className="whitespace-nowrap text-black">{config.label}</span>
+        </div>
+    );
+};
+
+const ValuationCard: React.FC<{ valuation: ValuationAnalysis }> = ({ valuation }) => {
+    const { t } = useI18n();
+    const judgmentColors = {
+        undervalued: 'bg-green-100 text-green-800',
+        'fairly valued': 'bg-gray-100 text-gray-800',
+        overvalued: 'bg-red-100 text-red-800',
+    };
+    return (
+        <Card title={t('stockAnalysisResult.valuation.title')} icon={<TagIcon className="w-5 h-5" />}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                    <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${judgmentColors[valuation.judgment]}`}>{valuation.judgment}</span>
+                    <p className="text-sm text-gray-600 mt-1">{valuation.reasoning}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold text-gray-500">{t('stockAnalysisResult.valuation.targetPrice')}</p>
+                    <p className="text-2xl font-bold text-black">{valuation.targetPriceRange}</p>
+                </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 italic text-center">{t('stockAnalysisResult.valuation.methodology')}: {valuation.methodology}</p>
+        </Card>
+    );
+};
+
+const PeerComparisonTable: React.FC<{ peers: PeerCompetitor[] }> = ({ peers }) => {
+    const { t } = useI18n();
+    return (
+        <Card title={t('stockAnalysisResult.peerComparison.title')} icon={<SparklesIcon className="w-5 h-5" />}>
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="text-left font-semibold text-black p-3">{t('stockAnalysisResult.peerComparison.company')}</th>
+                            <th className="text-right font-semibold text-black p-3">{t('stockAnalysisResult.peerComparison.marketCap')}</th>
+                            <th className="text-right font-semibold text-black p-3">{t('stockAnalysisResult.peerComparison.peRatio')}</th>
+                            <th className="text-right font-semibold text-black p-3">{t('stockAnalysisResult.peerComparison.revenueGrowth')}</th>
+                            <th className="text-right font-semibold text-black p-3">{t('stockAnalysisResult.peerComparison.grossMargin')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {peers.map((p, i) => (
+                            <tr key={i} className="border-b border-gray-200 last:border-b-0">
+                                <td className="p-3 font-medium text-black">{p.name} ({p.ticker})</td>
+                                <td className="p-3 text-right font-mono">{p.marketCap}</td>
+                                <td className="p-3 text-right font-mono">{p.peRatio}</td>
+                                <td className="p-3 text-right font-mono">{p.revenueGrowth}</td>
+                                <td className="p-3 text-right font-mono">{p.grossMargin}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </Card>
+    );
+};
+
+// --- New Professional-Grade Components ---
+const ManagementCard: React.FC<{ analysis: ManagementAnalysis }> = ({ analysis }) => {
+    const { t } = useI18n();
+    return (
+        <Card title={t('stockAnalysisResult.management.title')} icon={<UsersIcon className="w-5 h-5" />}>
+            <div>
+                <h4 className="font-semibold text-black mb-2">{t('stockAnalysisResult.management.keyExecs')}</h4>
+                <div className="space-y-3">
+                    {analysis.keyExecutives.map((exec, i) => (
+                        <div key={i} className="text-sm p-2 bg-gray-50 rounded-md">
+                            <p><span className="font-bold">{exec.name}</span>, <span className="text-gray-600">{exec.title}</span></p>
+                            <p className="text-xs text-gray-500 mt-1">{exec.summary}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="mt-4">
+                <h4 className="font-semibold text-black mb-2">{t('stockAnalysisResult.management.insiderTrading')}</h4>
+                <p className="text-sm text-gray-700 italic">"{analysis.insiderTradingSummary}"</p>
+            </div>
+        </Card>
+    );
+};
+
+const RsiGauge: React.FC<{ value: number, interpretation: string }> = ({ value, interpretation }) => {
+    const { t } = useI18n();
+    const getRsiColor = (val: number) => {
+        if (val > 70) return 'bg-red-500';
+        if (val < 30) return 'bg-green-500';
+        return 'bg-gray-500';
+    };
+    const rsiColor = getRsiColor(value);
+    const percentage = Math.max(0, Math.min(100, value));
+    
+    return (
+        <div className="text-center">
+            <div className="w-full bg-gray-200 rounded-full h-2.5 my-2">
+                <div className={`${rsiColor} h-2.5 rounded-full`} style={{ width: `${percentage}%` }}></div>
+            </div>
+            <p className="text-2xl font-bold">{value.toFixed(1)}</p>
+            <p className="text-sm font-semibold">{t(`stockAnalysisResult.technical.rsiStates.${interpretation}`)}</p>
+        </div>
+    );
+};
+
+const TechnicalAnalysisCard: React.FC<{ analysis: TechnicalAnalysis }> = ({ analysis }) => {
+    const { t } = useI18n();
+    return (
+        <Card title={t('stockAnalysisResult.technical.title')} icon={<PresentationChartLineIcon className="w-5 h-5" />}>
+            <p className="text-sm italic mb-4">"{analysis.summary}"</p>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 className="font-semibold text-black text-center mb-1">{t('stockAnalysisResult.technical.rsi')} (14-D)</h4>
+                    <RsiGauge value={analysis.rsi.value} interpretation={analysis.rsi.interpretation} />
+                </div>
+                <div>
+                     <h4 className="font-semibold text-black text-center mb-2">{t('stockAnalysisResult.technical.movingAverages')}</h4>
+                     <div className="space-y-2 text-center">
+                        <p>50-Day: <span className={`font-bold ${analysis.movingAverages['50-day'] === 'Above' ? 'text-green-600' : 'text-red-600'}`}>{analysis.movingAverages['50-day']}</span></p>
+                        <p>200-Day: <span className={`font-bold ${analysis.movingAverages['200-day'] === 'Above' ? 'text-green-600' : 'text-red-600'}`}>{analysis.movingAverages['200-day']}</span></p>
+                     </div>
+                </div>
+            </div>
+        </Card>
+    );
+};
+
+const FinancialHealthCard: React.FC<{ analysis: FinancialHealthAnalysis }> = ({ analysis }) => {
+    const { t } = useI18n();
+    const healthMetrics = [
+        { name: t('stockAnalysisResult.financialHealth.solvency'), data: analysis.solvency },
+        { name: t('stockAnalysisResult.financialHealth.efficiency'), data: analysis.efficiency },
+        { name: t('stockAnalysisResult.financialHealth.liquidity'), data: analysis.liquidity },
+    ];
+    return (
+        <Card title={t('stockAnalysisResult.financialHealth.title')} icon={<BanknotesIcon className="w-5 h-5" />}>
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="border-b-2 border-gray-200">
+                        <th className="text-left font-semibold text-black p-2">{t('stockAnalysisResult.financialHealth.metric')}</th>
+                        <th className="text-right font-semibold text-black p-2">{t('stockAnalysisResult.financialHealth.companyValue')}</th>
+                        <th className="text-right font-semibold text-black p-2">{t('stockAnalysisResult.financialHealth.industryAvg')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {healthMetrics.map((metric, i) => (
+                        <tr key={i} className="border-b border-gray-100 last:border-b-0">
+                            <td className="p-2 font-medium">{metric.name}</td>
+                            <td className="p-2 text-right font-mono font-bold">{metric.data.value}</td>
+                            <td className="p-2 text-right font-mono text-gray-600">{metric.data.industryAverage}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </Card>
+    );
+};
+
+const EarningsCallCard: React.FC<{ analysis: EarningsCallAnalysis }> = ({ analysis }) => {
+    const { t } = useI18n();
+    const toneConfig = {
+        Optimistic: 'text-green-600',
+        Cautious: 'text-yellow-600',
+        Pessimistic: 'text-red-600',
+        Neutral: 'text-gray-600',
+    };
+    return (
+        <Card title={t('stockAnalysisResult.earningsCall.title')} icon={<MicrophoneIcon className="w-5 h-5" />}>
+             <div>
+                <h4 className="font-semibold text-black mb-1">{t('stockAnalysisResult.earningsCall.managementTone')}</h4>
+                <p className={`text-lg font-bold ${toneConfig[analysis.managementTone]}`}>{analysis.managementTone}</p>
+            </div>
+            <div className="mt-4">
+                <h4 className="font-semibold text-black mb-2">{t('stockAnalysisResult.earningsCall.futureGuidance')}</h4>
+                <p className="text-sm italic text-gray-700">"{analysis.futureGuidance}"</p>
+            </div>
+            <div className="mt-4">
+                <h4 className="font-semibold text-black mb-2">{t('stockAnalysisResult.earningsCall.keyHighlights')}</h4>
+                <div className="space-y-3 text-sm">
+                    {analysis.keyHighlights.map((hl, i) => (
+                        <div key={i} className="p-2 bg-gray-50 rounded-md">
+                            <p className="font-bold text-gray-800">Q: {hl.question}</p>
+                            <p className="text-gray-600 mt-1">A: {hl.answer}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </Card>
+    );
+};
+
+// --- Main Component ---
 interface StockAnalysisResultProps {
   report: StockAnalysisReport;
 }
@@ -208,6 +391,19 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
     }, 50);
   }, []);
 
+  const handleExportMarkdown = useCallback(() => {
+    const markdownContent = stockAnalysisReportToMarkdown(report);
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+    const link = document.createElement('a');
+    const topic = report.companyProfile.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+    link.download = `Stock_Analysis_Report_${topic}.md`;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+}, [report]);
+
   useEffect(() => {
     const handleAfterPrint = () => {
       setIsPreparingPdf(false);
@@ -218,8 +414,6 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
       window.removeEventListener('afterprint', handleAfterPrint);
     };
   }, []);
-
-  const FallbackContent = <p className="text-gray-500 text-sm">{t('analysisResult.noDataAvailable')}</p>;
   
   if (!report) return null;
 
@@ -239,6 +433,14 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
       )}
 
       <div className="no-print relative flex justify-end gap-x-2">
+         <button
+            onClick={handleExportMarkdown}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+            aria-label={t('analysisResult.exportMarkdown')}
+            >
+            <MarkdownIcon className="h-5 w-5" />
+            <span>{t('analysisResult.exportMarkdown')}</span>
+        </button>
          <button
           onClick={handlePrint}
           className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
@@ -263,30 +465,48 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
 
       <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-lg border border-stone-200/90">
         <header className="text-center mb-8 pb-6 border-b border-gray-200">
-            <h2 className="text-4xl font-light text-black mb-2">{report.companyProfile?.name} ({report.companyProfile?.ticker})</h2>
-            <p className="text-sm text-gray-600">{report.companyProfile?.sector} / {report.companyProfile?.industry}</p>
+            <h2 className="text-4xl font-light text-black mb-2">{report.companyProfile?.name}</h2>
+            <p className="text-sm text-gray-600">{report.companyProfile?.ticker} · {report.companyProfile?.sector} / {report.companyProfile?.industry}</p>
         </header>
         
         <div className="space-y-6">
             {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
             
-            {report.companyProfile?.summary && (
-              <Card title={t('stockAnalysisResult.companyProfileTitle')} icon={<BuildingOfficeIcon className="w-5 h-5"/>}>
-                  <TextRenderer text={report.companyProfile.summary} keywords={keywords} />
-              </Card>
+            {report.marketSentimentAnalysis && (
+                <Card title={t('stockAnalysisResult.sentiment.title')} icon={<SpeakerWaveIcon className="w-5 h-5"/>}>
+                    <div className="space-y-4">
+                        <div className="flex items-center space-x-4">
+                            <span className="font-semibold text-black">{t('stockAnalysisResult.sentiment.assessment')}</span>
+                            <SentimentIndicator sentiment={report.marketSentimentAnalysis.sentiment} />
+                        </div>
+                        <TextRenderer text={report.marketSentimentAnalysis.description} keywords={keywords} />
+                        
+                        <div>
+                            <h4 className="text-lg font-semibold text-black mb-2">{t('stockAnalysisResult.sentiment.strategyImpact')}</h4>
+                            <div className="pl-4 border-l-4 border-gray-400">
+                                <TextRenderer text={report.marketSentimentAnalysis.strategyImpact} keywords={keywords} />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
             )}
 
-            {report.keyTakeaways && report.keyTakeaways.length > 0 && <KeyTakeaways takeaways={report.keyTakeaways} />}
-
-            <Card title={t('stockAnalysisResult.financialTrendsTitle')} icon={<ChartBarIcon className="w-5 h-5" />} className="md:col-span-2">
+            <Card title={t('stockAnalysisResult.financialTrendsTitle')} icon={<ChartTrendingUpIcon className="w-5 h-5" />}>
                 <FinancialTrendsChart data={report.financialTrends} />
             </Card>
 
-            {report.researchReportConsensus && <ResearchConsensus consensus={report.researchReportConsensus} />}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {report.valuationAnalysis && <ValuationCard valuation={report.valuationAnalysis} />}
+                {report.financialHealth && <FinancialHealthCard analysis={report.financialHealth} />}
+            </div>
+
+            {report.peerComparison && report.peerComparison.length > 0 && <PeerComparisonTable peers={report.peerComparison} />}
             
-            <Card title={t('stockAnalysisResult.investmentThesis.title')} icon={<LightBulbIcon className="w-5 h-5"/>} className="md:col-span-2">
-                {report.investmentThesis ? (
-                    <>
+            {report.researchReportConsensus && <ResearchConsensus consensus={report.researchReportConsensus} />}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {report.investmentThesis && (
+                    <Card title={t('stockAnalysisResult.investmentThesis.title')} icon={<LightBulbIcon className="w-5 h-5"/>}>
                         <div>
                             <h4 className="text-lg font-semibold text-black mb-2">{t('stockAnalysisResult.investmentThesis.bull')}</h4>
                             <p className="pl-4 border-l-4 border-green-400"><TextRenderer text={report.investmentThesis.bull} keywords={keywords} /></p>
@@ -299,13 +519,20 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
                             <h4 className="text-lg font-semibold text-black mb-2">{t('stockAnalysisResult.investmentThesis.conclusion')}</h4>
                             <p className="pl-4 border-l-4 border-gray-400"><TextRenderer text={report.investmentThesis.conclusion} keywords={keywords} /></p>
                         </div>
-                    </>
-                ) : FallbackContent}
-            </Card>
+                    </Card>
+                )}
+                 {report.managementAnalysis && <ManagementCard analysis={report.managementAnalysis} />}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {report.technicalAnalysis && <TechnicalAnalysisCard analysis={report.technicalAnalysis} />}
+                {report.earningsCallAnalysis && <EarningsCallCard analysis={report.earningsCallAnalysis} />}
+            </div>
             
-            <Card title={t('stockAnalysisResult.swot.title')} icon={<SparklesIcon className="w-5 h-5"/>} className="md:col-span-2">
+            <Card title={t('stockAnalysisResult.swot.title')} icon={<SparklesIcon className="w-5 h-5"/>}>
                 <SwotDisplay swot={report.swotAnalysis} />
             </Card>
+
         </div>
         <footer className="text-center mt-8 pt-4 border-t border-gray-200">
           <p className="text-xs text-gray-500">

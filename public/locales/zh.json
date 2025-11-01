@@ -138,6 +138,7 @@
   "analysisResult": {
     "exportPDF": "导出 PDF",
     "exportImage": "导出图片",
+    "exportMarkdown": "导出 Markdown",
     "exporting": "正在导出...",
     "exportError": "导出图片失败。请稍后再试。",
     "preparingPDF": "正在准备导出...",
@@ -145,7 +146,6 @@
     "reportTitle": "多维度投资分析报告",
     "source": "分析来源",
     "summaryTitle": "总体概述",
-    "takeawaysTitle": "核心摘要",
     "macroTitle": "宏观与政策面",
     "sentimentTitle": "市场情绪与催化剂",
     "sentimentLabel": "情绪评估:",
@@ -201,20 +201,26 @@
   "stockAnalysisResult": {
     "reportTitle": "个股分析报告 📊",
     "generatedBy": "由 AI 生成",
-    "companyProfile": "公司概况",
-    "takeawaysTitle": "核心摘要",
-    "financialTrends": "财务趋势",
+    "companyProfileTitle": "公司概况",
+    "sentiment": {
+      "title": "市场情绪与策略影响",
+      "assessment": "情绪评估:",
+      "strategyImpact": "对策略的影响:"
+    },
+    "financialTrendsTitle": "财务趋势",
     "revenue": "营收",
     "netIncome": "净利润",
     "noFinancialData": "暂无财务趋势数据。",
     "valuation": {
       "title": "估值分析",
-      "targetPrice": "目标价"
+      "targetPrice": "目标价",
+      "methodology": "估值方法"
     },
     "investmentThesis": {
       "title": "投资论点",
       "bull": "看涨理由 👍",
-      "bear": "看跌理由 👎"
+      "bear": "看跌理由 👎",
+      "conclusion": "结论"
     },
     "swot": {
       "title": "SWOT 分析",
@@ -228,7 +234,38 @@
       "company": "公司",
       "marketCap": "市值",
       "peRatio": "市盈率",
-      "revenueGrowth": "营收增长"
+      "revenueGrowth": "营收增长",
+      "grossMargin": "毛利率"
+    },
+    "management": {
+      "title": "管理层与内部人动态",
+      "keyExecs": "核心高管",
+      "insiderTrading": "内部人交易(6个月)"
+    },
+    "technical": {
+      "title": "技术分析快照",
+      "rsi": "相对强弱指数",
+      "movingAverages": "移动平均线",
+      "rsiStates": {
+        "Overbought": "超买",
+        "Oversold": "超卖",
+        "Neutral": "中性"
+      }
+    },
+    "financialHealth": {
+      "title": "深度财务健康度",
+      "metric": "指标",
+      "companyValue": "公司数值",
+      "industryAvg": "行业平均",
+      "solvency": "偿债能力 (产权比率)",
+      "efficiency": "运营效率 (ROE)",
+      "liquidity": "流动性 (流动比率)"
+    },
+    "earningsCall": {
+      "title": "财报电话会情报",
+      "managementTone": "管理层基调",
+      "futureGuidance": "未来指引",
+      "keyHighlights": "关键问答"
     },
     "sourcesTitle": "参考来源",
     "footer": "本报告使用超级挖掘机分析生成，",
@@ -335,7 +372,61 @@
     "noReports": "未找到近期研究报告。"
   },
   "announcementBanner": {
-    "text": "每日登录可免费领取 5 个信用点。✨",
+    "text": "每日登录可免费领取 1 个信用点。✨",
     "close": "关闭提示"
+  },
+  "scenarioAnalysis": {
+    "title": "情景推演与概率",
+    "bull": "乐观情景",
+    "base": "基本情景",
+    "bear": "悲观情景",
+    "drivers": "关键驱动"
+  },
+  "timeHorizon": {
+    "title": "投资时间维度策略",
+    "shortTerm": "短期策略 (1-3个月)",
+    "mediumTerm": "中期策略 (3-12个月)",
+    "longTerm": "长期策略 (>1年)"
+  },
+  "riskMatrix": {
+    "title": "结构化风险矩阵",
+    "risk": "风险因素",
+    "probability": "发生概率",
+    "impact": "潜在影响",
+    "mitigation": "对冲/应对策略"
+  },
+  "competitiveLandscape": {
+    "title": "竞争格局与关键玩家",
+    "player": "玩家",
+    "marketShare": "市场份额",
+    "techAdvantage": "技术优势",
+    "revenueGrowth": "营收增长",
+    "grossMargin": "毛利率",
+    "stockPerformance": "股价表现(3个月)",
+    "summary": "超级挖掘机观点"
+  },
+  "catalystTracker": {
+    "title": "新闻与催化剂追踪",
+    "recentNews": "近期新闻 (30天)",
+    "upcomingCatalysts": "未来催化剂 (1-3个月)"
+  },
+  "policyAnalysis": {
+    "title": "监管与政策深度剖析",
+    "tailwind": "政策顺风",
+    "headwind": "政策逆风",
+    "neutral": "政策环境平稳",
+    "currentPolicies": "现行核心政策",
+    "potentialChanges": "潜在政策变化",
+    "keyBodies": "核心监管机构"
+  },
+  "techTrajectory": {
+    "title": "技术与创新轨迹",
+    "maturity": "技术成熟度",
+    "emerging": "萌芽期",
+    "maturing": "成长期",
+    "mainstream": "成熟期",
+    "coreTech": "核心技术解析",
+    "innovationTrends": "关键创新方向",
+    "moatAnalysis": "技术护城河分析"
   }
 }
