@@ -84,28 +84,30 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             jsonString = jsonString.substring(firstBraceIndex, lastBraceIndex + 1);
         }
 
-        // FIX: The AI model can sometimes generate malformed JSON by omitting commas.
-        // This block attempts to parse, and on failure, applies fixes and retries.
+        // FIX: The AI model can sometimes generate malformed JSON.
+        // This block attempts to parse, and on any SyntaxError, applies fixes and retries.
         try {
             return JSON.parse(jsonString);
         } catch (e) {
-            if (e instanceof SyntaxError && (e.message.includes("Unexpected token") || e.message.includes("expected ',' or ']'") || e.message.includes("Unexpected string in JSON"))) {
-                console.warn("Initial JSON parsing failed. Attempting to auto-correct.", e);
+            // Broaden the condition to catch any SyntaxError for auto-correction.
+            // AI models can return various forms of malformed JSON, and specific message checks can be brittle across different browsers/environments.
+            if (e instanceof SyntaxError) {
+                console.warn("Initial JSON parsing failed due to SyntaxError. Attempting to auto-correct.", e);
                 try {
-                    // Correction attempt 1: Add missing commas between properties ending with quotes, brackets, or braces.
+                    // Correction attempt 1: Add missing commas between properties ending with quotes, brackets, or braces, and a new property.
                     let correctedJson = jsonString.replace(/([}\]"])\s*(")/g, "$1,$2");
                     
-                    // Correction attempt 2: Add missing commas between array elements (objects).
+                    // Correction attempt 2: Add missing commas between objects in an array.
                     correctedJson = correctedJson.replace(/}(?=\s*\{)/g, '},');
                     
                     return JSON.parse(correctedJson);
                 } catch (correctionError) {
                     console.error("Auto-correction of JSON failed. The error is likely more complex.", correctionError);
-                    // Re-throw the original error as it is more indicative of the initial problem.
-                    throw new Error(`Failed to parse AI response: ${content}`);
+                    // Re-throw a more informative error after a failed correction attempt.
+                    throw new Error(`Failed to parse AI response after attempting auto-correction. The response was: ${content}`);
                 }
             }
-            // If the error is not the one we're trying to fix, re-throw it immediately.
+            // If the error is not a SyntaxError, re-throw it immediately.
             throw e;
         }
 
