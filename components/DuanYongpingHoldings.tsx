@@ -43,35 +43,66 @@ const DuanYongpingHoldings: React.FC<DuanYongpingHoldingsProps> = ({ onSelect })
         </div>
         <h3 className="text-xl font-semibold text-black">{t('duanHoldings.title')}</h3>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100/80">
-            <tr>
-              <th scope="col" className="px-4 py-3">{t('duanHoldings.stock')}</th>
-              <th scope="col" className="px-4 py-3">{t('duanHoldings.ticker')}</th>
-              <th scope="col" className="px-4 py-3 text-right">{t('duanHoldings.portfolio')}</th>
-              <th scope="col" className="px-4 py-3 text-right">{t('duanHoldings.action')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {holdingsData.map((holding) => (
-              <tr key={holding.ticker} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50/80">
-                <th scope="row" className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{holding.name}</th>
-                <td className="px-4 py-3 font-mono text-gray-600">{holding.ticker}</td>
-                <td className="px-4 py-3 text-right font-semibold text-gray-800">{holding.percentage}</td>
-                <td className="px-4 py-3 text-right">
-                   <button
-                    onClick={() => onSelect(holding.ticker)} // Analyze by ticker for better accuracy
+      
+      {/* Desktop Table */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-100/80">
+              <tr>
+                <th scope="col" className="px-4 py-3">{t('duanHoldings.stock')}</th>
+                <th scope="col" className="px-4 py-3">{t('duanHoldings.ticker')}</th>
+                <th scope="col" className="px-4 py-3 text-right">{t('duanHoldings.portfolio')}</th>
+                <th scope="col" className="px-4 py-3 text-right">{t('duanHoldings.action')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {holdingsData.map((holding) => (
+                <tr key={holding.ticker} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50/80">
+                  <th scope="row" className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{holding.name}</th>
+                  <td className="px-4 py-3 font-mono text-gray-600">{holding.ticker}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-800">{holding.percentage}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => onSelect(holding.ticker)}
+                      className="relative inline-flex items-center gap-1.5 px-3 py-1 text-white text-xs font-medium rounded-full group overflow-hidden btn-premium opacity-90 hover:opacity-100 hover:shadow-md transition-all duration-300 hover:-translate-y-px active:scale-95"
+                    >
+                      <SparklesIcon className="w-3.5 h-3.5" />
+                      <span className="relative z-10">{t('latestNews.analyzeButton')}</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-4">
+        {holdingsData.map((holding) => (
+            <div key={holding.ticker} className="border border-gray-200 rounded-lg p-4 shadow-sm">
+                 <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-medium text-gray-900">{holding.name}</p>
+                    <p className="font-mono text-sm text-gray-600">{holding.ticker}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-4">
+                    <p className="font-semibold text-lg text-gray-800">{holding.percentage}</p>
+                    <p className="text-xs text-gray-500">{t('duanHoldings.portfolio')}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <button
+                    onClick={() => onSelect(holding.ticker)}
                     className="relative inline-flex items-center gap-1.5 px-3 py-1 text-white text-xs font-medium rounded-full group overflow-hidden btn-premium opacity-90 hover:opacity-100 hover:shadow-md transition-all duration-300 hover:-translate-y-px active:scale-95"
                   >
                     <SparklesIcon className="w-3.5 h-3.5" />
                     <span className="relative z-10">{t('latestNews.analyzeButton')}</span>
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+            </div>
+        ))}
       </div>
     </div>
   );
