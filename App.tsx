@@ -18,6 +18,7 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import InvestmentRiskModal from './components/InvestmentRiskModal';
+import UserGuideModal from './components/UserGuideModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import CaseStudyCard from './components/CaseStudyCard';
@@ -37,6 +38,7 @@ const USER_ID_KEY = 'gemini-user-id';
 const CREDITS_KEY = 'gemini-claude-credits';
 const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
 const BANNER_CLOSED_SESSION_KEY = 'gemini-daily-credit-banner-closed';
+const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
 
 
 const MAX_ANALYSES_PER_HOUR = 12;
@@ -491,10 +493,14 @@ const MainPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
+  const [isUserGuideModalOpen, setIsUserGuideModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [activeModel, setActiveModel] = useState<AnalysisModel>('deepseek');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
+  const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
+  const [hasPaid, setHasPaid] = useState<boolean>(false);
+
 
   // Credit and Usage State
   const [credits, setCredits] = useState<number>(0);
@@ -574,6 +580,9 @@ const MainPage: React.FC = () => {
 
     // Load history and settings from localStorage
     try {
+      const userHasPaid = localStorage.getItem(USER_HAS_PAID_KEY) === 'true';
+      setHasPaid(userHasPaid);
+        
       const storedTopicHistory = localStorage.getItem(TOPIC_HISTORY_STORAGE_KEY);
       if (storedTopicHistory) setTopicHistory(JSON.parse(storedTopicHistory));
 
@@ -607,7 +616,7 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     const fetchHotStocks = async () => {
       try {
-        const stocks = await getHotStocksFromAI(activeModel, locale);
+        const stocks = await getHotStocksFromAI(activeModel, locale, isRealtimeSearchEnabled);
         setHotStocks(stocks);
       } catch (err) {
         console.error("Failed to fetch hot stocks:", err);
@@ -615,7 +624,7 @@ const MainPage: React.FC = () => {
       }
     };
     fetchHotStocks();
-  }, [activeModel, locale]);
+  }, [activeModel, locale, isRealtimeSearchEnabled]);
 
   // SEO: Set meta tags and html lang
   useEffect(() => {
@@ -655,11 +664,12 @@ const MainPage: React.FC = () => {
         case 'deepseek':
             return `${t('controls.deepseek')} (${t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST})})`;
         case 'gemini':
-            return `${t('controls.gemini')} (${t('controls.costPerUse', {count: GEMINI_CREDIT_COST})})`;
+            const geminiModelName = isRealtimeSearchEnabled ? t('controls.geminiPro') : t('controls.geminiFlash');
+            return `${geminiModelName} (${t('controls.costPerUse', {count: GEMINI_CREDIT_COST})})`;
         case 'claude':
             return `${t('controls.claude')} (${t('controls.costPerUse', {count: CLAUDE_CREDIT_COST})})`;
     }
-  }, [t]);
+  }, [t, isRealtimeSearchEnabled]);
 
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
     setTopicHistory(newHistory);
@@ -711,8 +721,8 @@ const MainPage: React.FC = () => {
 
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
         const report = isPolymarketUrl 
-            ? await getPolymarketAnalysis(topic, activeModel, locale)
-            : await getAnalysis(topic, activeModel, locale);
+            ? await getPolymarketAnalysis(topic, activeModel, locale, isRealtimeSearchEnabled)
+            : await getAnalysis(topic, activeModel, locale, isRealtimeSearchEnabled);
         
         setAnalysisReport(report);
         recordAnalysisTimestamp();
@@ -729,7 +739,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [topicHistory, activeModel, locale, t, cost, isPaywalled, credits]);
+  }, [topicHistory, activeModel, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
@@ -751,8 +761,8 @@ const MainPage: React.FC = () => {
         setCredits(useCredits(cost));
 
         const [report, researchData] = await Promise.all([
-            getStockAnalysis(stockQueryToAnalyze, activeModel, locale),
-            getResearchReportAnalysis(stockQueryToAnalyze, activeModel, locale)
+            getStockAnalysis(stockQueryToAnalyze, activeModel, locale, isRealtimeSearchEnabled),
+            getResearchReportAnalysis(stockQueryToAnalyze, activeModel, locale, isRealtimeSearchEnabled)
         ]);
         
         const combinedReport: StockAnalysisReport = {
@@ -775,7 +785,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsStockLoading(false);
     }
-  }, [stockHistory, activeModel, locale, t, cost, isPaywalled, credits]);
+  }, [stockHistory, activeModel, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
@@ -796,7 +806,7 @@ const MainPage: React.FC = () => {
     try {
         setCredits(useCredits(cost));
 
-        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale);
+        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale, isRealtimeSearchEnabled);
 
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
@@ -814,13 +824,18 @@ const MainPage: React.FC = () => {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress('');
     }
-  }, [positionalWarfareHistory, activeModel, locale, t, cost, isPaywalled, credits]);
+  }, [positionalWarfareHistory, activeModel, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
   const handlePaymentSuccess = (creditsPurchased: number) => {
     const newTotal = addCredits(creditsPurchased);
     setCredits(newTotal);
     setIsPaymentModalOpen(false);
     
+    try {
+        localStorage.setItem(USER_HAS_PAID_KEY, 'true');
+        setHasPaid(true);
+    } catch (e) { console.error("Failed to write to localStorage", e); }
+
     if (pendingAnalysis) {
         setToast({ message: t('paymentModal.successMulti', { count: creditsPurchased }), type: 'success' });
         const { type, query } = pendingAnalysis;
@@ -1002,6 +1017,7 @@ const MainPage: React.FC = () => {
     <>
       {isBannerVisible && <AnnouncementBanner onClose={handleCloseBanner} />}
       {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
+      <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => {
@@ -1031,7 +1047,15 @@ const MainPage: React.FC = () => {
                     </div>
 
                     {/* Right side: Controls */}
-                    <div className="flex items-center gap-x-4">
+                    <div className="flex items-center gap-x-6">
+                        <button 
+                            onClick={() => setIsUserGuideModalOpen(true)} 
+                            className="hidden sm:flex items-center gap-x-1.5 text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                            aria-label={t('header.userGuide')}
+                        >
+                            <AcademicCapIcon className="w-5 h-5" />
+                            <span>{t('header.userGuide')}</span>
+                        </button>
                         <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
                             <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
                             <span className="sm:hidden">💎 {credits}</span>
@@ -1064,26 +1088,49 @@ const MainPage: React.FC = () => {
                       <span>{t('tabs.positional')}</span>
                     </TabButton>
                 </div>
-                <div className="flex items-center gap-x-2">
-                    <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700 shrink-0">
-                      {t('controls.model')}:
-                    </label>
-                    <div className="relative">
-                        <select
-                            id="model-switcher"
-                            value={activeModel}
-                            onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
-                            className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
-                        >
-                            <option value="deepseek">{getModelLabel('deepseek')}</option>
-                            <option value="gemini">{getModelLabel('gemini')}</option>
-                            <option value="claude">{getModelLabel('claude')}</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                            </svg>
+                <div className="flex items-center gap-x-4 sm:gap-x-6">
+                    <div className="flex items-center gap-x-2">
+                        <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700 shrink-0">
+                          {t('controls.model')}:
+                        </label>
+                        <div className="relative">
+                            <select
+                                id="model-switcher"
+                                value={activeModel}
+                                onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
+                                className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
+                            >
+                                <option value="deepseek">{getModelLabel('deepseek')}</option>
+                                <option value="gemini">{getModelLabel('gemini')}</option>
+                                <option value="claude">{getModelLabel('claude')}</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                </svg>
+                            </div>
                         </div>
+                    </div>
+                    <div className="flex items-center gap-x-2 relative group">
+                        <label htmlFor="realtime-search-toggle" className={`text-sm font-medium transition-colors ${!hasPaid ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'}`}>
+                            {t('controls.realtimeSearch')}
+                        </label>
+                        <button
+                            id="realtime-search-toggle"
+                            role="switch"
+                            aria-checked={isRealtimeSearchEnabled}
+                            onClick={() => hasPaid && setIsRealtimeSearchEnabled(!isRealtimeSearchEnabled)}
+                            disabled={!hasPaid}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 ${isRealtimeSearchEnabled ? 'bg-black' : 'bg-gray-200'} ${!hasPaid ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        >
+                            <span aria-hidden="true" className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isRealtimeSearchEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                        {!hasPaid && (
+                            <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 w-max hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10" role="tooltip">
+                                {t('controls.realtimeSearchTooltip')}
+                                <div className="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 transform bg-gray-800"></div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

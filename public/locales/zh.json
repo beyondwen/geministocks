@@ -9,7 +9,8 @@
     "title": "超级挖掘机",
     "subtitle": "智能分析热点，精准把握机会",
     "markets": "支持美股、A 股、港股、数字货币和实物期货市场",
-    "searchPlaceholder": "搜索主题、股票..."
+    "searchPlaceholder": "搜索主题、股票...",
+    "userGuide": "使用说明"
   },
   "stats": {
     "userAnalysisCount": "累计分析"
@@ -22,13 +23,17 @@
     "deepseek": "DeepSeek",
     "claude": "Claude",
     "gemini": "Gemini",
+    "geminiPro": "Gemini Pro",
+    "geminiFlash": "Gemini Flash",
     "top": "最强",
     "getCredits": "获取信用点",
     "useCreditAndAnalyzeMulti": "使用 {{count}} 点信用分析",
     "modelSwitched": "切换模型成功。",
     "credits": "信用点: {{count}} 💎",
     "addCredits": "充值",
-    "costPerUse": "{{count}}点/次"
+    "costPerUse": "{{count}}点/次",
+    "realtimeSearch": "实时搜索",
+    "realtimeSearchTooltip": "进行任意一次真实付费即可解锁实时联网搜索功能"
   },
   "tabs": {
     "topic": "挖掘",
@@ -60,6 +65,23 @@
     "line3": "投资者应独立判断并承担投资风险。",
     "line4": "继续使用即表示您已充分了解并接受上述风险提示。",
     "acceptButton": "我已了解风险"
+  },
+  "userGuideModal": {
+    "title": "超级挖掘机・使用说明",
+    "intro": "为了获得最佳分析效果，请根据您的需求选择合适的分析模式：",
+    "topicTitle": "挖掘分析",
+    "topicIcon": "✍️",
+    "topicDescription": "适用于分析宏观主题、行业趋势、新闻事件或任何您感兴趣的投资概念。您可以输入文字、粘贴新闻链接或文章内容。",
+    "topicExample": "例如：「AI Agent 的投资机会」、「英伟达 GTC 2024 大会要点」、「https://...」",
+    "stockTitle": "个股分析",
+    "stockIcon": "📈",
+    "stockDescription": "专为深度分析单一上市公司而设计。系统会从财务、技术、管理等多个维度生成一份机构级的分析报告。",
+    "stockExample": "例如：「AAPL」、「苹果公司」、「00700.HK」、「腾讯控股」",
+    "positionalTitle": "卡位战法",
+    "positionalIcon": "⚔️",
+    "positionalDescription": "一种高级策略分析。输入一个公认的行业龙头股，AI 会在同一板块中寻找业务相似、但市值或地位较低，有潜力“补涨”的“龙二”或“龙三”。",
+    "positionalExample": "例如：「英伟达」、「宁德时代」、「贵州茅台」",
+    "closeButton": "我明白了"
   },
   "paymentModal": {
     "title": "获取信用点",

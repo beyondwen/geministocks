@@ -10,20 +10,30 @@ const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtM2QyNWM4NzRjOWM4ODJhZjVmYTM3ZDA0MmMx
 const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
-const getModelName = (model: AnalysisModel): string => {
+const getModelName = (model: AnalysisModel, isRealtimeSearchEnabled: boolean): string => {
+    if (isRealtimeSearchEnabled) {
+        if (model === 'gemini') {
+            return 'google/gemini-2.5-pro';
+        }
+        if (model === 'claude') {
+            return 'anthropic/claude-haiku-4.5:online';
+        }
+        return 'deepseek/deepseek-v3.2-exp:online';
+    }
+
+    // Defaults
     if (model === 'gemini') {
-        return 'google/gemini-2.5-pro';
+        return 'google/gemini-2.5-flash';
     }
     if (model === 'claude') {
-        return 'anthropic/claude-haiku-4.5:online';
+        return 'anthropic/claude-haiku-4.5';
     }
-    // Default to deepseek
-    return 'deepseek/deepseek-v3.2-exp:online';
+    return 'deepseek/deepseek-v3.2-exp';
 };
 
-const getModelDisplayName = (model: AnalysisModel): string => {
+const getModelDisplayName = (model: AnalysisModel, isRealtimeSearchEnabled: boolean): string => {
     if (model === 'gemini') {
-        return 'Gemini 2.5 Pro';
+        return isRealtimeSearchEnabled ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash';
     }
     if (model === 'claude') {
         return 'Claude Haiku 4.5';
@@ -294,9 +304,9 @@ const getAnalysisSystemInstruction = (locale: Locale, modelDisplayName: string):
 };
 
 
-export const getAnalysis = async (topic: string, model: AnalysisModel, locale: Locale): Promise<AnalysisReport> => {
-    const modelName = getModelName(model);
-    const modelDisplayName = getModelDisplayName(model);
+export const getAnalysis = async (topic: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
+    const modelName = getModelName(model, isRealtimeSearchEnabled);
+    const modelDisplayName = getModelDisplayName(model, isRealtimeSearchEnabled);
     const systemInstruction = getAnalysisSystemInstruction(locale, modelDisplayName);
     
     const prompt = `
@@ -369,8 +379,8 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
 };
 
 
-export const getPolymarketAnalysis = async (url: string, model: AnalysisModel, locale: Locale): Promise<AnalysisReport> => {
-    const modelName = getModelName(model);
+export const getPolymarketAnalysis = async (url: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
+    const modelName = getModelName(model, isRealtimeSearchEnabled);
     const systemInstruction = getPolymarketAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -470,8 +480,8 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
 };
 
 
-export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale): Promise<StockAnalysisReport> => {
-    const modelName = getModelName(model);
+export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<StockAnalysisReport> => {
+    const modelName = getModelName(model, isRealtimeSearchEnabled);
     const systemInstruction = getStockAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -530,8 +540,8 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getResearchReportAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale): Promise<ResearchReportConsensus> => {
-    const modelName = getModelName(model);
+export const getResearchReportAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<ResearchReportConsensus> => {
+    const modelName = getModelName(model, isRealtimeSearchEnabled);
     const systemInstruction = getResearchReportAnalysisSystemInstruction(locale);
 
     const prompt = `
@@ -576,8 +586,8 @@ const getHotStocksSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getHotStocksFromAI = async (model: AnalysisModel, locale: Locale): Promise<{name: string; ticker: string}[]> => {
-    const modelName = getModelName(model);
+export const getHotStocksFromAI = async (model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<{name: string; ticker: string}[]> => {
+    const modelName = getModelName(model, isRealtimeSearchEnabled);
     const systemInstruction = getHotStocksSystemInstruction(locale);
     const prompt = "Please provide the list of the 10 hottest stocks in the last 24 hours.";
 
@@ -611,9 +621,10 @@ export const getPositionalWarfareAnalysis = async (
     leaderStockQuery: string,
     onProgress: (message: string) => void,
     model: AnalysisModel,
-    locale: Locale
+    locale: Locale,
+    isRealtimeSearchEnabled: boolean
 ): Promise<PositionalWarfareReport> => {
-    const modelName = getModelName(model);
+    const modelName = getModelName(model, isRealtimeSearchEnabled);
     const { step1System, step2System, step3System, step4System } = getPositionalWarfareSystemInstructions(locale);
 
     onProgress(locale === 'zh' ? "正在锁定并深度剖析龙头... 🎯" : "Locking and profiling the leader... 🎯");
