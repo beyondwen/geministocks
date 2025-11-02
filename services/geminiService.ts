@@ -21,6 +21,17 @@ const getModelName = (model: AnalysisModel): string => {
     return 'deepseek/deepseek-v3.2-exp:online';
 };
 
+const getModelDisplayName = (model: AnalysisModel): string => {
+    if (model === 'gemini') {
+        return 'Gemini 2.5 Pro';
+    }
+    if (model === 'claude') {
+        return 'Claude Haiku 4.5';
+    }
+    // Default to deepseek
+    return 'DeepSeek V3.2 Exp';
+};
+
 /**
  * A generic helper function to call the OpenRouter API.
  * @param prompt The user's prompt/request.
@@ -118,9 +129,10 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
     }
 }
 
-const getAnalysisSystemInstruction = (locale: Locale): string => {
+const getAnalysisSystemInstruction = (locale: Locale, modelDisplayName: string): string => {
     // Shared part of the schema
     const schema = `{
+          "modelUsed": "string (The name of the AI model used for this analysis)",
           "summary": "string (1-3 sentence summary)",
           "investmentScore": {
             "score": "number (1-100)",
@@ -260,6 +272,7 @@ const getAnalysisSystemInstruction = (locale: Locale): string => {
         If the topic relates to commodities or macro cycles, you MUST recommend relevant commodity futures (e.g., Gold 'GC=F').
         You MUST provide a quantitative "investmentScore" from 1-100.
         You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
+        You MUST populate the "modelUsed" field with this exact value: "${modelDisplayName}".
         The JSON schema is as follows: ${schema}
     `;
     }
@@ -275,6 +288,7 @@ const getAnalysisSystemInstruction = (locale: Locale): string => {
         If the topic relates to commodities or macro cycles, you MUST recommend relevant commodity futures (e.g., Gold 'GC=F').
         You MUST provide a quantitative "investmentScore" from 1-100.
         You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in English.
+        You MUST populate the "modelUsed" field with this exact value: "${modelDisplayName}".
         The JSON schema is as follows: ${schema}
     `;
 };
@@ -282,7 +296,8 @@ const getAnalysisSystemInstruction = (locale: Locale): string => {
 
 export const getAnalysis = async (topic: string, model: AnalysisModel, locale: Locale): Promise<AnalysisReport> => {
     const modelName = getModelName(model);
-    const systemInstruction = getAnalysisSystemInstruction(locale);
+    const modelDisplayName = getModelDisplayName(model);
+    const systemInstruction = getAnalysisSystemInstruction(locale, modelDisplayName);
     
     const prompt = `
         Please analyze the following text using the "Four-Dimensional Integrated Analysis Method" and provide a structured investment strategy report.

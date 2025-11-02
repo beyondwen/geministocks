@@ -198,6 +198,13 @@
   "hotStocks": {
     "title": "24小时热门股票"
   },
+  "duanHoldings": {
+    "title": "段永平最新持仓",
+    "stock": "股票",
+    "ticker": "代码",
+    "portfolio": "投资组合占比",
+    "action": "操作"
+  },
   "stockAnalysisResult": {
     "reportTitle": "个股分析报告 📊",
     "generatedBy": "由 AI 生成",

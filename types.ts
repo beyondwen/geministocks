@@ -141,6 +141,7 @@ export interface TechTrajectory {
 
 
 export interface AnalysisReport {
+  modelUsed?: string;
   summary: string;
   investmentScore: InvestmentScore;
   analysis: {

@@ -10,7 +10,7 @@ import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
 import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
-import AdSenseAd from './components/AdSenseAd';
+// import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
 import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon } from './components/icons/Icons';
@@ -23,6 +23,7 @@ import { useI18n } from './hooks/useI18n';
 import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
 import AnnouncementBanner from './components/AnnouncementBanner';
+import DuanYongpingHoldings from './components/DuanYongpingHoldings';
 
 // --- Constants ---
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -474,7 +475,6 @@ const MainPage: React.FC = () => {
   const [isStockLoading, setIsStockLoading] = useState<boolean>(false);
   const [stockError, setStockError] = useState<string | null>(null);
   const [hotStocks, setHotStocks] = useState<{name: string; ticker: string}[]>([]);
-  const [isHotStocksLoading, setIsHotStocksLoading] = useState<boolean>(true);
   const [stockHistory, setStockHistory] = useState<StockHistoryEntry[]>([]);
 
   // State for Positional Warfare Analysis
@@ -606,15 +606,12 @@ const MainPage: React.FC = () => {
   // Fetch dynamic hot stocks when model or language changes
   useEffect(() => {
     const fetchHotStocks = async () => {
-      setIsHotStocksLoading(true);
       try {
         const stocks = await getHotStocksFromAI(activeModel, locale);
         setHotStocks(stocks);
       } catch (err) {
         console.error("Failed to fetch hot stocks:", err);
         // Fallback to a default list or show an error, here we just log it
-      } finally {
-        setIsHotStocksLoading(false);
       }
     };
     fetchHotStocks();
@@ -843,8 +840,8 @@ const MainPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     handleAnalyze(newsTopic);
   };
-  
-  const handleHotStockSelect = (query: string) => {
+
+  const handleDuanStockSelect = (query: string) => {
     setStockQuery(query);
     handleStockAnalyze(query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1158,14 +1155,6 @@ const MainPage: React.FC = () => {
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">
-                    {activeTab === 'stock' && (
-                       <HotStocks 
-                          onSelect={handleHotStockSelect} 
-                          stocks={hotStocks} 
-                          isLoading={isHotStocksLoading} 
-                        />
-                    )}
-                    
                     {activeTab === 'topic' && (
                        <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
                           {isCaseStudyVisible && (
@@ -1176,6 +1165,9 @@ const MainPage: React.FC = () => {
                             sources={NEWS_SOURCES}
                           />}
                         </div>
+                    )}
+                    {(activeTab === 'stock' || activeTab === 'positional') && (
+                       <DuanYongpingHoldings onSelect={handleDuanStockSelect} />
                     )}
                      <AnalysisHistory
                         history={
@@ -1199,7 +1191,7 @@ const MainPage: React.FC = () => {
                           handleClearPositionalWarfareHistory
                         }
                       />
-                      <AdSenseAd />
+                      {/* <AdSenseAd /> */}
                   </div>
                 )}
             </div>
