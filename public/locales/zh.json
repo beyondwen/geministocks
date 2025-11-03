@@ -158,6 +158,7 @@
     "deleteLabel": "删除历史记录"
   },
   "analysisResult": {
+    "newAnalysis": "新的分析",
     "exportPDF": "导出 PDF",
     "exportImage": "导出图片",
     "exportMarkdown": "导出 Markdown",
@@ -228,6 +229,7 @@
     "action": "操作"
   },
   "stockAnalysisResult": {
+    "newAnalysis": "新的分析",
     "reportTitle": "个股分析报告 📊",
     "generatedBy": "由 AI 生成",
     "companyProfileTitle": "公司概况",
@@ -308,6 +310,7 @@
     "button": "开始分析"
   },
   "positionalWarfareResult": {
+    "newAnalysis": "新的分析",
     "reportTitle": "卡位战法・深度分析报告 ⚔️",
     "subtitle": "寻找板块中的下一个机会",
     "summaryTitle": "核心观点总结",
@@ -444,18 +447,18 @@
     "tailwind": "政策顺风",
     "headwind": "政策逆风",
     "neutral": "政策环境平稳",
-    "currentPolicies": "现行核心政策",
-    "potentialChanges": "潜在政策变化",
+    "currentPolicies": "当前核心政策",
+    "potentialChanges": "潜在政策变动",
     "keyBodies": "核心监管机构"
   },
   "techTrajectory": {
     "title": "技术与创新轨迹",
     "maturity": "技术成熟度",
-    "emerging": "萌芽期",
+    "emerging": "新兴期",
     "maturing": "成长期",
     "mainstream": "成熟期",
     "coreTech": "核心技术解析",
-    "innovationTrends": "关键创新方向",
+    "innovationTrends": "关键创新趋势",
     "moatAnalysis": "技术护城河分析"
   }
 }

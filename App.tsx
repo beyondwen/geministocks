@@ -925,6 +925,16 @@ const MainPage: React.FC = () => {
     }
   };
 
+  const handleNewAnalysis = () => {
+    setAnalysisReport(null);
+    setStockAnalysisReport(null);
+    setPositionalWarfareReport(null);
+    setError(null);
+    setStockError(null);
+    setPositionalWarfareError(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
 
   // --- History Handlers ---
 
@@ -1194,11 +1204,11 @@ const MainPage: React.FC = () => {
                         <p className="text-sm mt-1">{positionalWarfareError}</p>
                     </div>
                 ) : analysisReport ? (
-                    <AnalysisResult report={analysisReport} userInput={userInput} />
+                    <AnalysisResult report={analysisReport} userInput={userInput} onNewAnalysis={handleNewAnalysis} />
                 ) : stockAnalysisReport ? (
-                    <StockAnalysisResult report={stockAnalysisReport} />
+                    <StockAnalysisResult report={stockAnalysisReport} onNewAnalysis={handleNewAnalysis} />
                 ) : positionalWarfareReport ? (
-                    <PositionalWarfareResult report={positionalWarfareReport} />
+                    <PositionalWarfareResult report={positionalWarfareReport} onNewAnalysis={handleNewAnalysis} />
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">

@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, ManagementAnalysis, TechnicalAnalysis, FinancialHealthAnalysis, EarningsCallAnalysis } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon, SpeakerWaveIcon, LightBulbIcon, MarkdownIcon, ChartTrendingUpIcon, ShieldCheckIcon, UsersIcon, PresentationChartLineIcon, BanknotesIcon, MicrophoneIcon } from './icons/Icons';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon, SpeakerWaveIcon, LightBulbIcon, MarkdownIcon, ChartTrendingUpIcon, ShieldCheckIcon, UsersIcon, PresentationChartLineIcon, BanknotesIcon, MicrophoneIcon, PlusIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
 import ResearchConsensus from './ResearchConsensus';
@@ -341,9 +341,10 @@ const EarningsCallCard: React.FC<{ analysis: EarningsCallAnalysis }> = ({ analys
 // --- Main Component ---
 interface StockAnalysisResultProps {
   report: StockAnalysisReport;
+  onNewAnalysis: () => void;
 }
 
-const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => {
+const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNewAnalysis }) => {
   const { t } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -432,33 +433,43 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report }) => 
         </div>
       )}
 
-      <div className="no-print relative flex justify-end gap-x-2">
-         <button
-            onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-            aria-label={t('analysisResult.exportMarkdown')}
-            >
-            <MarkdownIcon className="h-5 w-5" />
-            <span>{t('analysisResult.exportMarkdown')}</span>
-        </button>
-         <button
-          onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-          aria-label={t('analysisResult.exportPDF')}
-        >
-          <DocumentArrowDownIcon className="h-5 w-5" />
-          <span>{t('analysisResult.exportPDF')}</span>
-        </button>
+      <div className="no-print relative flex justify-between items-center gap-x-2">
         <button
-          onClick={handleExportImage}
-          disabled={isExporting}
-          className="relative inline-flex items-center gap-2 px-4 py-2 btn-premium text-white text-sm font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label={t('analysisResult.exportImage')}
+          onClick={onNewAnalysis}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+          aria-label={t('stockAnalysisResult.newAnalysis')}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-          <DownloadIcon className="h-5 w-5" />
-          <span className="relative z-10">{isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}</span>
+          <PlusIcon className="h-5 w-5" />
+          <span>{t('stockAnalysisResult.newAnalysis')}</span>
         </button>
+        <div className="flex gap-x-2">
+          <button
+              onClick={handleExportMarkdown}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+              aria-label={t('analysisResult.exportMarkdown')}
+              >
+              <MarkdownIcon className="h-5 w-5" />
+              <span>{t('analysisResult.exportMarkdown')}</span>
+          </button>
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+            aria-label={t('analysisResult.exportPDF')}
+          >
+            <DocumentArrowDownIcon className="h-5 w-5" />
+            <span>{t('analysisResult.exportPDF')}</span>
+          </button>
+          <button
+            onClick={handleExportImage}
+            disabled={isExporting}
+            className="relative inline-flex items-center gap-2 px-4 py-2 btn-premium text-white text-sm font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={t('analysisResult.exportImage')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+            <DownloadIcon className="h-5 w-5" />
+            <span className="relative z-10">{isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}</span>
+          </button>
+        </div>
       </div>
 
       {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center"><p>{exportError}</p></div>}

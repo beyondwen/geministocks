@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, RiskFactor, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, MarkdownIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon } from './icons/Icons';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, MarkdownIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
@@ -408,9 +408,10 @@ const TechTrajectoryCard: React.FC<{ trajectory: TechTrajectory }> = ({ trajecto
 interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
+  onNewAnalysis: () => void;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNewAnalysis }) => {
   const { t } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -519,33 +520,43 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput }) =>
         </div>
       )}
 
-      <div className="no-print relative flex justify-end gap-x-2">
+      <div className="no-print relative flex justify-between items-center gap-x-2">
         <button
-          onClick={handleExportMarkdown}
+          onClick={onNewAnalysis}
           className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-          aria-label={t('analysisResult.exportMarkdown')}
+          aria-label={t('analysisResult.newAnalysis')}
         >
-          <MarkdownIcon className="h-5 w-5" />
-          <span>{t('analysisResult.exportMarkdown')}</span>
+          <PlusIcon className="h-5 w-5" />
+          <span>{t('analysisResult.newAnalysis')}</span>
         </button>
-        <button
-          onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-          aria-label={t('analysisResult.exportPDF')}
-        >
-          <DocumentArrowDownIcon className="h-5 w-5" />
-          <span>{t('analysisResult.exportPDF')}</span>
-        </button>
-        <button
-          onClick={handleExportImage}
-          disabled={isExporting}
-          className="relative inline-flex items-center gap-2 px-4 py-2 btn-premium text-white text-sm font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label={t('analysisResult.exportImage')}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-          <DownloadIcon className="h-5 w-5" />
-          <span className="relative z-10">{isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}</span>
-        </button>
+        <div className="flex gap-x-2">
+          <button
+            onClick={handleExportMarkdown}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+            aria-label={t('analysisResult.exportMarkdown')}
+          >
+            <MarkdownIcon className="h-5 w-5" />
+            <span>{t('analysisResult.exportMarkdown')}</span>
+          </button>
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+            aria-label={t('analysisResult.exportPDF')}
+          >
+            <DocumentArrowDownIcon className="h-5 w-5" />
+            <span>{t('analysisResult.exportPDF')}</span>
+          </button>
+          <button
+            onClick={handleExportImage}
+            disabled={isExporting}
+            className="relative inline-flex items-center gap-2 px-4 py-2 btn-premium text-white text-sm font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={t('analysisResult.exportImage')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+            <DownloadIcon className="h-5 w-5" />
+            <span className="relative z-10">{isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}</span>
+          </button>
+        </div>
       </div>
 
       {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center"><p>{exportError}</p></div>}
