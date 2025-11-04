@@ -5,16 +5,13 @@ import { XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
 
 type PackageId = 'pack_5_usd' | 'pack_18_usd' | 'pack_30_usd';
-type SubscriptionId = 'pro_monthly_usd';
-type PaymentType = 'credits' | 'subscription';
 
 interface CheckoutFormProps {
     onPaymentSuccess: (creditsPurchased: number) => void;
-    selectedPackage: { id: PackageId | SubscriptionId; price: string; credits?: number };
-    paymentType: PaymentType;
+    selectedPackage: { id: PackageId; price: string; credits: number };
 }
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ onPaymentSuccess, selectedPackage, paymentType }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ onPaymentSuccess, selectedPackage }) => {
     const stripe = useStripe();
     const elements = useElements();
     const { t } = useI18n();
@@ -37,7 +34,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onPaymentSuccess, selectedP
         if (error) {
             setMessage(error.message || t('paymentModal.error.default'));
         } else {
-            const creditsPurchased = paymentType === 'credits' && selectedPackage.credits ? selectedPackage.credits : 100;
+            const creditsPurchased = selectedPackage.credits;
             onPaymentSuccess(creditsPurchased);
         }
 
@@ -80,7 +77,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
   const [clientSecret, setClientSecret] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [paymentType, setPaymentType] = useState<PaymentType>('credits');
 
   const creditPackages: { id: PackageId; credits: number; price: string; description: string; bestValue?: boolean }[] = [
     { id: 'pack_5_usd', credits: 5, price: '$1.00', description: '' },
@@ -88,23 +84,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
     { id: 'pack_30_usd', credits: 30, price: '$4.00', description: t('paymentModal.package_30_desc'), bestValue: true },
   ];
 
-  const subscriptionPackage = {
-      id: 'pro_monthly_usd' as SubscriptionId,
-      price: '$5.00',
-      name: t('paymentModal.pro_sub_name'),
-      features: t('paymentModal.pro_sub_features') as unknown as string[]
-  };
-
-  const [selectedCreditPackage, setSelectedCreditPackage] = useState(creditPackages[2]);
-  const selectedPackage = paymentType === 'credits' ? selectedCreditPackage : subscriptionPackage;
+  const [selectedPackage, setSelectedPackage] = useState(creditPackages[2]);
 
   useEffect(() => {
     if (isOpen) {
         setIsLoading(true);
         setError('');
-        const payload = paymentType === 'credits'
-            ? { packageId: selectedCreditPackage.id }
-            : { subscriptionId: subscriptionPackage.id };
+        const payload = { packageId: selectedPackage.id };
 
         fetch('/api/create-payment-intent', { 
             method: 'POST',
@@ -119,7 +105,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         })
         .finally(() => setIsLoading(false));
     }
-  }, [isOpen, selectedCreditPackage, paymentType]);
+  }, [isOpen, selectedPackage]);
 
   if (!isOpen) return null;
 
@@ -140,50 +126,33 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
       >
         <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-100" aria-label={t('paymentModal.close')}><XIcon className="w-6 h-6" /></button>
 
-        <h2 id="payment-modal-title" className="text-2xl font-bold text-black mb-6">{t('paymentModal.title')}</h2>
+        <h2 id="payment-modal-title" className="text-2xl font-bold text-black mb-2">{t('paymentModal.title')}</h2>
+        <p className="text-gray-600 mb-6">{t('paymentModal.description')}</p>
         
-        <div className="flex bg-gray-100 p-1 rounded-full mb-6">
-            <button onClick={() => setPaymentType('credits')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'credits' ? 'bg-white shadow text-black' : 'text-gray-600'}`}>{t('paymentModal.buyCreditsTab')}</button>
-            <button onClick={() => setPaymentType('subscription')} className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${paymentType === 'subscription' ? 'bg-white shadow text-black' : 'text-gray-600'}`}>{t('paymentModal.subscribeProTab')}</button>
+        <div className="animate-fade-in">
+            <p className="text-gray-600 mb-4">{t('paymentModal.packagesTitle')}</p>
+            <div className="flex justify-center gap-2 mb-6">
+                {creditPackages.map(pkg => (
+                    <button
+                        key={pkg.id}
+                        onClick={() => setSelectedPackage(pkg)}
+                        className={`relative flex-1 p-3 text-center border-2 rounded-lg transition-all duration-200 ${selectedPackage.id === pkg.id ? 'border-black bg-gray-100 scale-105 shadow-lg' : 'border-gray-200 bg-white hover:border-gray-400'}`}
+                    >
+                        {pkg.bestValue && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-black text-white text-xs font-bold px-2 py-0.5 rounded-full">{t('paymentModal.bestValue')}</div>}
+                        <p className="font-bold text-black">{t('paymentModal.credits_plural', { count: pkg.credits })}</p>
+                        <p className="text-sm text-gray-600">{pkg.price}</p>
+                        {pkg.description && <p className="text-xs font-semibold text-gray-700 mt-1">{pkg.description}</p>}
+                    </button>
+                ))}
+            </div>
         </div>
-
-        {paymentType === 'credits' && (
-            <div className="animate-fade-in">
-                <p className="text-gray-600 mb-4">{t('paymentModal.packagesTitle')}</p>
-                <div className="flex justify-center gap-2 mb-6">
-                    {creditPackages.map(pkg => (
-                        <button
-                            key={pkg.id}
-                            onClick={() => setSelectedCreditPackage(pkg)}
-                            className={`relative flex-1 p-3 text-center border-2 rounded-lg transition-all duration-200 ${selectedCreditPackage.id === pkg.id ? 'border-black bg-gray-100 scale-105 shadow-lg' : 'border-gray-200 bg-white hover:border-gray-400'}`}
-                        >
-                            {pkg.bestValue && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-black text-white text-xs font-bold px-2 py-0.5 rounded-full">{t('paymentModal.bestValue')}</div>}
-                            <p className="font-bold text-black">{t('paymentModal.credits_plural', { count: pkg.credits })}</p>
-                            <p className="text-sm text-gray-600">{pkg.price}</p>
-                            {pkg.description && <p className="text-xs font-semibold text-gray-700 mt-1">{pkg.description}</p>}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )}
-
-        {paymentType === 'subscription' && (
-            <div className="animate-fade-in">
-                <div className="p-4 bg-gray-100 border-2 border-gray-200 rounded-lg">
-                    <p className="font-bold text-lg text-black">{subscriptionPackage.name} - {subscriptionPackage.price}{t('paymentModal.per_month')}</p>
-                    <ul className="mt-2 list-disc list-inside text-sm text-gray-700 space-y-1">
-                        {subscriptionPackage.features.map(f => <li key={f}>{f}</li>)}
-                    </ul>
-                </div>
-            </div>
-        )}
         
         {isLoading && <div className="text-center py-8">{t('paymentModal.loading')}</div>}
         {error && <div className="text-center py-4 text-red-600 bg-red-50/80 p-3 rounded-lg">{error}</div>}
         
         {clientSecret && !isLoading && !error && (
           <Elements options={options} stripe={stripePromise}>
-            <CheckoutForm onPaymentSuccess={onPaymentSuccess} selectedPackage={selectedPackage} paymentType={paymentType} />
+            <CheckoutForm onPaymentSuccess={onPaymentSuccess} selectedPackage={selectedPackage} />
           </Elements>
         )}
       </div>

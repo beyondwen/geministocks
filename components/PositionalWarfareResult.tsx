@@ -2,9 +2,8 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { toPng } from 'html-to-image';
 import type { PositionalWarfareReport, LeaderStockProfile, FollowerCandidate, StockFinancialMetrics } from '../types';
 import TextRenderer from './TextRenderer';
-import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, XIcon, MarkdownIcon } from './icons/Icons';
+import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
-import { positionalWarfareReportToMarkdown } from '../services/markdownService';
 
 const generateStockLink = (ticker: string, market: string): string => {
     if (!market) return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
@@ -296,9 +295,10 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({ leader, follower, onC
 
 interface PositionalWarfareResultProps {
   report: PositionalWarfareReport;
+  onNewAnalysis: () => void;
 }
 
-const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ report }) => {
+const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ report, onNewAnalysis }) => {
   const { t } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -349,18 +349,6 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
     }, 50);
   }, []);
 
-  const handleExportMarkdown = useCallback(() => {
-    const markdownContent = positionalWarfareReportToMarkdown(report);
-    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
-    const link = document.createElement('a');
-    const topic = report.leaderStock.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-    link.download = `Positional_Warfare_Report_${topic || 'report'}.md`;
-    link.href = URL.createObjectURL(blob);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-}, [report]);
 
 
   useEffect(() => {
@@ -399,14 +387,6 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
         )}
 
         <div className="no-print relative flex justify-end gap-x-2">
-            <button
-                onClick={handleExportMarkdown}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-                aria-label={t('analysisResult.exportMarkdown')}
-                >
-                <MarkdownIcon className="h-5 w-5" />
-                <span>{t('analysisResult.exportMarkdown')}</span>
-            </button>
             <button
                 onClick={handlePrint}
                 className="inline-flex items-center px-4 py-2 border-2 border-gray-200 text-sm font-medium rounded-xl shadow-sm text-black bg-white hover:bg-gray-100 transition-all"

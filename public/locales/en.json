@@ -19,16 +19,8 @@
     "getPerplexity": "Get Perplexity Pro for Free"
   },
   "controls": {
-    "model": "Analysis Model",
-    "deepseek": "DeepSeek",
-    "claude": "Claude",
-    "gemini": "Gemini",
-    "geminiPro": "Gemini Pro",
-    "geminiFlash": "Gemini Flash",
-    "top": "Strongest",
     "getCredits": "Get Credits",
     "useCreditAndAnalyzeMulti": "Use {{count}} Credits & Analyze",
-    "modelSwitched": "Model switched successfully.",
     "credits": "Credits: {{count}} 💎",
     "addCredits": "Add",
     "costPerUse": "{{count}} credits/use",
@@ -58,14 +50,6 @@
   "imageModal": {
     "title": "Welcome to follow \"Xiaosheng Dushu\""
   },
-  "riskModal": {
-    "title": "【Investment Risk Warning】",
-    "line1": "The stock market is risky, and investment requires caution.",
-    "line2": "This platform only provides information display and does not constitute any investment advice.",
-    "line3": "Investors should make independent judgments and bear investment risks.",
-    "line4": "By continuing to use this service, you acknowledge that you have fully understood and accepted the above risk warnings.",
-    "acceptButton": "I Understand the Risks"
-  },
   "userGuideModal": {
     "title": "Super Digger ・ User Guide",
     "intro": "To get the best analysis results, please choose the appropriate analysis mode for your needs:",
@@ -85,7 +69,7 @@
   },
   "paymentModal": {
     "title": "Get Credits",
-    "description": "Purchase credits to use premium analysis models.",
+    "description": "Purchase credits to continue your analysis.",
     "packagesTitle": "Choose a Credit Pack:",
     "credits_plural": "{{count}} Credits",
     "bestValue": "Best Value",
@@ -98,15 +82,6 @@
     "supportedMethods": "We currently support credit cards (Visa, Mastercard, etc.).",
     "package_18_desc": "20% Bonus",
     "package_30_desc": "50% Bonus",
-    "pro_sub_name": "Pro Subscription",
-    "pro_sub_features": [
-      "Receive 100 credits automatically each month",
-      "Access all analysis models",
-      "Priority access to future Pro features"
-    ],
-    "buyCreditsTab": "Buy Credits",
-    "subscribeProTab": "Subscribe Pro",
-    "per_month": "/month",
     "error": {
       "default": "An error occurred with your payment method.",
       "unexpected": "An unexpected payment error occurred. Please try again."
@@ -124,23 +99,30 @@
   },
   "loader": {
     "analyzing": "Analyzing...",
-    "messages": [
-      "Initializing analysis engine... ⚙️",
-      "Connecting to AI for deep insights... 🧠",
-      "Cross-validating data sources... 📊",
-      "Applying quantitative models... 🧮",
-      "Scanning for market anomaly signals... 📡",
-      "Assessing geopolitical risks... 🗺️",
-      "Simulating future cash flows... 💰",
-      "Building multi-dimensional analysis framework... 🏗️",
-      "Parsing latest financial report data... 📄",
-      "Analyzing macroeconomic factors... 🌍",
-      "Mapping the industry chain... 🔗",
-      "Evaluating company core fundamentals... 🧾",
-      "Gauging current market sentiment... 🎭",
-      "AI is in deep thought... 🤔",
-      "Generating investment strategies... 📈",
-      "Finalizing stock recommendations... ✅"
+    "topicSteps": [
+      "Running core analysis...",
+      "Performing deep dives...",
+      "Formulating strategy & suggestions...",
+      "Finalizing report..."
+    ],
+    "stockSteps": [
+      "Analyzing core fundamentals...",
+      "Aggregating institutional research...",
+      "Synthesizing professional-grade report..."
+    ],
+    "positionalSteps": [
+      "Locking and profiling the leader... 🎯",
+      "Screening for potential followers... 🔍",
+      "Analyzing candidate financials... 📊",
+      "Synthesizing final strategy... ⚔️"
+    ],
+    "quotes": [
+      "Be fearful when others are greedy, and greedy when others are fearful. - Warren Buffett",
+      "The stock market is a device for transferring money from the impatient to the patient. - Warren Buffett",
+      "Rule No. 1: Never lose money. Rule No. 2: Never forget Rule No. 1. - Warren Buffett",
+      "Risk comes from not knowing what you're doing. - Warren Buffett",
+      "Invest in what you know. - Peter Lynch",
+      "If you aren't willing to own a stock for 10 years, don't even think about owning it for 10 minutes. - Warren Buffett"
     ]
   },
   "analysisInput": {
@@ -161,7 +143,6 @@
     "newAnalysis": "New Analysis",
     "exportPDF": "Export PDF",
     "exportImage": "Export Image",
-    "exportMarkdown": "Export Markdown",
     "exporting": "Exporting...",
     "exportError": "Failed to export image. Please try again later.",
     "preparingPDF": "Preparing to export...",
@@ -193,6 +174,11 @@
     "Positive": "Positive",
     "Neutral": "Neutral",
     "Negative": "Negative"
+  },
+  "riskLevels": {
+    "High": "High",
+    "Medium": "Medium",
+    "Low": "Low"
   },
   "industryChain": {
     "upstream": "Upstream ⬆️",
@@ -281,6 +267,14 @@
         "Overbought": "Overbought",
         "Oversold": "Oversold",
         "Neutral": "Neutral"
+      },
+      "movingAveragesStates": {
+        "Above": "Above",
+        "Below": "Below"
+      },
+      "movingAveragesDays": {
+        "50": "50-Day",
+        "200": "200-Day"
       }
     },
     "financialHealth": {
@@ -296,7 +290,13 @@
       "title": "Earnings Call Intelligence",
       "managementTone": "Management Tone",
       "futureGuidance": "Future Guidance",
-      "keyHighlights": "Key Q&A Highlights"
+      "keyHighlights": "Key Q&A Highlights",
+      "managementTones": {
+        "Optimistic": "Optimistic",
+        "Cautious": "Cautious",
+        "Pessimistic": "Pessimistic",
+        "Neutral": "Neutral"
+      }
     },
     "sourcesTitle": "Reference Sources",
     "footer": "This report was generated by Super Digger,",
@@ -384,8 +384,9 @@
     "placeholder": "Redemption Code...",
     "button": "Redeem",
     "invalidCode": "Invalid redemption code.",
-    "alreadyRedeemed": "You have already redeemed this code today.",
-    "success": "Wishing you happiness. Thank you!"
+    "alreadyRedeemed": "This code has already been redeemed.",
+    "successLive": "Success! Real-time search has been unlocked.",
+    "successMe": "Success! You have received {{count}} credits."
   },
   "toasts": {
     "dailyCreditsAwarded": "You've received your {{count}} free daily credit! ✨"

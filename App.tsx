@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis, getResearchReportAnalysis, type AnalysisModel } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis } from './services/geminiService';
 // FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
@@ -17,7 +17,6 @@ import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
-import InvestmentRiskModal from './components/InvestmentRiskModal';
 import UserGuideModal from './components/UserGuideModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
@@ -31,7 +30,6 @@ const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
-const RISK_WARNING_ACCEPTED_KEY = 'gemini-risk-warning-accepted';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
 const USER_ID_KEY = 'gemini-user-id';
@@ -45,9 +43,7 @@ const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 // --- Model Usage Rules ---
-const DEEPSEEK_CREDIT_COST = 1;
-const GEMINI_CREDIT_COST = 2;
-const CLAUDE_CREDIT_COST = 4;
+const ANALYSIS_CREDIT_COST = 1;
 
 // --- New Credit System Rules ---
 const DAILY_FREE_CREDITS_AWARD = 1;
@@ -111,19 +107,19 @@ interface NewsSource {
 }
 
 const NEWS_SOURCES: NewsSource[] = [
+  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'kagi', name: 'Kagi 新闻', url: 'https://news.kagi.com/world_zh-Hans.xml' },
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
-  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
   { id: 'solidot', name: '奇客', url: 'https://www.solidot.org/index.rss' },
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
+  '36氪': 'bg-gray-100 text-gray-800',
   'Kagi 新闻': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
   '奇客': 'bg-gray-100 text-gray-800',
-  '36氪': 'bg-gray-100 text-gray-800',
 };
 
 
@@ -470,6 +466,7 @@ const MainPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [topicHistory, setTopicHistory] = useState<TopicHistoryEntry[]>([]);
+  const [topicProgress, setTopicProgress] = useState<number>(0);
   
   // State for Stock Analysis
   const [stockQuery, setStockQuery] = useState<string>('');
@@ -478,13 +475,14 @@ const MainPage: React.FC = () => {
   const [stockError, setStockError] = useState<string | null>(null);
   const [hotStocks, setHotStocks] = useState<{name: string; ticker: string}[]>([]);
   const [stockHistory, setStockHistory] = useState<StockHistoryEntry[]>([]);
+  const [stockProgress, setStockProgress] = useState<number>(0);
 
   // State for Positional Warfare Analysis
   const [leaderStockQuery, setLeaderStockQuery] = useState<string>('');
   const [positionalWarfareReport, setPositionalWarfareReport] = useState<PositionalWarfareReport | null>(null);
   const [isPositionalWarfareLoading, setIsPositionalWarfareLoading] = useState<boolean>(false);
   const [positionalWarfareError, setPositionalWarfareError] = useState<string | null>(null);
-  const [positionalWarfareProgress, setPositionalWarfareProgress] = useState<string>('');
+  const [positionalWarfareProgress, setPositionalWarfareProgress] = useState<number>(0);
   const [positionalWarfareHistory, setPositionalWarfareHistory] = useState<PositionalWarfareHistoryEntry[]>([]);
 
 
@@ -492,10 +490,8 @@ const MainPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
-  const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isUserGuideModalOpen, setIsUserGuideModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<AnalysisModel>('deepseek');
   const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
   const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
@@ -572,12 +568,6 @@ const MainPage: React.FC = () => {
     // Set credits state from the now-updated localStorage
     setCredits(getCredits());
 
-    // Check if risk warning has been accepted
-    const hasAcceptedRisk = localStorage.getItem(RISK_WARNING_ACCEPTED_KEY);
-    if (hasAcceptedRisk !== 'true') {
-        setIsRiskModalOpen(true);
-    }
-
     // Load history and settings from localStorage
     try {
       const userHasPaid = localStorage.getItem(USER_HAS_PAID_KEY) === 'true';
@@ -612,11 +602,11 @@ const MainPage: React.FC = () => {
     }
   }, [t]);
 
-  // Fetch dynamic hot stocks when model or language changes
+  // Fetch dynamic hot stocks when language changes
   useEffect(() => {
     const fetchHotStocks = async () => {
       try {
-        const stocks = await getHotStocksFromAI(activeModel, locale, isRealtimeSearchEnabled);
+        const stocks = await getHotStocksFromAI(locale, isRealtimeSearchEnabled);
         setHotStocks(stocks);
       } catch (err) {
         console.error("Failed to fetch hot stocks:", err);
@@ -624,7 +614,7 @@ const MainPage: React.FC = () => {
       }
     };
     fetchHotStocks();
-  }, [activeModel, locale, isRealtimeSearchEnabled]);
+  }, [locale, isRealtimeSearchEnabled]);
 
   // SEO: Set meta tags and html lang
   useEffect(() => {
@@ -643,33 +633,9 @@ const MainPage: React.FC = () => {
   }, [locale, t]);
 
   const { cost, isPaywalled } = useMemo(() => {
-    let calculatedCost = 0;
-
-    if (activeModel === 'deepseek') {
-        calculatedCost = DEEPSEEK_CREDIT_COST;
-    } else if (activeModel === 'gemini') {
-        calculatedCost = GEMINI_CREDIT_COST;
-    } else { // claude
-        calculatedCost = CLAUDE_CREDIT_COST;
-    }
-    
-    const hasEnoughCredits = credits >= calculatedCost;
-    const calculatedIsPaywalled = !hasEnoughCredits;
-
-    return { cost: calculatedCost, isPaywalled: calculatedIsPaywalled };
-  }, [activeModel, credits]);
-
-  const getModelLabel = useCallback((model: AnalysisModel) => {
-    switch(model) {
-        case 'deepseek':
-            return `${t('controls.deepseek')} (${t('controls.costPerUse', {count: DEEPSEEK_CREDIT_COST})})`;
-        case 'gemini':
-            const geminiModelName = isRealtimeSearchEnabled ? t('controls.geminiPro') : t('controls.geminiFlash');
-            return `${geminiModelName} (${t('controls.costPerUse', {count: GEMINI_CREDIT_COST})})`;
-        case 'claude':
-            return `${t('controls.claude')} (${t('controls.costPerUse', {count: CLAUDE_CREDIT_COST})})`;
-    }
-  }, [t, isRealtimeSearchEnabled]);
+    const hasEnoughCredits = credits >= ANALYSIS_CREDIT_COST;
+    return { cost: ANALYSIS_CREDIT_COST, isPaywalled: !hasEnoughCredits };
+  }, [credits]);
 
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
     setTopicHistory(newHistory);
@@ -694,12 +660,6 @@ const MainPage: React.FC = () => {
     });
   };
 
-  const handleModelChange = (newModel: AnalysisModel) => {
-    if (activeModel === newModel) return;
-    setActiveModel(newModel);
-    setToast({ message: t('controls.modelSwitched'), type: 'info' });
-  };
-
   const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
     if (!topic.trim()) { setError(t('errors.emptyTopic')); return; }
     if (checkRateLimit()) { setError(t('errors.rateLimit')); return; }
@@ -715,14 +675,15 @@ const MainPage: React.FC = () => {
     setAnalysisReport(null);
     setStockAnalysisReport(null);
     setPositionalWarfareReport(null);
+    setTopicProgress(0);
 
     try {
         setCredits(useCredits(cost));
 
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
         const report = isPolymarketUrl 
-            ? await getPolymarketAnalysis(topic, activeModel, locale, isRealtimeSearchEnabled)
-            : await getAnalysis(topic, activeModel, locale, isRealtimeSearchEnabled);
+            ? await getPolymarketAnalysis(topic, locale, isRealtimeSearchEnabled)
+            : await getAnalysis(topic, setTopicProgress, locale, isRealtimeSearchEnabled);
         
         setAnalysisReport(report);
         recordAnalysisTimestamp();
@@ -738,8 +699,9 @@ const MainPage: React.FC = () => {
         setError(errorMessage);
     } finally {
         setIsLoading(false);
+        setTopicProgress(0);
     }
-  }, [topicHistory, activeModel, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [topicHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
@@ -756,19 +718,12 @@ const MainPage: React.FC = () => {
     setStockAnalysisReport(null);
     setAnalysisReport(null);
     setPositionalWarfareReport(null);
+    setStockProgress(0);
 
     try {
         setCredits(useCredits(cost));
 
-        const [report, researchData] = await Promise.all([
-            getStockAnalysis(stockQueryToAnalyze, activeModel, locale, isRealtimeSearchEnabled),
-            getResearchReportAnalysis(stockQueryToAnalyze, activeModel, locale, isRealtimeSearchEnabled)
-        ]);
-        
-        const combinedReport: StockAnalysisReport = {
-            ...report,
-            researchReportConsensus: researchData
-        };
+        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setStockProgress, locale, isRealtimeSearchEnabled);
 
         setStockAnalysisReport(combinedReport);
         recordAnalysisTimestamp();
@@ -784,8 +739,9 @@ const MainPage: React.FC = () => {
         setStockError(errorMessage);
     } finally {
         setIsStockLoading(false);
+        setStockProgress(0);
     }
-  }, [stockHistory, activeModel, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [stockHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
@@ -802,11 +758,12 @@ const MainPage: React.FC = () => {
     setPositionalWarfareReport(null);
     setAnalysisReport(null);
     setStockAnalysisReport(null);
+    setPositionalWarfareProgress(0);
     
     try {
         setCredits(useCredits(cost));
 
-        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, activeModel, locale, isRealtimeSearchEnabled);
+        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, locale, isRealtimeSearchEnabled);
 
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
@@ -822,9 +779,9 @@ const MainPage: React.FC = () => {
         setPositionalWarfareError(errorMessage);
     } finally {
         setIsPositionalWarfareLoading(false);
-        setPositionalWarfareProgress('');
+        setPositionalWarfareProgress(0);
     }
-  }, [positionalWarfareHistory, activeModel, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [positionalWarfareHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
   const handlePaymentSuccess = (creditsPurchased: number) => {
     const newTotal = addCredits(creditsPurchased);
@@ -890,29 +847,40 @@ const MainPage: React.FC = () => {
   };
 
   const handleRedeemCode = useCallback(() => {
-    if (redemptionCode.toLowerCase().trim() !== 'happy') {
-        setToast({ message: t('redeem.invalidCode'), type: 'info' });
-        return;
-    }
+    const code = redemptionCode.toLowerCase().trim();
 
-    const REDEMPTION_KEY = 'gemini-redemption-date-happy';
-    const today = new Date().toISOString().split('T')[0];
+    if (code === 'live') {
+        const REDEMPTION_KEY = 'gemini-redemption-live-unlocked';
 
-    try {
-        const lastRedemptionDate = localStorage.getItem(REDEMPTION_KEY);
-        if (lastRedemptionDate === today) {
-            setToast({ message: t('redeem.alreadyRedeemed'), type: 'info' });
-            return;
+        try {
+            const alreadyRedeemed = localStorage.getItem(REDEMPTION_KEY);
+            if (alreadyRedeemed === 'true') {
+                setToast({ message: t('redeem.alreadyRedeemed'), type: 'info' });
+                return;
+            }
+
+            // Unlock real-time search
+            localStorage.setItem(USER_HAS_PAID_KEY, 'true');
+            setHasPaid(true);
+            localStorage.setItem(REDEMPTION_KEY, 'true');
+
+            setToast({ message: t('redeem.successLive'), type: 'success' });
+            setRedemptionCode(''); // Clear input after successful redemption
+
+        } catch (e) {
+            console.error("Failed to process 'live' redemption code:", e);
         }
-
-        const newCredits = addCredits(10);
-        setCredits(newCredits);
-        localStorage.setItem(REDEMPTION_KEY, today);
-        setToast({ message: t('redeem.success'), type: 'success' });
-        setRedemptionCode(''); // Clear input after successful redemption
-
-    } catch (e) {
-        console.error("Failed to process redemption code:", e);
+    } else if (code === 'me') {
+        try {
+            const newCredits = addCredits(5);
+            setCredits(newCredits);
+            setToast({ message: t('redeem.successMe', { count: 5 }), type: 'success' });
+            setRedemptionCode(''); // Clear input after successful redemption
+        } catch(e) {
+            console.error("Failed to process 'me' redemption code:", e);
+        }
+    } else {
+        setToast({ message: t('redeem.invalidCode'), type: 'info' });
     }
   }, [redemptionCode, t]);
 
@@ -1007,26 +975,16 @@ const MainPage: React.FC = () => {
     updatePositionalWarfareHistory([]);
   };
 
-  const handleAcceptRisk = () => {
-    setIsRiskModalOpen(false);
-    try {
-        localStorage.setItem(RISK_WARNING_ACCEPTED_KEY, 'true');
-    } catch (err) {
-        console.error("Failed to save to localStorage", err);
-    }
-  };
-
   const showLatestNews = locale === 'zh';
   const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
   
   const noReportLoaded = !analysisReport && !stockAnalysisReport && !positionalWarfareReport;
-  const notLoading = !isLoading && !isStockLoading && !isPositionalWarfareLoading;
-  const showDashboard = noReportLoaded && notLoading;
+  const isLoadingAny = isLoading || isStockLoading || isPositionalWarfareLoading;
+  const showDashboard = noReportLoaded && !isLoadingAny;
 
   return (
     <>
       {isBannerVisible && <AnnouncementBanner onClose={handleCloseBanner} />}
-      {isRiskModalOpen && <InvestmentRiskModal onAccept={handleAcceptRisk} />}
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
@@ -1099,28 +1057,6 @@ const MainPage: React.FC = () => {
                     </TabButton>
                 </div>
                 <div className="flex items-center gap-x-4 sm:gap-x-6">
-                    <div className="flex items-center gap-x-2">
-                        <label htmlFor="model-switcher" className="text-sm font-medium text-gray-700 shrink-0">
-                          {t('controls.model')}:
-                        </label>
-                        <div className="relative">
-                            <select
-                                id="model-switcher"
-                                value={activeModel}
-                                onChange={(e) => handleModelChange(e.target.value as AnalysisModel)}
-                                className="appearance-none bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
-                            >
-                                <option value="deepseek">{getModelLabel('deepseek')}</option>
-                                <option value="gemini">{getModelLabel('gemini')}</option>
-                                <option value="claude">{getModelLabel('claude')}</option>
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
                     <div className="flex items-center gap-x-2 relative group">
                         <label htmlFor="realtime-search-toggle" className={`text-sm font-medium transition-colors ${!hasPaid ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'}`}>
                             {t('controls.realtimeSearch')}
@@ -1186,8 +1122,11 @@ const MainPage: React.FC = () => {
                 )}
                 
                 {/* --- RESULTS / DASHBOARD --- */}
-                {isLoading || isStockLoading || isPositionalWarfareLoading ? (
-                  <Loader progressMessage={isPositionalWarfareLoading ? positionalWarfareProgress : undefined} />
+                {isLoadingAny ? (
+                  <Loader 
+                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : 'positional'}
+                    currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
+                  />
                 ) : error ? (
                     <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
                         <p className="font-semibold">{t('errors.title')}</p>

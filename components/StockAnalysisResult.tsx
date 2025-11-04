@@ -2,11 +2,10 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, ManagementAnalysis, TechnicalAnalysis, FinancialHealthAnalysis, EarningsCallAnalysis } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon, SpeakerWaveIcon, LightBulbIcon, MarkdownIcon, ChartTrendingUpIcon, ShieldCheckIcon, UsersIcon, PresentationChartLineIcon, BanknotesIcon, MicrophoneIcon, PlusIcon } from './icons/Icons';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon, SpeakerWaveIcon, LightBulbIcon, ChartTrendingUpIcon, ShieldCheckIcon, UsersIcon, PresentationChartLineIcon, BanknotesIcon, MicrophoneIcon, PlusIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
 import ResearchConsensus from './ResearchConsensus';
-import { stockAnalysisReportToMarkdown } from '../services/markdownService';
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
   <div className={`bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm ${className}`}>
@@ -265,8 +264,8 @@ const TechnicalAnalysisCard: React.FC<{ analysis: TechnicalAnalysis }> = ({ anal
                 <div>
                      <h4 className="font-semibold text-black text-center mb-2">{t('stockAnalysisResult.technical.movingAverages')}</h4>
                      <div className="space-y-2 text-center">
-                        <p>50-Day: <span className={`font-bold ${analysis.movingAverages['50-day'] === 'Above' ? 'text-green-600' : 'text-red-600'}`}>{analysis.movingAverages['50-day']}</span></p>
-                        <p>200-Day: <span className={`font-bold ${analysis.movingAverages['200-day'] === 'Above' ? 'text-green-600' : 'text-red-600'}`}>{analysis.movingAverages['200-day']}</span></p>
+                        <p>{t('stockAnalysisResult.technical.movingAveragesDays.50')}: <span className={`font-bold ${analysis.movingAverages['50-day'] === 'Above' ? 'text-green-600' : 'text-red-600'}`}>{t(`stockAnalysisResult.technical.movingAveragesStates.${analysis.movingAverages['50-day']}`)}</span></p>
+                        <p>{t('stockAnalysisResult.technical.movingAveragesDays.200')}: <span className={`font-bold ${analysis.movingAverages['200-day'] === 'Above' ? 'text-green-600' : 'text-red-600'}`}>{t(`stockAnalysisResult.technical.movingAveragesStates.${analysis.movingAverages['200-day']}`)}</span></p>
                      </div>
                 </div>
             </div>
@@ -317,7 +316,7 @@ const EarningsCallCard: React.FC<{ analysis: EarningsCallAnalysis }> = ({ analys
         <Card title={t('stockAnalysisResult.earningsCall.title')} icon={<MicrophoneIcon className="w-5 h-5" />}>
              <div>
                 <h4 className="font-semibold text-black mb-1">{t('stockAnalysisResult.earningsCall.managementTone')}</h4>
-                <p className={`text-lg font-bold ${toneConfig[analysis.managementTone]}`}>{analysis.managementTone}</p>
+                <p className={`text-lg font-bold ${toneConfig[analysis.managementTone]}`}>{t(`stockAnalysisResult.earningsCall.managementTones.${analysis.managementTone}`)}</p>
             </div>
             <div className="mt-4">
                 <h4 className="font-semibold text-black mb-2">{t('stockAnalysisResult.earningsCall.futureGuidance')}</h4>
@@ -392,18 +391,6 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNew
     }, 50);
   }, []);
 
-  const handleExportMarkdown = useCallback(() => {
-    const markdownContent = stockAnalysisReportToMarkdown(report);
-    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
-    const link = document.createElement('a');
-    const topic = report.companyProfile.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-    link.download = `Stock_Analysis_Report_${topic}.md`;
-    link.href = URL.createObjectURL(blob);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-}, [report]);
 
   useEffect(() => {
     const handleAfterPrint = () => {
@@ -443,14 +430,6 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNew
           <span>{t('stockAnalysisResult.newAnalysis')}</span>
         </button>
         <div className="flex gap-x-2">
-          <button
-              onClick={handleExportMarkdown}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-              aria-label={t('analysisResult.exportMarkdown')}
-              >
-              <MarkdownIcon className="h-5 w-5" />
-              <span>{t('analysisResult.exportMarkdown')}</span>
-          </button>
           <button
             onClick={handlePrint}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"

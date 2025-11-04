@@ -1,8 +1,6 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 
-export type AnalysisModel = 'deepseek' | 'gemini' | 'claude';
-
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
@@ -10,36 +8,18 @@ const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtM2QyNWM4NzRjOWM4ODJhZjVmYTM3ZDA0MmMx
 const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
-const getModelName = (model: AnalysisModel, isRealtimeSearchEnabled: boolean): string => {
+const getModelName = (isRealtimeSearchEnabled: boolean): string => {
     if (isRealtimeSearchEnabled) {
-        if (model === 'gemini') {
-            return 'google/gemini-2.5-pro';
-        }
-        if (model === 'claude') {
-            return 'anthropic/claude-haiku-4.5:online';
-        }
-        return 'deepseek/deepseek-v3.2-exp:online';
+        return 'openai/gpt-4o-mini:online';
     }
-
-    // Defaults
-    if (model === 'gemini') {
-        return 'google/gemini-2.5-flash';
-    }
-    if (model === 'claude') {
-        return 'anthropic/claude-haiku-4.5';
-    }
-    return 'deepseek/deepseek-v3.2-exp';
+    return 'openai/gpt-4o-mini';
 };
 
-const getModelDisplayName = (model: AnalysisModel, isRealtimeSearchEnabled: boolean): string => {
-    if (model === 'gemini') {
-        return isRealtimeSearchEnabled ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash';
+const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
+    if (isRealtimeSearchEnabled) {
+        return 'GPT-4o mini (Online)';
     }
-    if (model === 'claude') {
-        return 'Claude Haiku 4.5';
-    }
-    // Default to deepseek
-    return 'DeepSeek V3.2 Exp';
+    return 'GPT-4o mini';
 };
 
 /**
@@ -139,185 +119,95 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
     }
 }
 
-const getAnalysisSystemInstruction = (locale: Locale, modelDisplayName: string): string => {
-    // Shared part of the schema
-    const schema = `{
-          "modelUsed": "string (The name of the AI model used for this analysis)",
-          "summary": "string (1-3 sentence summary)",
-          "investmentScore": {
-            "score": "number (1-100)",
-            "reason": "string (brief justification for the score)"
-          },
-          "analysis": {
-            "macroPolicy": "string (must include specific macro data like CPI/PPI)",
-            "industryChain": {
-              "upstream": [{"name": "string", "description": "string"}],
-              "midstream": [{"name": "string", "description": "string"}],
-              "downstream": [{"name": "string", "description": "string"}]
-            },
-            "companyFundamentals": "string",
-            "marketSentiment": {
-              "sentiment": "'Positive' | 'Neutral' | 'Negative'",
-              "description": "string"
-            }
-          },
-          "marketSizeAndOutlook": {
-            "narrative": "string (Provide a forward-looking analysis of the market size and application prospects.)",
-            "tamSamSom": {
-              "TAM": "string (Total Addressable Market value)",
-              "SAM": "string (Serviceable Addressable Market value)",
-              "SOM": "string (Serviceable Obtainable Market value)",
-              "sourceOrMethodology": "string (Source of the data or methodology for estimation)"
-            }
-          },
-          "competitiveLandscape": {
-            "keyPlayers": [{
-              "name": "string (Company Name)",
-              "marketShare": "string (e.g., 'approx. 25%' or 'Leader')",
-              "techAdvantage": "string (Brief description of their core tech advantage)",
-              "revenueGrowth": "string (e.g., '+15% TTM')",
-              "grossMargin": "string (e.g., '45%')",
-              "stockPerformance": "string (e.g., '+30% in last 3 months')"
-            }],
-            "summary": "string (A brief summary of which company has the most comprehensive advantage)"
-          },
-          "catalystTracker": {
-            "recentNews": [{
-              "date": "string (YYYY-MM-DD)",
-              "description": "string (Summary of the key news/event)",
-              "impact": "'Positive' | 'Negative' | 'Neutral'"
-            }],
-            "upcomingCatalysts": [{
-              "date": "string (YYYY-MM-DD or Q3 2024)",
-              "event": "string (e.g., 'Industry Conference', 'Earnings Release')"
-            }]
-          },
-          "policyAnalysis": {
-            "keyBodies": ["string (e.g., 'FDA', 'NMPA')"],
-            "currentPolicies": "string (Summary of current key policies)",
-            "assessment": "'Headwind' | 'Tailwind' | 'Neutral'",
-            "potentialChanges": "string (Analysis of potential future policy changes)"
-          },
-          "techTrajectory": {
-            "coreTech": "string (Simple explanation of the core technology)",
-            "maturity": "'Emerging' | 'Maturing' | 'Mainstream'",
-            "innovationTrends": ["string (List of 2-3 key innovation directions)"],
-            "moatAnalysis": "string (Analysis of the height of the technological barrier)"
-          },
-          "scenarioAnalysis": [
-            {
-              "scenario": "'Bull Case'",
-              "description": "string (Detailed description under this scenario)",
-              "probability": "number (A decimal between 0 and 1 representing the probability of this scenario occurring)",
-              "keyDrivers": ["string (Key drivers or catalysts for this scenario)"]
-            },
-            {
-              "scenario": "'Base Case'",
-              "description": "string",
-              "probability": "number",
-              "keyDrivers": ["string"]
-            },
-            {
-              "scenario": "'Bear Case'",
-              "description": "string",
-              "probability": "number",
-              "keyDrivers": ["string (Key risks for this scenario)"]
-            }
-          ],
-          "investmentStrategy": {
-            "logic": "string",
-            "suggestion": "string",
-            "timeHorizons": {
-              "shortTerm": "string (Strategy for 1-3 months)",
-              "mediumTerm": "string (Strategy for 3-12 months)",
-              "longTerm": "string (Strategy for >1 year)"
-            }
-          },
-          "riskMatrix": [
-            {
-              "risk": "string (The specific risk factor)",
-              "probability": "'High' | 'Medium' | 'Low'",
-              "impact": "'High' | 'Medium' | 'Low'",
-              "mitigation": "string (Mitigation or hedging strategy)"
-            }
-          ],
-          "allocationCadenceAndOutlook": "string (Provide guidance on investment timing, position building pace, and long-term outlook.)",
-          "tieredSuggestions": {
-            "coreHoldings": [{
-              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-              "reason": "string (Reason for being a high-conviction core holding)", "relevance": "'High'"
-            }],
-            "strategicSatellites": [{
-              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-              "reason": "string (Reason for being a satellite holding)", "relevance": "'Medium'"
-            }],
-            "watchlist": [{
-              "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'",
-              "reason": "string (Reason for being on the watchlist)", "relevance": "'Low'"
-            }]
-          },
-          "associationAnalysis": {
-            "relatedStocks": [{
-              "name": "string (e.g., 'NVIDIA Corp')",
-              "ticker": "string (The stock ticker, e.g., 'NVDA')",
-              "reason": "string (Concise reason for relevance)"
-            }],
-            "relatedTopics": [{
-              "name": "string (e.g., 'AI Chip Manufacturing')",
-              "reason": "string (Concise reason for relevance)"
-            }]
-          }
-        }`;
+const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string) => {
+    const commonInstructions = `You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information. You MUST respond strictly in JSON format. Do not add any extra text.`;
+    const languageInstruction = locale === 'zh' ? 'All content must be in Simplified Chinese.' : 'All content must be in English.';
 
-    if (locale === 'zh') {
-        return `
-        You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information.
-        Your analysis must include ALL of the following professional modules:
-        1.  **Core Analysis**: Comprehensive analysis including macro data, industry chain, market sentiment, TAM/SAM/SOM, scenario analysis (Bull/Base/Bear), time horizons, and a risk matrix.
-        2.  **Competitive Landscape**: Identify 3-5 key players and create a quantitative comparison matrix (market share, tech advantage, revenue growth, gross margin, stock performance).
-        3.  **Catalyst Tracker**: Summarize key news from the last 30 days and list potential upcoming catalysts for the next 1-3 months.
-        4.  **Policy Deep Dive**: Analyze the regulatory environment, providing a 'Headwind' or 'Tailwind' assessment.
-        5.  **Technology Trajectory**: Assess the maturity of the core technology ('Emerging', 'Maturing', 'Mainstream') and its innovation trends.
-        If the topic is related to blockchain or crypto, you MUST recommend relevant cryptocurrencies.
-        If the topic relates to commodities or macro cycles, you MUST recommend relevant commodity futures (e.g., Gold 'GC=F').
-        You MUST provide a quantitative "investmentScore" from 1-100.
-        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in Simplified Chinese.
-        You MUST populate the "modelUsed" field with this exact value: "${modelDisplayName}".
-        The JSON schema is as follows: ${schema}
-    `;
-    }
-    return `
-        You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information.
-        Your analysis must include ALL of the following professional modules:
-        1.  **Core Analysis**: Comprehensive analysis including macro data, industry chain, market sentiment, TAM/SAM/SOM, scenario analysis (Bull/Base/Bear), time horizons, and a risk matrix.
-        2.  **Competitive Landscape**: Identify 3-5 key players and create a quantitative comparison matrix (market share, tech advantage, revenue growth, gross margin, stock performance).
-        3.  **Catalyst Tracker**: Summarize key news from the last 30 days and list potential upcoming catalysts for the next 1-3 months.
-        4.  **Policy Deep Dive**: Analyze the regulatory environment, providing a 'Headwind' or 'Tailwind' assessment.
-        5.  **Technology Trajectory**: Assess the maturity of the core technology ('Emerging', 'Maturing', 'Mainstream') and its innovation trends.
-        If the topic is related to blockchain or crypto, you MUST recommend relevant cryptocurrencies.
-        If the topic relates to commodities or macro cycles, you MUST recommend relevant commodity futures (e.g., Gold 'GC=F').
-        You MUST provide a quantitative "investmentScore" from 1-100.
-        You MUST respond strictly in the following JSON format. Do not add any extra text. All content must be in English.
-        You MUST populate the "modelUsed" field with this exact value: "${modelDisplayName}".
-        The JSON schema is as follows: ${schema}
-    `;
+    const part1Schema = `{
+      "summary": "string (1-3 sentence summary)",
+      "investmentScore": { "score": "number (1-100)", "reason": "string (brief justification for the score)" },
+      "analysis": {
+        "macroPolicy": "string (must include specific macro data like CPI/PPI)",
+        "industryChain": { "upstream": [{"name": "string", "description": "string"}], "midstream": [{"name": "string", "description": "string"}], "downstream": [{"name": "string", "description": "string"}] },
+        "companyFundamentals": "string",
+        "marketSentiment": { "sentiment": "'Positive' | 'Neutral' | 'Negative'", "description": "string" }
+      }
+    }`;
+
+    const part2Schema = `{
+      "marketSizeAndOutlook": {
+        "narrative": "string (Provide a forward-looking analysis of the market size and application prospects.)",
+        "tamSamSom": { "TAM": "string", "SAM": "string", "SOM": "string", "sourceOrMethodology": "string" }
+      },
+      "competitiveLandscape": {
+        "keyPlayers": [{ "name": "string", "marketShare": "string", "techAdvantage": "string", "revenueGrowth": "string", "grossMargin": "string", "stockPerformance": "string" }],
+        "summary": "string (A brief summary of which company has the most comprehensive advantage)"
+      },
+      "catalystTracker": {
+        "recentNews": [{ "date": "string (YYYY-MM-DD)", "description": "string", "impact": "'Positive' | 'Negative' | 'Neutral'" }],
+        "upcomingCatalysts": [{ "date": "string (YYYY-MM-DD or Q3 2024)", "event": "string" }]
+      },
+      "policyAnalysis": { "keyBodies": ["string"], "currentPolicies": "string", "assessment": "'Headwind' | 'Tailwind' | 'Neutral'", "potentialChanges": "string" },
+      "techTrajectory": { "coreTech": "string", "maturity": "'Emerging' | 'Maturing' | 'Mainstream'", "innovationTrends": ["string"], "moatAnalysis": "string" }
+    }`;
+
+    const part3Schema = `{
+      "scenarioAnalysis": [
+        { "scenario": "'Bull Case'", "description": "string", "probability": "number", "keyDrivers": ["string"] },
+        { "scenario": "'Base Case'", "description": "string", "probability": "number", "keyDrivers": ["string"] },
+        { "scenario": "'Bear Case'", "description": "string", "probability": "number", "keyDrivers": ["string"] }
+      ],
+      "investmentStrategy": {
+        "logic": "string", "suggestion": "string",
+        "timeHorizons": { "shortTerm": "string", "mediumTerm": "string", "longTerm": "string" }
+      },
+      "riskMatrix": [{ "risk": "string", "probability": "'High' | 'Medium' | 'Low'", "impact": "'High' | 'Medium' | 'Low'", "mitigation": "string" }],
+      "allocationCadenceAndOutlook": "string",
+      "tieredSuggestions": {
+        "coreHoldings": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string", "relevance": "'High'" }],
+        "strategicSatellites": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string", "relevance": "'Medium'" }],
+        "watchlist": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string", "relevance": "'Low'" }]
+      },
+      "associationAnalysis": {
+        "relatedStocks": [{ "name": "string", "ticker": "string", "reason": "string" }],
+        "relatedTopics": [{ "name": "string", "reason": "string" }]
+      }
+    }`;
+
+    return {
+        part1System: `${commonInstructions} You will generate the first part of the analysis: Core Analysis. ${languageInstruction} The JSON schema is: ${part1Schema}`,
+        part2System: `${commonInstructions} You will generate the second part of the analysis: Deep Dives into market, competition, catalysts, policy, and tech. ${languageInstruction} The JSON schema is: ${part2Schema}`,
+        part3System: `${commonInstructions} You will generate the final part of the analysis: Strategy & Suggestions. ${languageInstruction} You MUST populate the "modelUsed" field with this exact value: "${modelDisplayName}". The JSON schema is: ${part3Schema}`
+    };
 };
 
+export const getAnalysis = async (topic: string, onProgress: (stepIndex: number) => void, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
+    const modelName = getModelName(isRealtimeSearchEnabled);
+    const modelDisplayName = getModelDisplayName(isRealtimeSearchEnabled);
+    const { part1System, part2System, part3System } = getAnalysisSystemInstructions(locale, modelDisplayName);
 
-export const getAnalysis = async (topic: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
-    const modelName = getModelName(model, isRealtimeSearchEnabled);
-    const modelDisplayName = getModelDisplayName(model, isRealtimeSearchEnabled);
-    const systemInstruction = getAnalysisSystemInstruction(locale, modelDisplayName);
+    const prompt = `Please analyze the following text: --- ${topic} ---`;
+
+    onProgress(0); // "Running core analysis..."
+    const part1Result = await callOpenRouterAI(prompt, part1System, modelName);
     
-    const prompt = `
-        Please analyze the following text using the "Four-Dimensional Integrated Analysis Method" and provide a structured investment strategy report.
-        Text to analyze:
-        ---
-        ${topic}
-        ---
-    `;
+    onProgress(1); // "Performing deep dives..."
+    const part2Result = await callOpenRouterAI(prompt, part2System, modelName);
 
-    return callOpenRouterAI(prompt, systemInstruction, modelName);
+    onProgress(2); // "Formulating strategy & suggestions..."
+    const part3Result = await callOpenRouterAI(prompt, part3System, modelName);
+    
+    onProgress(3); // "Finalizing report..."
+
+    // Combine results from all parts
+    const finalReport: AnalysisReport = {
+        ...part1Result,
+        ...part2Result,
+        ...part3Result,
+        modelUsed: modelDisplayName,
+    };
+    
+    return finalReport;
 };
 
 const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
@@ -379,8 +269,8 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
 };
 
 
-export const getPolymarketAnalysis = async (url: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
-    const modelName = getModelName(model, isRealtimeSearchEnabled);
+export const getPolymarketAnalysis = async (url: string, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
+    const modelName = getModelName(isRealtimeSearchEnabled);
     const systemInstruction = getPolymarketAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -480,8 +370,14 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
 };
 
 
-export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<StockAnalysisReport> => {
-    const modelName = getModelName(model, isRealtimeSearchEnabled);
+export const getStockAnalysis = async (
+    stockQuery: string, 
+    onProgress: (stepIndex: number) => void,
+    locale: Locale, 
+    isRealtimeSearchEnabled: boolean
+): Promise<StockAnalysisReport> => {
+    onProgress(0); // "Analyzing core fundamentals..."
+    const modelName = getModelName(isRealtimeSearchEnabled);
     const systemInstruction = getStockAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -491,7 +387,20 @@ export const getStockAnalysis = async (stockQuery: string, model: AnalysisModel,
         ---
     `;
 
-    return callOpenRouterAI(prompt, systemInstruction, modelName);
+    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callOpenRouterAI(prompt, systemInstruction, modelName);
+    
+    onProgress(1); // "Aggregating institutional research..."
+    
+    const researchData = await getResearchReportAnalysis(stockQuery, locale, isRealtimeSearchEnabled);
+    
+    onProgress(2); // "Synthesizing professional-grade report..."
+
+    const combinedReport: StockAnalysisReport = {
+        ...reportPart,
+        researchReportConsensus: researchData,
+    };
+
+    return combinedReport;
 };
 
 const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
@@ -540,8 +449,8 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getResearchReportAnalysis = async (stockQuery: string, model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<ResearchReportConsensus> => {
-    const modelName = getModelName(model, isRealtimeSearchEnabled);
+export const getResearchReportAnalysis = async (stockQuery: string, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<ResearchReportConsensus> => {
+    const modelName = getModelName(isRealtimeSearchEnabled);
     const systemInstruction = getResearchReportAnalysisSystemInstruction(locale);
 
     const prompt = `
@@ -586,8 +495,8 @@ const getHotStocksSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getHotStocksFromAI = async (model: AnalysisModel, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<{name: string; ticker: string}[]> => {
-    const modelName = getModelName(model, isRealtimeSearchEnabled);
+export const getHotStocksFromAI = async (locale: Locale, isRealtimeSearchEnabled: boolean): Promise<{name: string; ticker: string}[]> => {
+    const modelName = getModelName(isRealtimeSearchEnabled);
     const systemInstruction = getHotStocksSystemInstruction(locale);
     const prompt = "Please provide the list of the 10 hottest stocks in the last 24 hours.";
 
@@ -619,29 +528,28 @@ const getPositionalWarfareSystemInstructions = (locale: Locale) => {
 
 export const getPositionalWarfareAnalysis = async (
     leaderStockQuery: string,
-    onProgress: (message: string) => void,
-    model: AnalysisModel,
+    onProgress: (stepIndex: number) => void,
     locale: Locale,
     isRealtimeSearchEnabled: boolean
 ): Promise<PositionalWarfareReport> => {
-    const modelName = getModelName(model, isRealtimeSearchEnabled);
+    const modelName = getModelName(isRealtimeSearchEnabled);
     const { step1System, step2System, step3System, step4System } = getPositionalWarfareSystemInstructions(locale);
 
-    onProgress(locale === 'zh' ? "正在锁定并深度剖析龙头... 🎯" : "Locking and profiling the leader... 🎯");
+    onProgress(0);
     const leaderProfile: LeaderStockProfile = await callOpenRouterAI(leaderStockQuery, step1System, modelName);
 
-    onProgress(locale === 'zh' ? "正在海选同板块潜力股... 🔍" : "Screening for potential followers... 🔍");
+    onProgress(1);
     const step2Prompt = locale === 'zh' ? `龙头股票资料: ${JSON.stringify(leaderProfile)}` : `Leader Stock Profile: ${JSON.stringify(leaderProfile)}`;
     const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName);
     const candidates = screeningResult.candidates || [];
     if (candidates.length === 0) throw new Error(locale === 'zh' ? "未能找到合适的潜力补涨股。" : "Could not find suitable follower candidates.");
 
-    onProgress(locale === 'zh' ? "正在分析候选股财务指标... 📊" : "Analyzing candidate financials... 📊");
+    onProgress(2);
     const step3Prompt = locale === 'zh' ? `公司列表: ${JSON.stringify(candidates)}` : `Companies List: ${JSON.stringify(candidates)}`;
     const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName);
     const detailedCandidates = metricsResult.detailedCandidates || [];
 
-    onProgress(locale === 'zh' ? "正在生成核心观点总结... ⚔️" : "Synthesizing final strategy... ⚔️");
+    onProgress(3);
     const step4Prompt = locale === 'zh' ? `龙头股票: ${JSON.stringify(leaderProfile)}\n\n潜力补涨股及指标: ${JSON.stringify(detailedCandidates)}` : `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
     const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName);
     

@@ -19,16 +19,8 @@
     "getPerplexity": "免费领取 Perplexity 会员"
   },
   "controls": {
-    "model": "分析模型",
-    "deepseek": "DeepSeek",
-    "claude": "Claude",
-    "gemini": "Gemini",
-    "geminiPro": "Gemini Pro",
-    "geminiFlash": "Gemini Flash",
-    "top": "最强",
     "getCredits": "获取信用点",
     "useCreditAndAnalyzeMulti": "使用 {{count}} 点信用分析",
-    "modelSwitched": "切换模型成功。",
     "credits": "信用点: {{count}} 💎",
     "addCredits": "充值",
     "costPerUse": "{{count}}点/次",
@@ -58,14 +50,6 @@
   "imageModal": {
     "title": "欢迎关注“小声读书”"
   },
-  "riskModal": {
-    "title": "【投资风险警示】",
-    "line1": "股市有风险，投资需谨慎。",
-    "line2": "本平台仅提供信息展示，不构成任何投资建议。",
-    "line3": "投资者应独立判断并承担投资风险。",
-    "line4": "继续使用即表示您已充分了解并接受上述风险提示。",
-    "acceptButton": "我已了解风险"
-  },
   "userGuideModal": {
     "title": "超级挖掘机・使用说明",
     "intro": "为了获得最佳分析效果，请根据您的需求选择合适的分析模式：",
@@ -85,7 +69,7 @@
   },
   "paymentModal": {
     "title": "获取信用点",
-    "description": "购买信用点以使用高级分析模型。",
+    "description": "购买信用点以继续您的分析。",
     "packagesTitle": "选择一个信用包：",
     "credits_plural": "{{count}}个信用点",
     "bestValue": "最划算",
@@ -98,15 +82,6 @@
     "supportedMethods": "目前我们支持信用卡（Visa, Mastercard 等）支付。",
     "package_18_desc": "赠送 20%",
     "package_30_desc": "赠送 50%",
-    "pro_sub_name": "Pro 版会员",
-    "pro_sub_features": [
-      "每月自动获得 100 个信用点",
-      "可使用所有分析模型",
-      "未来更多 Pro 功能优先体验"
-    ],
-    "buyCreditsTab": "购买信用点",
-    "subscribeProTab": "订阅 Pro 版",
-    "per_month": "/月",
     "error": {
       "default": "您的支付方式出现问题。",
       "unexpected": "发生意外的支付错误，请重试。"
@@ -123,24 +98,31 @@
     "noNews": "该来源暂无最新动态。"
   },
   "loader": {
-    "analyzing": "正在分析中 🤖",
-    "messages": [
-      "正在初始化分析引擎... ⚙️",
-      "正在连接 AI 获取深度见解... 🧠",
-      "正在交叉验证数据源... 📊",
-      "正在应用量化模型... 🧮",
-      "正在扫描市场异动信号... 📡",
-      "正在评估地缘政治风险... 🗺️",
-      "正在模拟未来现金流... 💰",
-      "正在构建多维分析框架... 🏗️",
-      "正在解析最新财报数据... 📄",
-      "正在分析宏观经济因素... 🌍",
-      "正在绘制产业链图谱... 🔗",
-      "正在评估公司核心基本面... 🧾",
-      "正在衡量当前市场情绪... 🎭",
-      "AI 正在深度思考... 🤔",
-      "正在生成投资策略... 📈",
-      "即将完成标的推荐... ✅"
+    "analyzing": "正在分析中...",
+    "topicSteps": [
+      "正在进行核心分析...",
+      "正在进行深度挖掘...",
+      "正在生成策略与建议...",
+      "即将完成报告..."
+    ],
+    "stockSteps": [
+      "正在分析核心基本面...",
+      "正在汇总机构研报数据...",
+      "正在生成专业级报告..."
+    ],
+    "positionalSteps": [
+      "正在锁定并深度剖析龙头... 🎯",
+      "正在海选同板块潜力股... 🔍",
+      "正在分析候选股财务指标... 📊",
+      "正在生成核心观点总结... ⚔️"
+    ],
+    "quotes": [
+      "在别人贪婪时恐惧，在别人恐惧时贪婪。 - 沃伦·巴菲特",
+      "股票市场是一个将钱从没耐心的人转移到有耐心的人的设备。 - 沃伦·巴菲特",
+      "投资成功的第一原则是不要亏钱，第二原则是永远不要忘记第一原则。 - 沃伦·巴菲特",
+      "风险来自于你不知道自己在做什么。 - 沃伦·巴菲特",
+      "知道什么就投什么。 - 彼得·林奇",
+      "如果你不准备持有十年，就不要持有十分钟。 - 沃伦·巴菲特"
     ]
   },
   "analysisInput": {
@@ -161,7 +143,6 @@
     "newAnalysis": "新的分析",
     "exportPDF": "导出 PDF",
     "exportImage": "导出图片",
-    "exportMarkdown": "导出 Markdown",
     "exporting": "正在导出...",
     "exportError": "导出图片失败。请稍后再试。",
     "preparingPDF": "正在准备导出...",
@@ -193,6 +174,11 @@
     "Positive": "乐观",
     "Neutral": "中性",
     "Negative": "悲观"
+  },
+  "riskLevels": {
+    "High": "高",
+    "Medium": "中",
+    "Low": "低"
   },
   "industryChain": {
     "upstream": "上游 ⬆️",
@@ -281,6 +267,14 @@
         "Overbought": "超买",
         "Oversold": "超卖",
         "Neutral": "中性"
+      },
+      "movingAveragesStates": {
+        "Above": "高于",
+        "Below": "低于"
+      },
+      "movingAveragesDays": {
+        "50": "50日均线",
+        "200": "200日均线"
       }
     },
     "financialHealth": {
@@ -296,7 +290,13 @@
       "title": "财报电话会情报",
       "managementTone": "管理层基调",
       "futureGuidance": "未来指引",
-      "keyHighlights": "关键问答"
+      "keyHighlights": "关键问答",
+      "managementTones": {
+        "Optimistic": "乐观",
+        "Cautious": "谨慎",
+        "Pessimistic": "悲观",
+        "Neutral": "中性"
+      }
     },
     "sourcesTitle": "参考来源",
     "footer": "本报告使用超级挖掘机分析生成，",
@@ -384,8 +384,9 @@
     "placeholder": "输入兑换码...",
     "button": "兑换",
     "invalidCode": "无效的兑换码。",
-    "alreadyRedeemed": "您今天已经兑换过了。",
-    "success": "祝你开心，谢谢。"
+    "alreadyRedeemed": "此兑换码已被使用。",
+    "successLive": "兑换成功！实时搜索功能已解锁。",
+    "successMe": "兑换成功！您已获得 {{count}} 个信用点。"
   },
   "toasts": {
     "dailyCreditsAwarded": "每日 {{count}} 点免费信用点已到账！✨"

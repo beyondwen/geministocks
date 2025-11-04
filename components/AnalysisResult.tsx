@@ -1,13 +1,12 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, RiskFactor, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, MarkdownIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon } from './icons/Icons';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
 import AssociationAnalysisGraph from './AssociationAnalysisGraph';
 import { useI18n } from '../hooks/useI18n';
-import { analysisReportToMarkdown } from '../services/markdownService';
 
 const GlobeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
@@ -171,7 +170,7 @@ const ScenarioAnalysisCard: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }
         <Card title={t('scenarioAnalysis.title')} icon={<SparklesIcon className="w-5 h-5"/>} className="md:col-span-2">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {scenarios.map((s, i) => {
-                    const config = scenarioConfig[s.scenario];
+                    const config = scenarioConfig[s.scenario] || scenarioConfig['Base Case'];
                     return (
                         <div key={i} className={`flex flex-col p-4 border-l-4 rounded-r-lg bg-gray-100/50 ${config.color}`}>
                            <div className="flex justify-between items-center mb-2">
@@ -238,8 +237,8 @@ const RiskMatrixCard: React.FC<{ risks: RiskFactor[] }> = ({ risks }) => {
                         {risks.map((r, i) => (
                             <tr key={i} className="border-b border-gray-200 last:border-b-0">
                                 <td className="p-3 font-medium text-black">{r.risk}</td>
-                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${levelColors[r.probability]}`}>{r.probability}</span></td>
-                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${levelColors[r.impact]}`}>{r.impact}</span></td>
+                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${levelColors[r.probability]}`}>{t(`riskLevels.${r.probability}`)}</span></td>
+                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${levelColors[r.impact]}`}>{t(`riskLevels.${r.impact}`)}</span></td>
                                 <td className="p-3 text-gray-700">{r.mitigation}</td>
                             </tr>
                         ))}
@@ -307,7 +306,7 @@ const CatalystTrackerCard: React.FC<{ tracker: CatalystTracker }> = ({ tracker }
                             <div key={i} className="p-3 bg-gray-100/50 rounded-lg">
                                 <div className="flex justify-between items-start text-xs mb-1">
                                     <span className="font-mono text-gray-500">{news.date}</span>
-                                    <span className={`font-semibold px-2 py-0.5 rounded-full ${impactColors[news.impact]}`}>{news.impact}</span>
+                                    <span className={`font-semibold px-2 py-0.5 rounded-full ${impactColors[news.impact]}`}>{t(`sentiments.${news.impact}`)}</span>
                                 </div>
                                 <p className="text-sm text-gray-800">{news.description}</p>
                             </div>
@@ -337,7 +336,7 @@ const PolicyAnalysisCard: React.FC<{ analysis: PolicyAnalysis }> = ({ analysis }
         Headwind: { label: t('policyAnalysis.headwind'), color: 'text-red-600', icon: '🌬️' },
         Neutral: { label: t('policyAnalysis.neutral'), color: 'text-gray-600', icon: '〰️' },
     };
-    const config = assessmentConfig[analysis.assessment];
+    const config = assessmentConfig[analysis.assessment] || assessmentConfig['Neutral'];
 
     return (
         <Card title={t('policyAnalysis.title')} icon={<ScaleIcon className="w-5 h-5"/>} className="md:col-span-2">
@@ -473,18 +472,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNe
     }, 50);
   }, []);
   
-  const handleExportMarkdown = useCallback(() => {
-    const markdownContent = analysisReportToMarkdown(report, userInput);
-    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
-    const link = document.createElement('a');
-    const topic = report.summary?.substring(0, 30).replace(/\s+/g, '_').replace(/[^\w-]/g, '') || 'report';
-    link.download = `Investment_Analysis_Report_${topic}.md`;
-    link.href = URL.createObjectURL(blob);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  }, [report, userInput]);
 
   useEffect(() => {
     const handleAfterPrint = () => {
@@ -530,14 +517,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNe
           <span>{t('analysisResult.newAnalysis')}</span>
         </button>
         <div className="flex gap-x-2">
-          <button
-            onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
-            aria-label={t('analysisResult.exportMarkdown')}
-          >
-            <MarkdownIcon className="h-5 w-5" />
-            <span>{t('analysisResult.exportMarkdown')}</span>
-          </button>
           <button
             onClick={handlePrint}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"

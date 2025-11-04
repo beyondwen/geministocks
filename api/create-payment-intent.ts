@@ -16,7 +16,6 @@ interface VercelRequest {
   method: string;
   body: {
     packageId?: 'pack_5_usd' | 'pack_18_usd' | 'pack_30_usd';
-    subscriptionId?: 'pro_monthly_usd';
   };
 }
 
@@ -25,10 +24,6 @@ const packagePrices: { [key: string]: number } = {
     'pack_5_usd': 100,      // $1.00 for 5 credits
     'pack_18_usd': 300,     // $3.00 for 18 credits
     'pack_30_usd': 400,     // $4.00 for 30 credits
-};
-
-const subscriptionPrices: { [key: string]: number } = {
-    'pro_monthly_usd': 500 // $5.00 for pro subscription
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -53,20 +48,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { packageId, subscriptionId } = req.body;
+    const { packageId } = req.body;
     let amount: number | undefined;
     let metadata: { [key: string]: string } = {};
 
     if (packageId) {
         amount = packagePrices[packageId];
         metadata.packageId = packageId;
-    } else if (subscriptionId) {
-        amount = subscriptionPrices[subscriptionId];
-        metadata.subscriptionId = subscriptionId;
     }
 
     if (!amount) {
-      return res.status(400).json({ error: { message: 'Invalid package or subscription selected.' } });
+      return res.status(400).json({ error: { message: 'Invalid package selected.' } });
     }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
