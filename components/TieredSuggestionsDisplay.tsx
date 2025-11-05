@@ -1,12 +1,10 @@
-
-
 import React from 'react';
 import type { StockTicker, TieredSuggestions } from '../types';
 import { ExternalLinkIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
 
-// Helper function to generate stock links, copied from StockRelevanceChart
+// Helper function to generate stock links
 const generateStockLink = (stock: StockTicker): string => {
     const { ticker, market } = stock;
     switch (market) {
@@ -27,8 +25,8 @@ const generateStockLink = (stock: StockTicker): string => {
     }
 };
 
-// Reusable StockCard component, copied from StockRelevanceChart
-const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stock, keywords }) => {
+// Reusable StockCard component
+const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; onAnalyze?: (query: string) => void; }> = ({ stock, keywords, onAnalyze }) => {
   const { t } = useI18n();
   const relevanceConfig = {
     High: {
@@ -59,7 +57,18 @@ const StockCard: React.FC<{ stock: StockTicker; keywords: string[]; }> = ({ stoc
       <div>
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h5 className="font-bold text-black pr-2">{stock.name}</h5>
+            <div className="font-bold text-black pr-2">
+                {onAnalyze ? (
+                    <button
+                        onClick={() => onAnalyze(stock.name)}
+                        className="text-left font-bold text-black hover:text-gray-700 animated-underline transition-colors"
+                    >
+                        {stock.name}
+                    </button>
+                ) : (
+                    <span>{stock.name}</span>
+                )}
+            </div>
             <p className="text-xs text-gray-500">({stock.market})</p>
           </div>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.bgColor} ${config.textColor} flex-shrink-0`}>
@@ -105,9 +114,10 @@ interface TierDisplayProps {
   stocks: StockTicker[];
   keywords: string[];
   colorClasses: string;
+  onAnalyzeStock: (query: string) => void;
 }
 
-const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords, colorClasses }) => {
+const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords, colorClasses, onAnalyzeStock }) => {
   if (!stocks || stocks.length === 0) {
     return null;
   }
@@ -120,7 +130,7 @@ const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-b-lg border-x border-b border-gray-200">
         {stocks.map((stock, index) => (
-          <StockCard key={`${stock.ticker}-${index}`} stock={stock} keywords={keywords} />
+          <StockCard key={`${stock.ticker}-${index}`} stock={stock} keywords={keywords} onAnalyze={onAnalyzeStock} />
         ))}
       </div>
     </div>
@@ -132,9 +142,10 @@ const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords
 interface TieredSuggestionsDisplayProps {
   suggestions: TieredSuggestions;
   keywords: string[];
+  onAnalyzeStock: (query: string) => void;
 }
 
-const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ suggestions, keywords }) => {
+const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ suggestions, keywords, onAnalyzeStock }) => {
   const { t } = useI18n();
   const { coreHoldings, strategicSatellites, watchlist } = suggestions || {};
 
@@ -146,6 +157,7 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         stocks={coreHoldings}
         keywords={keywords}
         colorClasses="bg-gray-200 text-black"
+        onAnalyzeStock={onAnalyzeStock}
       />
       <TierDisplay
         title={t('tieredSuggestions.satellite')}
@@ -153,6 +165,7 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         stocks={strategicSatellites}
         keywords={keywords}
         colorClasses="bg-gray-100 text-black"
+        onAnalyzeStock={onAnalyzeStock}
       />
       <TierDisplay
         title={t('tieredSuggestions.watchlist')}
@@ -160,6 +173,7 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         stocks={watchlist}
         keywords={keywords}
         colorClasses="bg-gray-100 text-black"
+        onAnalyzeStock={onAnalyzeStock}
       />
     </div>
   );

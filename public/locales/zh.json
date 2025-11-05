@@ -305,8 +305,8 @@
   },
   "positionalWarfareInput": {
     "title": "卡位战法分析",
-    "description": "寻找同板块中有潜力的“补涨龙”或“龙二” 🎯",
-    "placeholder": "例如: 英伟达, NVDA, 宁德时代...",
+    "description": "输入行业赛道或龙头股，寻找“补涨”机会 🎯",
+    "placeholder": "例如: 英伟达, AI半导体, 宁德时代...",
     "button": "开始分析"
   },
   "positionalWarfareResult": {
@@ -335,6 +335,14 @@
     "metric": "指标",
     "leader": "龙头 👑",
     "follower": "补涨龙 🐲"
+  },
+  "leaderConfirmation": {
+    "title": "确认龙头股",
+    "identified": "AI 已识别出的龙头为:",
+    "question": "是否基于此龙头继续分析？",
+    "confirmButton": "确认并分析 ({{count}}点)",
+    "cancelButton": "取消",
+    "close": "关闭确认"
   },
   "aboutPage": {
     "title": "使用说明",

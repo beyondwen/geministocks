@@ -305,8 +305,8 @@
   },
   "positionalWarfareInput": {
     "title": "Positional Warfare Analysis",
-    "description": "Find potential \"catch-up\" stocks in the same sector 🎯",
-    "placeholder": "e.g., NVIDIA, NVDA, CATL...",
+    "description": "Enter an industry or leader stock to find 'catch-up' opportunities 🎯",
+    "placeholder": "e.g., NVIDIA, AI Semiconductors, CATL...",
     "button": "Start Analysis"
   },
   "positionalWarfareResult": {
@@ -335,6 +335,14 @@
     "metric": "Metric",
     "leader": "Leader 👑",
     "follower": "Follower 🐲"
+  },
+  "leaderConfirmation": {
+    "title": "Confirm Leader Stock",
+    "identified": "AI has identified the leader as:",
+    "question": "Proceed with analysis based on this leader?",
+    "confirmButton": "Confirm & Analyze ({{count}} Cr.)",
+    "cancelButton": "Cancel",
+    "close": "Close confirmation"
   },
   "aboutPage": {
     "title": "User Guide",

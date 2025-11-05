@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { getAnalysis, getStockAnalysis, getHotStocksFromAI, getPositionalWarfareAnalysis, getPolymarketAnalysis } from './services/geminiService';
+// FIX: Import `getHotStocksFromAI` to resolve reference error.
+import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI } from './services/geminiService';
 // FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
-import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry } from './types';
+import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
@@ -455,6 +456,68 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
     </button>
 );
 
+// --- New Leader Confirmation Modal Component ---
+interface LeaderConfirmationModalProps {
+    isOpen: boolean;
+    leader: LeaderStockProfile | null;
+    onConfirm: () => void;
+    onClose: () => void;
+    cost: number;
+}
+
+const LeaderConfirmationModal: React.FC<LeaderConfirmationModalProps> = ({ isOpen, leader, onConfirm, onClose, cost }) => {
+    const { t } = useI18n();
+
+    if (!isOpen || !leader) return null;
+
+    return (
+        <div
+            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leader-confirm-title"
+        >
+            <div
+                className="bg-white p-8 max-w-md w-full mx-4 text-left relative animate-reveal-scale rounded-2xl shadow-floating"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+                    aria-label={t('leaderConfirmation.close')}
+                >
+                    <XIcon className="w-6 h-6" />
+                </button>
+                <h2 id="leader-confirm-title" className="text-2xl font-bold text-black mb-4 text-center">
+                    {t('leaderConfirmation.title')}
+                </h2>
+                <div className="my-6 p-4 bg-gray-100 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600">{t('leaderConfirmation.identified')}</p>
+                    <p className="text-xl font-bold text-black mt-1">{leader.name} ({leader.ticker})</p>
+                    <p className="text-xs text-gray-500 mt-1">{leader.sector}</p>
+                </div>
+                <p className="text-center text-gray-700">{t('leaderConfirmation.question')}</p>
+                <div className="mt-8 flex flex-col sm:flex-row-reverse gap-4">
+                    <button
+                        onClick={onConfirm}
+                        className="relative w-full sm:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 btn-premium text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95"
+                    >
+                        <span className="relative z-10">{t('leaderConfirmation.confirmButton', { count: cost })}</span>
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="w-full sm:w-auto flex-1 px-6 py-3 bg-white border-2 border-gray-200 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 hover:border-gray-300 transition-all"
+                    >
+                        {t('leaderConfirmation.cancelButton')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 type PendingAnalysis = { type: 'topic' | 'stock' | 'positional'; query: string };
 
 const MainPage: React.FC = () => {
@@ -484,7 +547,16 @@ const MainPage: React.FC = () => {
   const [positionalWarfareError, setPositionalWarfareError] = useState<string | null>(null);
   const [positionalWarfareProgress, setPositionalWarfareProgress] = useState<number>(0);
   const [positionalWarfareHistory, setPositionalWarfareHistory] = useState<PositionalWarfareHistoryEntry[]>([]);
+  const [isFindingLeader, setIsFindingLeader] = useState<boolean>(false);
+  const [potentialLeader, setPotentialLeader] = useState<LeaderStockProfile | null>(null);
+  const [isConfirmingLeader, setIsConfirmingLeader] = useState<boolean>(false);
 
+
+  // State for Inline Stock Analysis
+  const [inlineStockAnalysisReport, setInlineStockAnalysisReport] = useState<StockAnalysisReport | null>(null);
+  const [isInlineStockLoading, setIsInlineStockLoading] = useState<boolean>(false);
+  const [inlineStockProgress, setInlineStockProgress] = useState<number>(0);
+  const [inlineStockError, setInlineStockError] = useState<string | null>(null);
 
   // Common State
   const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
@@ -743,45 +815,101 @@ const MainPage: React.FC = () => {
     }
   }, [stockHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
 
-  const handlePositionalWarfareAnalyze = useCallback(async (query: string, bypassCreditCheck = false) => {
+  const handlePositionalWarfareAnalyze = useCallback(async (query: string) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
     if (checkRateLimit()) { setPositionalWarfareError(t('errors.rateLimit')); return; }
-    if (isPaywalled && !bypassCreditCheck) {
-        setPendingAnalysis({ type: 'positional', query });
-        setIsPaymentModalOpen(true);
-        return;
-    }
+    // Credit check happens after leader confirmation
 
     setActiveTab('positional');
-    setIsPositionalWarfareLoading(true);
+    setIsFindingLeader(true);
     setPositionalWarfareError(null);
     setPositionalWarfareReport(null);
     setAnalysisReport(null);
     setStockAnalysisReport(null);
+
+    try {
+        const leaderProfile = await findIndustryLeader(query, locale, isRealtimeSearchEnabled);
+        setPotentialLeader(leaderProfile);
+        setIsConfirmingLeader(true);
+    } catch (err) {
+        console.error(err);
+        const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
+        setPositionalWarfareError(errorMessage);
+    } finally {
+        setIsFindingLeader(false);
+    }
+  }, [locale, t, isRealtimeSearchEnabled]);
+  
+  const handleConfirmLeaderAndAnalyze = useCallback(async (bypassCreditCheck = false) => {
+    if (!potentialLeader) return;
+    if (isPaywalled && !bypassCreditCheck) {
+        setPendingAnalysis({ type: 'positional', query: leaderStockQuery });
+        setIsPaymentModalOpen(true);
+        return;
+    }
+    
+    setIsConfirmingLeader(false);
+    setIsPositionalWarfareLoading(true);
+    setPositionalWarfareError(null);
     setPositionalWarfareProgress(0);
     
     try {
         setCredits(useCredits(cost));
-
-        const report = await getPositionalWarfareAnalysis(query, setPositionalWarfareProgress, locale, isRealtimeSearchEnabled);
+        
+        const report = await getPositionalWarfareFollowerAnalysis(potentialLeader, setPositionalWarfareProgress, locale, isRealtimeSearchEnabled);
 
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
-        const newEntry: PositionalWarfareHistoryEntry = { id: Date.now(), leaderStockQuery: query, report };
+        const newEntry: PositionalWarfareHistoryEntry = { id: Date.now(), leaderStockQuery, report };
         const newHistory = [newEntry, ...positionalWarfareHistory].slice(0, 20);
         updatePositionalWarfareHistory(newHistory);
+
     } catch (err) {
         console.error(err);
-        setCredits(addCredits(cost)); // Refund credit on failure
+        setCredits(addCredits(cost));
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setPositionalWarfareError(errorMessage);
     } finally {
         setIsPositionalWarfareLoading(false);
         setPositionalWarfareProgress(0);
+        setPotentialLeader(null);
     }
-  }, [positionalWarfareHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [potentialLeader, leaderStockQuery, positionalWarfareHistory, locale, t, cost, isPaywalled, isRealtimeSearchEnabled]);
+
+  const handleInlineStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
+    if (isPaywalled && !bypassCreditCheck) {
+        setPendingAnalysis({ type: 'stock', query: stockQueryToAnalyze });
+        setIsPaymentModalOpen(true);
+        return;
+    }
+    
+    setIsInlineStockLoading(true);
+    setInlineStockError(null);
+    setInlineStockAnalysisReport(null);
+    setInlineStockProgress(0);
+
+    try {
+        setCredits(useCredits(cost));
+        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setInlineStockProgress, locale, isRealtimeSearchEnabled);
+        setInlineStockAnalysisReport(combinedReport);
+        // Do not add to history for inline analysis to keep the main history clean
+    } catch (err) {
+        console.error(err);
+        setCredits(addCredits(cost)); // Refund credit on failure
+        const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
+        setInlineStockError(errorMessage);
+    } finally {
+        setIsInlineStockLoading(false);
+    }
+  }, [locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+
+  const clearInlineStockAnalysis = () => {
+    setInlineStockAnalysisReport(null);
+    setInlineStockError(null);
+    setInlineStockProgress(0);
+  };
 
   const handlePaymentSuccess = (creditsPurchased: number) => {
     const newTotal = addCredits(creditsPurchased);
@@ -798,8 +926,23 @@ const MainPage: React.FC = () => {
         const { type, query } = pendingAnalysis;
         setTimeout(() => {
             if (type === 'topic') handleAnalyze(query, true);
-            if (type === 'stock') handleStockAnalyze(query, true);
-            if (type === 'positional') handlePositionalWarfareAnalyze(query, true);
+            else if (type === 'stock') {
+                // If an inline analysis was pending, trigger it. Otherwise, trigger the main one.
+                if (analysisReport) {
+                    handleInlineStockAnalyze(query, true);
+                } else {
+                    handleStockAnalyze(query, true);
+                }
+            }
+            else if (type === 'positional') {
+                 // If we were in the middle of confirming a leader, re-open the modal.
+                 // Otherwise, it means the user clicked the main button while having 0 credits. Re-trigger the whole flow.
+                if (isConfirmingLeader) {
+                    handleConfirmLeaderAndAnalyze(true);
+                } else {
+                    handlePositionalWarfareAnalyze(query);
+                }
+            }
         }, 300);
         setPendingAnalysis(null);
     } else {
@@ -979,7 +1122,7 @@ const MainPage: React.FC = () => {
   const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
   
   const noReportLoaded = !analysisReport && !stockAnalysisReport && !positionalWarfareReport;
-  const isLoadingAny = isLoading || isStockLoading || isPositionalWarfareLoading;
+  const isLoadingAny = isLoading || isStockLoading || isPositionalWarfareLoading || isFindingLeader;
   const showDashboard = noReportLoaded && !isLoadingAny;
 
   return (
@@ -993,6 +1136,13 @@ const MainPage: React.FC = () => {
             setPendingAnalysis(null);
         }}
         onPaymentSuccess={handlePaymentSuccess}
+      />
+      <LeaderConfirmationModal
+          isOpen={isConfirmingLeader}
+          leader={potentialLeader}
+          onConfirm={handleConfirmLeaderAndAnalyze}
+          onClose={() => setIsConfirmingLeader(false)}
+          cost={cost}
       />
       {toast && <Toast message={toast.message} type={toast.type} />}
       {isImageModalOpen && (
@@ -1114,7 +1264,7 @@ const MainPage: React.FC = () => {
                           leaderStockQuery={leaderStockQuery}
                           setLeaderStockQuery={setLeaderStockQuery}
                           onAnalyze={() => handlePositionalWarfareAnalyze(leaderStockQuery)}
-                          isLoading={isPositionalWarfareLoading}
+                          isLoading={isPositionalWarfareLoading || isFindingLeader}
                           isPaywalled={isPaywalled}
                           cost={cost}
                         />
@@ -1124,7 +1274,7 @@ const MainPage: React.FC = () => {
                 {/* --- RESULTS / DASHBOARD --- */}
                 {isLoadingAny ? (
                   <Loader 
-                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : 'positional'}
+                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isFindingLeader ? undefined : 'positional'}
                     currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
                   />
                 ) : error ? (
@@ -1143,7 +1293,17 @@ const MainPage: React.FC = () => {
                         <p className="text-sm mt-1">{positionalWarfareError}</p>
                     </div>
                 ) : analysisReport ? (
-                    <AnalysisResult report={analysisReport} userInput={userInput} onNewAnalysis={handleNewAnalysis} />
+                    <AnalysisResult 
+                        report={analysisReport} 
+                        userInput={userInput} 
+                        onNewAnalysis={handleNewAnalysis}
+                        onAnalyzeStock={handleInlineStockAnalyze}
+                        inlineReport={inlineStockAnalysisReport}
+                        isInlineLoading={isInlineStockLoading}
+                        inlineProgress={inlineStockProgress}
+                        inlineError={inlineStockError}
+                        onClearInlineReport={clearInlineStockAnalysis}
+                    />
                 ) : stockAnalysisReport ? (
                     <StockAnalysisResult report={stockAnalysisReport} onNewAnalysis={handleNewAnalysis} />
                 ) : positionalWarfareReport ? (

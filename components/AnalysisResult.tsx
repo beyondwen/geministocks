@@ -1,12 +1,15 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, RiskFactor, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon } from './icons/Icons';
+import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, RiskFactor, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory, StockAnalysisReport } from '../types';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon, XIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
 import AssociationAnalysisGraph from './AssociationAnalysisGraph';
 import { useI18n } from '../hooks/useI18n';
+import Loader from './Loader';
+import StockAnalysisResult from './StockAnalysisResult';
+
 
 const GlobeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
@@ -161,16 +164,17 @@ const MarketSizeCard: React.FC<{ narrative: string; tamSamSom: TAM_SAM_SOM }> = 
 
 const ScenarioAnalysisCard: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
     const { t } = useI18n();
-    const scenarioConfig = {
+    const scenarioConfig: {[key: string]: { icon: React.ReactNode; title: string; color: string; }} = {
         'Bull Case': { icon: <TrendingUpIcon className="w-5 h-5 text-green-600"/>, title: t('scenarioAnalysis.bull'), color: 'border-green-500' },
         'Base Case': { icon: <ScaleIcon className="w-5 h-5 text-gray-600"/>, title: t('scenarioAnalysis.base'), color: 'border-gray-500' },
         'Bear Case': { icon: <TrendingDownIcon className="w-5 h-5 text-red-600"/>, title: t('scenarioAnalysis.bear'), color: 'border-red-500' },
+        'Default': { icon: <ScaleIcon className="w-5 h-5 text-gray-600"/>, title: t('scenarioAnalysis.base'), color: 'border-gray-500' },
     };
     return (
         <Card title={t('scenarioAnalysis.title')} icon={<SparklesIcon className="w-5 h-5"/>} className="md:col-span-2">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {scenarios.map((s, i) => {
-                    const config = scenarioConfig[s.scenario] || scenarioConfig['Base Case'];
+                    const config = scenarioConfig[s.scenario] || scenarioConfig['Default'];
                     return (
                         <div key={i} className={`flex flex-col p-4 border-l-4 rounded-r-lg bg-gray-100/50 ${config.color}`}>
                            <div className="flex justify-between items-center mb-2">
@@ -216,7 +220,7 @@ const TimeHorizonStrategyCard: React.FC<{ horizons: TimeHorizonStrategy }> = ({ 
 
 const RiskMatrixCard: React.FC<{ risks: RiskFactor[] }> = ({ risks }) => {
     const { t } = useI18n();
-    const levelColors = {
+    const levelColors: {[key: string]: string} = {
         'High': 'bg-red-100 text-red-800',
         'Medium': 'bg-yellow-100 text-yellow-800',
         'Low': 'bg-green-100 text-green-800',
@@ -251,7 +255,7 @@ const RiskMatrixCard: React.FC<{ risks: RiskFactor[] }> = ({ risks }) => {
 
 // --- New Professional-Grade Topic Analysis Components ---
 
-const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape }> = ({ landscape }) => {
+const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape, onAnalyzeStock: (query: string) => void }> = ({ landscape, onAnalyzeStock }) => {
     const { t } = useI18n();
     return (
         <Card title={t('competitiveLandscape.title')} icon={<TrophyIcon className="w-5 h-5"/>} className="md:col-span-2">
@@ -270,7 +274,11 @@ const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape }> = 
                     <tbody>
                         {landscape.keyPlayers.map((p, i) => (
                             <tr key={i} className="border-b border-gray-200 last:border-b-0">
-                                <td className="p-3 font-medium text-black">{p.name}</td>
+                                <td className="p-3">
+                                    <button onClick={() => onAnalyzeStock(p.name)} className="text-left font-medium text-black hover:text-gray-700 animated-underline transition-colors">
+                                        {p.name}
+                                    </button>
+                                </td>
                                 <td className="p-3">{p.marketShare}</td>
                                 <td className="p-3">{p.techAdvantage}</td>
                                 <td className="p-3 text-right font-mono">{p.revenueGrowth}</td>
@@ -291,7 +299,7 @@ const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape }> = 
 
 const CatalystTrackerCard: React.FC<{ tracker: CatalystTracker }> = ({ tracker }) => {
     const { t } = useI18n();
-    const impactColors = {
+    const impactColors: {[key: string]: string} = {
         Positive: 'bg-green-100 text-green-800',
         Negative: 'bg-red-100 text-red-800',
         Neutral: 'bg-gray-100 text-gray-800',
@@ -331,12 +339,13 @@ const CatalystTrackerCard: React.FC<{ tracker: CatalystTracker }> = ({ tracker }
 
 const PolicyAnalysisCard: React.FC<{ analysis: PolicyAnalysis }> = ({ analysis }) => {
     const { t } = useI18n();
-    const assessmentConfig = {
+    const assessmentConfig: {[key: string]: { label: string; color: string; icon: string; }} = {
         Tailwind: { label: t('policyAnalysis.tailwind'), color: 'text-green-600', icon: '💨' },
         Headwind: { label: t('policyAnalysis.headwind'), color: 'text-red-600', icon: '🌬️' },
         Neutral: { label: t('policyAnalysis.neutral'), color: 'text-gray-600', icon: '〰️' },
+        Default: { label: t('policyAnalysis.neutral'), color: 'text-gray-600', icon: '〰️' },
     };
-    const config = assessmentConfig[analysis.assessment] || assessmentConfig['Neutral'];
+    const config = assessmentConfig[analysis.assessment] || assessmentConfig['Default'];
 
     return (
         <Card title={t('policyAnalysis.title')} icon={<ScaleIcon className="w-5 h-5"/>} className="md:col-span-2">
@@ -362,12 +371,12 @@ const PolicyAnalysisCard: React.FC<{ analysis: PolicyAnalysis }> = ({ analysis }
 
 const TechTrajectoryCard: React.FC<{ trajectory: TechTrajectory }> = ({ trajectory }) => {
     const { t } = useI18n();
-    const maturityConfig = {
+    const maturityConfig: {[key: string]: { label: string; position: string; }} = {
         Emerging: { label: t('techTrajectory.emerging'), position: '25%' },
         Maturing: { label: t('techTrajectory.maturing'), position: '60%' },
         Mainstream: { label: t('techTrajectory.mainstream'), position: '90%' },
     };
-    const config = maturityConfig[trajectory.maturity];
+    const config = maturityConfig[trajectory.maturity] || maturityConfig.Maturing;
 
     return (
         <Card title={t('techTrajectory.title')} icon={<BeakerIcon className="w-5 h-5"/>} className="md:col-span-2">
@@ -402,15 +411,74 @@ const TechTrajectoryCard: React.FC<{ trajectory: TechTrajectory }> = ({ trajecto
 };
 
 
-// --- Main Component ---
+// --- Inline Analysis Modal ---
+const InlineStockAnalysisModal: React.FC<{
+    isOpen: boolean;
+    isLoading: boolean;
+    progress: number;
+    report: StockAnalysisReport | null;
+    error: string | null;
+    onClose: () => void;
+}> = ({ isOpen, isLoading, progress, report, error, onClose }) => {
+    const { t } = useI18n();
+    if (!isOpen) return null;
 
+    const modalTitle = report?.companyProfile.name || t('stockAnalysisInput.title');
+
+    return (
+        <div 
+            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-40 animate-fade-in no-print" 
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inline-stock-analysis-title"
+        >
+            <div 
+                className="bg-white/95 rounded-2xl shadow-floating w-[95vw] h-[90vh] max-w-5xl flex flex-col" 
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
+                    <h2 id="inline-stock-analysis-title" className="text-xl font-bold text-gray-800">{modalTitle}</h2>
+                    <button onClick={onClose} className="p-2 rounded-full text-gray-500 hover:bg-gray-100">
+                        <XIcon className="w-6 h-6" />
+                    </button>
+                </div>
+                <div className="flex-grow overflow-y-auto">
+                    {isLoading && <Loader taskType="stock" currentStep={progress} />}
+                    {error && <div className="p-8 text-center text-red-600 bg-red-50/80 rounded-lg m-4">{error}</div>}
+                    {report && <StockAnalysisResult report={report} onNewAnalysis={onClose} />}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// --- Main Component ---
 interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
   onNewAnalysis: () => void;
+  onAnalyzeStock: (query: string) => void;
+  inlineReport: StockAnalysisReport | null;
+  isInlineLoading: boolean;
+  inlineProgress: number;
+  inlineError: string | null;
+  onClearInlineReport: () => void;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNewAnalysis }) => {
+
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ 
+    report, 
+    userInput, 
+    onNewAnalysis, 
+    onAnalyzeStock,
+    inlineReport,
+    isInlineLoading,
+    inlineProgress,
+    inlineError,
+    onClearInlineReport
+}) => {
   const { t } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -494,6 +562,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNe
 
   return (
     <div className="space-y-6 animate-reveal-scale">
+      <InlineStockAnalysisModal
+          isOpen={isInlineLoading || !!inlineReport || !!inlineError}
+          isLoading={isInlineLoading}
+          progress={inlineProgress}
+          report={inlineReport}
+          error={inlineError}
+          onClose={onClearInlineReport}
+      />
       {isPreparingPdf && (
         <div className="no-print fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-2xl p-8 shadow-floating text-center">
@@ -601,7 +677,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNe
                     />
                 )}
                 
-                {report.competitiveLandscape && <CompetitiveLandscapeCard landscape={report.competitiveLandscape} />}
+                {report.competitiveLandscape && <CompetitiveLandscapeCard landscape={report.competitiveLandscape} onAnalyzeStock={onAnalyzeStock} />}
                 {report.catalystTracker && <CatalystTrackerCard tracker={report.catalystTracker} />}
                 {report.policyAnalysis && <PolicyAnalysisCard analysis={report.policyAnalysis} />}
                 {report.techTrajectory && <TechTrajectoryCard trajectory={report.techTrajectory} />}
@@ -653,7 +729,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ report, userInput, onNe
                 )}
             </div>
             
-            {report.tieredSuggestions && <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} />}
+            {report.tieredSuggestions && <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} onAnalyzeStock={onAnalyzeStock} />}
 
             {report.sources && report.sources.length > 0 && (
                 <Card title={t('analysisResult.sourcesTitle')} icon={<DocumentArrowDownIcon className="w-5 h-5"/>}>

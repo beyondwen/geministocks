@@ -507,17 +507,22 @@ export const getHotStocksFromAI = async (locale: Locale, isRealtimeSearchEnabled
     throw new Error('AI returned an invalid format for hot stocks.');
 };
 
+const getFindLeaderInstruction = (locale: Locale) => {
+    const schema = `{ "name": "string", "ticker": "string", "sector": "string", "market": "string", "analysis": "string (A concise analysis of its market leadership)", "metrics": { "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "recentPerformance": "string" } }`;
+    if (locale === 'zh') {
+        return `你是一位顶级的金融分析师。你的任务是分析用户提供的查询。如果查询是一家具体的上市公司（如“英伟达”、“AAPL”），请识别其精确信息。如果查询是一个行业、赛道或概念（如“AI半导体”、“新能源汽车”），请找出该领域无可争议的市场领导者并提供其详细信息。使用网络搜索获取最新数据。如果某个指标不适用，请使用 "N/A"。必须严格以JSON格式回应。所有内容为简体中文。Schema: ${schema}`;
+    }
+    return `You are a top-tier financial analyst. Your task is to analyze the provided query. If the query is a specific, publicly traded company (e.g., "NVIDIA", "AAPL"), identify its precise details. If the query is an industry, sector, or concept (e.g., "AI semiconductors", "electric vehicles"), identify the undisputed market leader in that area and provide its details. Use web search for the latest data. If a metric is not applicable, use "N/A". You MUST respond strictly in JSON format. All content in English. Schema: ${schema}`;
+};
 
-const getPositionalWarfareSystemInstructions = (locale: Locale) => {
+const getFollowerAnalysisInstructions = (locale: Locale) => {
     const langConfig = {
         zh: {
-            step1System: `You are a top-tier financial analyst. Your task is to identify the precise details of the provided stock query and provide a brief analysis of its market leadership. Use web search for the latest data. If a metric is not applicable (e.g., P/E for a non-profitable company), use "N/A". Respond strictly in JSON format. All content in Simplified Chinese. Schema: { "name": "string", "ticker": "string", "sector": "string", "market": "string", "analysis": "string (关于其市场领导地位的简要分析)", "metrics": { "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "recentPerformance": "string" } }`,
             step2System: `You are a sector screener AI. Given a leading stock's profile, find 3 to 5 other publicly traded companies in the same specific sector that could be potential "follower" candidates. Focus on companies with a "lower position" (e.g., smaller market cap). For each, provide its name, ticker, and market. Respond strictly in JSON format. All content in Simplified Chinese. Schema: { "candidates": [{ "name": "string", "ticker": "string", "market": "string" }] }`,
             step3System: `You are a financial data retrieval AI. For the given list of companies, fetch their latest key financial metrics using web search. Provide market cap, P/E ratio, recent revenue growth (YoY), and recent stock performance (last 3 months). If a metric is not applicable, use "N/A". Respond strictly in JSON format. All content in Simplified Chinese. Schema: { "detailedCandidates": [{ "name": "string", "ticker": "string", "market": "string", "metrics": { "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "recentPerformance": "string" } }] }`,
             step4System: `You are a top-tier fund manager specializing in the "Positional Warfare Strategy". You have been given a leader's profile and potential follower candidates with metrics. Generate a comprehensive strategic report. Include a "strategistSummary". For EACH follower, provide "comparativeAnalysis", "investmentThesis", "potentialCatalysts", "risks", and a "positioningScore" (1-10 with reasoning). Respond strictly in JSON format. All content in Simplified Chinese. Schema: { "strategistSummary": "string", "followerAnalysis": [ { "ticker": "string", "comparativeAnalysis": "string", "investmentThesis": "string", "potentialCatalysts": ["string"], "risks": ["string"], "positioningScore": { "score": "number", "reasoning": "string" } } ] }`,
         },
         en: {
-            step1System: `You are a top-tier financial analyst. Your task is to identify the precise details of the provided stock query and provide a brief analysis of its market leadership. Use web search for the latest data. If a metric is not applicable (e.g., P/E for a non-profitable company), use "N/A". Respond strictly in JSON format. All content in English. Schema: { "name": "string", "ticker": "string", "sector": "string", "market": "string", "analysis": "string (A concise analysis of its market leadership)", "metrics": { "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "recentPerformance": "string" } }`,
             step2System: `You are a sector screener AI. Given a leading stock's profile, find 3 to 5 other publicly traded companies in the same specific sector that could be potential "follower" candidates. Focus on companies with a "lower position" (e.g., smaller market cap). For each, provide its name, ticker, and market. Respond strictly in JSON format. All content in English. Schema: { "candidates": [{ "name": "string", "ticker": "string", "market": "string" }] }`,
             step3System: `You are a financial data retrieval AI. For the given list of companies, fetch their latest key financial metrics using web search. Provide market cap, P/E ratio, recent revenue growth (YoY), and recent stock performance (last 3 months). If a metric is not applicable, use "N/A". Respond strictly in JSON format. All content in English. Schema: { "detailedCandidates": [{ "name": "string", "ticker": "string", "market": "string", "metrics": { "marketCap": "string", "peRatio": "string", "revenueGrowth": "string", "recentPerformance": "string" } }] }`,
             step4System: `You are a top-tier fund manager specializing in the "Positional Warfare Strategy". You have been given a leader's profile and potential follower candidates with metrics. Generate a comprehensive strategic report. Include a "strategistSummary". For EACH follower, provide "comparativeAnalysis", "investmentThesis", "potentialCatalysts", "risks", and a "positioningScore" (1-10 with reasoning). Respond strictly in JSON format. All content in English. Schema: { "strategistSummary": "string", "followerAnalysis": [ { "ticker": "string", "comparativeAnalysis": "string", "investmentThesis": "string", "potentialCatalysts": ["string"], "risks": ["string"], "positioningScore": { "score": "number", "reasoning": "string" } } ] }`,
@@ -526,30 +531,37 @@ const getPositionalWarfareSystemInstructions = (locale: Locale) => {
     return langConfig[locale];
 }
 
-export const getPositionalWarfareAnalysis = async (
-    leaderStockQuery: string,
+export const findIndustryLeader = async (
+    query: string,
+    locale: Locale,
+    isRealtimeSearchEnabled: boolean
+): Promise<LeaderStockProfile> => {
+    const modelName = getModelName(isRealtimeSearchEnabled);
+    const systemInstruction = getFindLeaderInstruction(locale);
+    return await callOpenRouterAI(query, systemInstruction, modelName);
+};
+
+export const getPositionalWarfareFollowerAnalysis = async (
+    leaderProfile: LeaderStockProfile,
     onProgress: (stepIndex: number) => void,
     locale: Locale,
     isRealtimeSearchEnabled: boolean
 ): Promise<PositionalWarfareReport> => {
     const modelName = getModelName(isRealtimeSearchEnabled);
-    const { step1System, step2System, step3System, step4System } = getPositionalWarfareSystemInstructions(locale);
+    const { step2System, step3System, step4System } = getFollowerAnalysisInstructions(locale);
 
-    onProgress(0);
-    const leaderProfile: LeaderStockProfile = await callOpenRouterAI(leaderStockQuery, step1System, modelName);
-
-    onProgress(1);
+    onProgress(1); // Screening for followers
     const step2Prompt = locale === 'zh' ? `龙头股票资料: ${JSON.stringify(leaderProfile)}` : `Leader Stock Profile: ${JSON.stringify(leaderProfile)}`;
     const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName);
     const candidates = screeningResult.candidates || [];
     if (candidates.length === 0) throw new Error(locale === 'zh' ? "未能找到合适的潜力补涨股。" : "Could not find suitable follower candidates.");
 
-    onProgress(2);
+    onProgress(2); // Analyzing candidate financials
     const step3Prompt = locale === 'zh' ? `公司列表: ${JSON.stringify(candidates)}` : `Companies List: ${JSON.stringify(candidates)}`;
     const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName);
     const detailedCandidates = metricsResult.detailedCandidates || [];
 
-    onProgress(3);
+    onProgress(3); // Synthesizing final strategy
     const step4Prompt = locale === 'zh' ? `龙头股票: ${JSON.stringify(leaderProfile)}\n\n潜力补涨股及指标: ${JSON.stringify(detailedCandidates)}` : `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
     const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName);
     
@@ -566,7 +578,7 @@ export const getPositionalWarfareAnalysis = async (
     const finalReport: PositionalWarfareReport = {
         strategistSummary: finalAnalysis.strategistSummary,
         leaderStock: leaderProfile,
-        followerCandidates: finalFollowers as any[], // Casting as we've built the object to match the type
+        followerCandidates: finalFollowers as any[],
     };
 
     return finalReport;
