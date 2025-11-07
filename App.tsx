@@ -567,7 +567,7 @@ const MainPage: React.FC = () => {
   
   // State for Q&A Analysis
   const [qandaQuery, setQandaQuery] = useState<string>('');
-  const [qandaResult, setQandaResult] = useState<QandAResultItem[] | null>(null);
+  const [qandaResult, setQandaResult] = useState<QandAResultItem | null>(null);
   const [isQandaLoading, setIsQandaLoading] = useState<boolean>(false);
   const [qandaError, setQandaError] = useState<string | null>(null);
   const [qandaUsage, setQandaUsage] = useState({ count: 0, date: '' });
@@ -978,7 +978,12 @@ const MainPage: React.FC = () => {
 
     try {
         const result = await getSemanticSearchResult(query, locale);
-        setQandaResult(result);
+        if (!result.answer) {
+             setQandaResult(null); // Treat empty answer as no result
+             setQandaError(t('qandaResult.noResults'));
+        } else {
+             setQandaResult(result);
+        }
         
         // This is a free action, but we track daily usage
         const newUsage = { ...qandaUsage, count: qandaUsage.count + 1 };
@@ -1432,7 +1437,7 @@ const MainPage: React.FC = () => {
                 ) : positionalWarfareReport ? (
                     <PositionalWarfareResult report={positionalWarfareReport} onNewAnalysis={handleNewAnalysis} />
                 ) : qandaResult ? (
-                    <QandAResult results={qandaResult} onNewAnalysis={handleNewAnalysis} />
+                    <QandAResult result={qandaResult} onNewAnalysis={handleNewAnalysis} />
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">

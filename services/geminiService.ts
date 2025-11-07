@@ -607,47 +607,41 @@ export const getPositionalWarfareFollowerAnalysis = async (
     return finalReport;
 };
 
-export const getSemanticSearchResult = async (query: string, locale: Locale): Promise<QandAResultItem[]> => {
+export const getSemanticSearchResult = async (query: string, locale: Locale): Promise<QandAResultItem> => {
     if (!query.trim()) {
-        return [];
+        return { rephrasedQuestion: query, answer: "" };
     }
 
     const getQandASystemInstruction = (locale: Locale): string => {
-        const schema = `[{
-            "question": "string (A rephrased, specific question that the answer addresses.)",
-            "answer": "string (A clear, natural language answer to the question.)",
-            "sql": "string (A hypothetical SQL query to retrieve the data.)",
-            "table": "string (A sample data table in CSV format as a string, including a header row.)"
-        }]`;
+        const schema = `{
+            "rephrasedQuestion": "string (A rephrased, specific question that your answer addresses.)",
+            "answer": "string (A professional, insightful, and clear answer to the question. Use Markdown for formatting if necessary, like lists or bold text.)"
+        }`;
 
         const languageInstruction = locale === 'zh'
             ? 'All content must be in Simplified Chinese.'
             : 'All content must be in English.';
 
-        return `You are an advanced financial data analysis AI named FinQuery. Your task is to answer user questions about finance, economics, and publicly traded companies.
-You MUST provide answers based on your general knowledge.
-For each relevant answer you provide, you MUST also generate a *hypothetical* SQL query that could have been used to retrieve the data from a fictional, well-structured financial database.
-You MUST also generate a small, simplified sample data table in CSV format (as a string, including a header row) that illustrates the kind of data the SQL query would run against.
-The user's original question might be broad; your returned "question" field should be a rephrased, more specific question that your answer addresses.
-If the user's question is NOT related to finance, economics, or public companies, or if you CANNOT provide a confident answer, you MUST respond with an empty JSON array: [].
-You MUST ONLY respond with a JSON object that strictly adheres to the provided schema. Do not add any extra text, explanations, or markdown formatting.
-The user is asking in ${locale === 'zh' ? 'Simplified Chinese' : 'English'}. Your answer, including all fields in the JSON, MUST be in ${languageInstruction}.
-The required JSON schema for your response is an array of objects: ${schema}`;
+        return `You are a world-class financial analyst AI. Your task is to provide a professional and insightful answer to the user's question about finance, economics, or public companies.
+You MUST provide answers based on your general knowledge and analytical capabilities.
+If the user's question is NOT related to finance, economics, or public companies, or if you CANNOT provide a confident answer, you MUST respond with a JSON object containing an empty string for the 'answer' field.
+You MUST ONLY respond with a JSON object that strictly adheres to the provided schema. Do not add any extra text, explanations, or markdown formatting outside the JSON structure.
+The user is asking in ${locale === 'zh' ? 'Simplified Chinese' : 'English'}. Your entire response, including all fields in the JSON, MUST be in ${languageInstruction}.
+The required JSON schema for your response is: ${schema}`;
     };
 
     const systemInstruction = getQandASystemInstruction(locale);
-    // Use the specific model requested by the user for the Q&A feature.
     const modelName = 'google/gemini-2.5-flash';
 
     try {
-        const results = await callOpenRouterAI(query, systemInstruction, modelName);
+        const result = await callOpenRouterAI(query, systemInstruction, modelName);
 
-        if (Array.isArray(results)) {
-            return results as QandAResultItem[];
+        if (result && typeof result.answer === 'string') {
+            return result as QandAResultItem;
         }
         
-        console.warn("AI returned a non-array response for Q&A, returning empty.", results);
-        return [];
+        console.warn("AI returned a non-conforming response for Q&A, returning empty.", result);
+        return { rephrasedQuestion: query, answer: "" };
 
     } catch (error) {
         console.error("Error calling OpenRouter AI for semantic search:", error);
