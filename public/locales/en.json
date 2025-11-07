@@ -188,6 +188,12 @@
     "sqlQuery": "SQL Query",
     "sourceTable": "Source Data Table"
   },
+  "investmentTidbit": {
+    "title": "Today's Investment Tidbit",
+    "loading": "Generating today's tidbit...",
+    "error": "Could not fetch today's tidbit, please try again later.",
+    "unlockPrompt": "Unlock the real-time search feature to get a daily AI investment tidbit."
+  },
   "scoreDisplay": {
     "title": "Investment Attractiveness Score"
   },

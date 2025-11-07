@@ -657,3 +657,30 @@ The required JSON schema for your response is an array of objects: ${schema}`;
         throw new Error(`An unknown error occurred during the AI Q&A call.`);
     }
 };
+
+export const getInvestmentTidbit = async (locale: Locale): Promise<string> => {
+    const systemInstruction = (locale: Locale): string => {
+        const schema = `{ "tidbit": "string (A single, short, interesting, non-headline investment-related sentence.)" }`;
+        const languageInstruction = locale === 'zh' 
+            ? '所有内容必须是简体中文。' 
+            : 'All content must be in English.';
+
+        return `You are a financial analyst AI that finds interesting, non-obvious investment leads from today's global financial information.
+        Your task is to find one such lead. Examples: 'Drought in Brazil reduces coffee bean production, which could put pressure on Starbucks' supply chain costs,' or 'The popularity of a sci-fi movie has renewed interest in the "quantum computing" concept stocks behind it.'
+        You MUST respond strictly with a JSON object containing a single sentence. Do not add any extra text or explanations. ${languageInstruction}
+        JSON Schema: ${schema}`;
+    };
+
+    // This feature requires up-to-date information, so we always use the online model.
+    const modelName = getModelName(true); 
+    const instruction = systemInstruction(locale);
+    const prompt = "Please provide one interesting, non-headline investment lead for today.";
+
+    const response = await callOpenRouterAI(prompt, instruction, modelName);
+    
+    if (response && typeof response.tidbit === 'string') {
+        return response.tidbit;
+    }
+    
+    throw new Error('AI returned an invalid format for the investment tidbit.');
+};

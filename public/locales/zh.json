@@ -188,6 +188,12 @@
     "sqlQuery": "SQL 查询",
     "sourceTable": "来源数据表"
   },
+  "investmentTidbit": {
+    "title": "今日投资灵感",
+    "loading": "正在生成今日灵感...",
+    "error": "无法获取今日灵感，请稍后再试。",
+    "unlockPrompt": "解锁实时搜索功能，即可每日获取一条 AI 投资灵感。"
+  },
   "scoreDisplay": {
     "title": "投资吸引力评分"
   },

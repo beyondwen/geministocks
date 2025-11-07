@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 // FIX: Import `getHotStocksFromAI` to resolve reference error.
-import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI, getSemanticSearchResult } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI, getSemanticSearchResult, getInvestmentTidbit } from './services/geminiService';
 // FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile, QandAResultItem } from './types';
@@ -27,6 +27,7 @@ import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
 import QandAInput from './components/QandAInput';
 import QandAResult from './components/QandAResult';
+import InvestmentTidbit from './components/InvestmentTidbit';
 
 
 // --- Constants ---
@@ -42,6 +43,7 @@ const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
 const BANNER_CLOSED_SESSION_KEY = 'gemini-daily-credit-banner-closed';
 const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
 const QANDA_USAGE_KEY = 'gemini-qanda-usage';
+const INVESTMENT_TIDBIT_KEY = 'gemini-investment-tidbit';
 
 
 const MAX_ANALYSES_PER_HOUR = 12;
@@ -589,6 +591,11 @@ const MainPage: React.FC = () => {
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [redemptionCode, setRedemptionCode] = useState('');
   
+  // State for Investment Tidbit
+  const [investmentTidbit, setInvestmentTidbit] = useState<string | null>(null);
+  const [isTidbitLoading, setIsTidbitLoading] = useState<boolean>(true);
+  const [tidbitError, setTidbitError] = useState<string | null>(null);
+  
   // Effect to hide toast after a delay
   useEffect(() => {
     if (toast) {
@@ -719,6 +726,42 @@ const MainPage: React.FC = () => {
     };
     fetchHotStocks();
   }, [locale, isRealtimeSearchEnabled]);
+
+  // Fetch daily investment tidbit
+  useEffect(() => {
+    const fetchTidbit = async () => {
+        setIsTidbitLoading(true);
+        setTidbitError(null);
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const storedTidbitData = localStorage.getItem(INVESTMENT_TIDBIT_KEY);
+
+            if (storedTidbitData) {
+                const { date, tidbit, locale: storedLocale } = JSON.parse(storedTidbitData);
+                if (date === today && tidbit && storedLocale === locale) {
+                    setInvestmentTidbit(tidbit);
+                    setIsTidbitLoading(false);
+                    return;
+                }
+            }
+
+            if (hasPaid) {
+                const tidbitText = await getInvestmentTidbit(locale); 
+                setInvestmentTidbit(tidbitText);
+                localStorage.setItem(INVESTMENT_TIDBIT_KEY, JSON.stringify({ date: today, tidbit: tidbitText, locale }));
+            } else {
+                setInvestmentTidbit(t('investmentTidbit.unlockPrompt'));
+            }
+        } catch (err) {
+            console.error("Failed to fetch investment tidbit:", err);
+            setTidbitError(t('investmentTidbit.error'));
+        } finally {
+            setIsTidbitLoading(false);
+        }
+    };
+
+    fetchTidbit();
+  }, [locale, hasPaid, t]);
 
   // SEO: Set meta tags and html lang
   useEffect(() => {
@@ -1387,6 +1430,11 @@ const MainPage: React.FC = () => {
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">
+                    <InvestmentTidbit 
+                        tidbit={investmentTidbit} 
+                        isLoading={isTidbitLoading} 
+                        error={tidbitError} 
+                    />
                     {activeTab === 'topic' && (
                        <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
                           {isCaseStudyVisible && (
