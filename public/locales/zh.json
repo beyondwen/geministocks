@@ -30,7 +30,8 @@
   "tabs": {
     "topic": "挖掘",
     "stock": "个股",
-    "positional": "卡位"
+    "positional": "卡位",
+    "qanda": "问答"
   },
   "errors": {
     "title": "分析出错",
@@ -39,7 +40,8 @@
     "analysisFailed": "分析失败：{{message}} 😭",
     "unknownError": "发生未知错误。🤯",
     "emptyStock": "股票代码或名称为必填项。",
-    "emptyLeaderStock": "龙头股票为必填项。"
+    "emptyLeaderStock": "龙头股票为必填项。",
+    "emptyQandA": "问题为必填项。"
   },
   "footer": {
     "accountName": "小声读书",
@@ -116,6 +118,9 @@
       "正在分析候选股财务指标... 📊",
       "正在生成核心观点总结... ⚔️"
     ],
+    "qanda": {
+      "searching": "正在知识库中检索..."
+    },
     "quotes": [
       "在别人贪婪时恐惧，在别人恐惧时贪婪。 - 沃伦·巴菲特",
       "股票市场是一个将钱从没耐心的人转移到有耐心的人的设备。 - 沃伦·巴菲特",
@@ -166,6 +171,22 @@
     "footer": "本报告由「超级挖掘机」分析生成",
     "disclaimer": "投资有风险，决策需谨慎",
     "noDataAvailable": "该部分数据暂无。"
+  },
+  "qandaInput": {
+    "title": "智能问答",
+    "description": "输入具体的金融问题，从知识库中获取精准答案。",
+    "placeholder": "例如：贵州茅台2023年的净利润是多少？",
+    "button": "搜索",
+    "limitReached": "您今日的 3 次免费提问已用完，请明天再来。",
+    "queriesLeft": "今日还剩 {{count}} 次免费提问。"
+  },
+  "qandaResult": {
+    "title": "检索结果",
+    "noResults": "未能从知识库中找到相关答案。请尝试其他问题，或使用“挖掘”功能进行开放式分析。",
+    "matchedQuestion": "匹配的问题",
+    "answer": "答案",
+    "sqlQuery": "SQL 查询",
+    "sourceTable": "来源数据表"
   },
   "scoreDisplay": {
     "title": "投资吸引力评分"

@@ -385,6 +385,14 @@ export interface PositionalWarfareHistoryEntry {
   report: PositionalWarfareReport;
 }
 
+// --- New Types for Q&A (Semantic Search) ---
+export interface QandAResultItem {
+  question: string;
+  answer: string;
+  sql: string;
+  table: string; // CSV data as a string
+}
+
 // --- Deprecated Types (Kept for reference, can be removed later) ---
 /** @deprecated Use TopicHistoryEntry instead */
 export type HistoryEntry = TopicHistoryEntry;

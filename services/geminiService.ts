@@ -1,5 +1,6 @@
-import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
+import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus, QandAResultItem } from '../types';
 import type { Locale } from '../hooks/useI18n';
+import { GoogleGenAI, Type } from '@google/genai';
 
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -79,10 +80,32 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         // FIX: Clean the response to handle models that wrap JSON in Markdown or other text.
         let jsonString = content;
         const firstBraceIndex = jsonString.indexOf('{');
-        const lastBraceIndex = jsonString.lastIndexOf('}');
+        const firstBracketIndex = jsonString.indexOf('[');
+        
+        let startIndex = -1;
+        if (firstBraceIndex !== -1 && firstBracketIndex !== -1) {
+            startIndex = Math.min(firstBraceIndex, firstBracketIndex);
+        } else if (firstBraceIndex !== -1) {
+            startIndex = firstBraceIndex;
+        } else {
+            startIndex = firstBracketIndex;
+        }
 
-        if (firstBraceIndex !== -1 && lastBraceIndex > firstBraceIndex) {
-            jsonString = jsonString.substring(firstBraceIndex, lastBraceIndex + 1);
+        const lastBraceIndex = jsonString.lastIndexOf('}');
+        const lastBracketIndex = jsonString.lastIndexOf(']');
+        
+        let endIndex = -1;
+        if (lastBraceIndex !== -1 && lastBracketIndex !== -1) {
+            endIndex = Math.max(lastBraceIndex, lastBracketIndex);
+        } else if (lastBraceIndex !== -1) {
+            endIndex = lastBraceIndex;
+        } else {
+            endIndex = lastBracketIndex;
+        }
+
+
+        if (startIndex !== -1 && endIndex > startIndex) {
+            jsonString = jsonString.substring(startIndex, endIndex + 1);
         }
 
         // FIX: The AI model can sometimes generate malformed JSON.
@@ -582,4 +605,55 @@ export const getPositionalWarfareFollowerAnalysis = async (
     };
 
     return finalReport;
+};
+
+export const getSemanticSearchResult = async (query: string, locale: Locale): Promise<QandAResultItem[]> => {
+    if (!query.trim()) {
+        return [];
+    }
+
+    const getQandASystemInstruction = (locale: Locale): string => {
+        const schema = `[{
+            "question": "string (A rephrased, specific question that the answer addresses.)",
+            "answer": "string (A clear, natural language answer to the question.)",
+            "sql": "string (A hypothetical SQL query to retrieve the data.)",
+            "table": "string (A sample data table in CSV format as a string, including a header row.)"
+        }]`;
+
+        const languageInstruction = locale === 'zh'
+            ? 'All content must be in Simplified Chinese.'
+            : 'All content must be in English.';
+
+        return `You are an advanced financial data analysis AI named FinQuery. Your task is to answer user questions about finance, economics, and publicly traded companies.
+You MUST provide answers based on your general knowledge.
+For each relevant answer you provide, you MUST also generate a *hypothetical* SQL query that could have been used to retrieve the data from a fictional, well-structured financial database.
+You MUST also generate a small, simplified sample data table in CSV format (as a string, including a header row) that illustrates the kind of data the SQL query would run against.
+The user's original question might be broad; your returned "question" field should be a rephrased, more specific question that your answer addresses.
+If the user's question is NOT related to finance, economics, or public companies, or if you CANNOT provide a confident answer, you MUST respond with an empty JSON array: [].
+You MUST ONLY respond with a JSON object that strictly adheres to the provided schema. Do not add any extra text, explanations, or markdown formatting.
+The user is asking in ${locale === 'zh' ? 'Simplified Chinese' : 'English'}. Your answer, including all fields in the JSON, MUST be in ${languageInstruction}.
+The required JSON schema for your response is an array of objects: ${schema}`;
+    };
+
+    const systemInstruction = getQandASystemInstruction(locale);
+    // Use the specific model requested by the user for the Q&A feature.
+    const modelName = 'google/gemini-2.5-flash';
+
+    try {
+        const results = await callOpenRouterAI(query, systemInstruction, modelName);
+
+        if (Array.isArray(results)) {
+            return results as QandAResultItem[];
+        }
+        
+        console.warn("AI returned a non-array response for Q&A, returning empty.", results);
+        return [];
+
+    } catch (error) {
+        console.error("Error calling OpenRouter AI for semantic search:", error);
+        if (error instanceof Error) {
+            throw new Error(`AI Q&A failed. Reason: ${error.message}`);
+        }
+        throw new Error(`An unknown error occurred during the AI Q&A call.`);
+    }
 };
