@@ -447,12 +447,13 @@ type TabButtonProps = {
   isActive: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  badge?: string;
 };
 
-const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) => (
+const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children, badge }) => (
     <button
         onClick={onClick}
-        className={`flex items-center justify-center gap-x-2 px-4 py-1.5 text-sm font-semibold transition-colors duration-200 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black border ${
+        className={`relative flex items-center justify-center gap-x-2 px-4 py-1.5 text-sm font-semibold transition-colors duration-200 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black border ${
             isActive
             ? 'bg-white text-black shadow-sm border-stone-300'
             : 'text-gray-600 border-stone-200/90 hover:bg-stone-100/80 hover:border-stone-300'
@@ -461,6 +462,11 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, children }) =>
         aria-selected={isActive}
     >
         {children}
+        {badge && (
+            <span className="absolute -top-1.5 -right-1.5 text-xs font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 transform scale-75">
+              {badge}
+            </span>
+        )}
     </button>
 );
 
@@ -1288,7 +1294,7 @@ const MainPage: React.FC = () => {
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
-                <div className="flex space-x-2" role="tablist" aria-label="分析模式">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                        <DocumentTextIcon className="w-5 h-5" />
                        <span>{t('tabs.topic')}</span>
@@ -1301,7 +1307,7 @@ const MainPage: React.FC = () => {
                       <SwordsIcon className="w-5 h-5" />
                       <span>{t('tabs.positional')}</span>
                     </TabButton>
-                    <TabButton isActive={activeTab === 'qanda'} onClick={() => setActiveTab('qanda')}>
+                    <TabButton isActive={activeTab === 'qanda'} onClick={() => setActiveTab('qanda')} badge="HOT">
                       <QuestionMarkCircleIcon className="w-5 h-5" />
                       <span>{t('tabs.qanda')}</span>
                     </TabButton>
