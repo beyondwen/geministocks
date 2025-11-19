@@ -1,3 +1,4 @@
+
 import { ChartBarIcon, DocumentTextIcon, SparklesIcon } from "./components/icons/Icons";
 
 export interface GroundingSource {
@@ -385,10 +386,10 @@ export interface PositionalWarfareHistoryEntry {
   report: PositionalWarfareReport;
 }
 
-// --- New Types for Q&A (Semantic Search) ---
+// --- Q&A Types ---
 export interface QandAResultItem {
-  rephrasedQuestion: string;
-  answer: string;
+    rephrasedQuestion: string;
+    answer: string;
 }
 
 // --- Deprecated Types (Kept for reference, can be removed later) ---

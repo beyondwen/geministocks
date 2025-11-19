@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 // FIX: Import `getHotStocksFromAI` to resolve reference error.
-import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI, getSemanticSearchResult } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI } from './services/geminiService';
 // FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
-import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile, QandAResultItem } from './types';
+import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
@@ -25,8 +25,6 @@ import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
-import QandAInput from './components/QandAInput';
-import QandAResult from './components/QandAResult';
 
 
 // --- Constants ---
@@ -528,7 +526,7 @@ const LeaderConfirmationModal: React.FC<LeaderConfirmationModalProps> = ({ isOpe
 };
 
 
-type PendingAnalysis = { type: 'topic' | 'stock' | 'positional' | 'qanda'; query: string };
+type PendingAnalysis = { type: 'topic' | 'stock' | 'positional'; query: string };
 
 const MainPage: React.FC = () => {
   const { t, locale } = useI18n();
@@ -561,13 +559,6 @@ const MainPage: React.FC = () => {
   const [potentialLeader, setPotentialLeader] = useState<LeaderStockProfile | null>(null);
   const [isConfirmingLeader, setIsConfirmingLeader] = useState<boolean>(false);
   
-  // State for Q&A Analysis
-  const [qandaQuery, setQandaQuery] = useState<string>('');
-  const [qandaResult, setQandaResult] = useState<QandAResultItem | null>(null);
-  const [isQandaLoading, setIsQandaLoading] = useState<boolean>(false);
-  const [qandaError, setQandaError] = useState<string | null>(null);
-
-
   // State for Inline Stock Analysis
   const [inlineStockAnalysisReport, setInlineStockAnalysisReport] = useState<StockAnalysisReport | null>(null);
   const [isInlineStockLoading, setIsInlineStockLoading] = useState<boolean>(false);
@@ -575,7 +566,7 @@ const MainPage: React.FC = () => {
   const [inlineStockError, setInlineStockError] = useState<string | null>(null);
 
   // Common State
-  const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional' | 'qanda'>('topic');
+  const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isUserGuideModalOpen, setIsUserGuideModalOpen] = useState(false);
@@ -754,11 +745,9 @@ const MainPage: React.FC = () => {
       setAnalysisReport(null);
       setStockAnalysisReport(null);
       setPositionalWarfareReport(null);
-      setQandaResult(null);
       setError(null);
       setStockError(null);
       setPositionalWarfareError(null);
-      setQandaError(null);
   }
 
   const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
@@ -898,30 +887,6 @@ const MainPage: React.FC = () => {
     }
   }, [potentialLeader, leaderStockQuery, positionalWarfareHistory, locale, t, cost, isPaywalled, isRealtimeSearchEnabled]);
 
-  const handleQandAAnalyze = useCallback(async (query: string) => {
-    if (!query.trim()) { setQandaError(t('errors.emptyQandA')); return; }
-    
-    setActiveTab('qanda');
-    setIsQandaLoading(true);
-    handleClearAllResults();
-
-    try {
-        const result = await getSemanticSearchResult(query, locale);
-        if (!result.answer) {
-             setQandaResult(null); // Treat empty answer as no result
-             setQandaError(t('qandaResult.noResults'));
-        } else {
-             setQandaResult(result);
-        }
-        
-    } catch (err) {
-        console.error(err);
-        const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
-        setQandaError(errorMessage);
-    } finally {
-        setIsQandaLoading(false);
-    }
-  }, [locale, t]);
 
   const handleInlineStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (isPaywalled && !bypassCreditCheck) {
@@ -971,7 +936,6 @@ const MainPage: React.FC = () => {
         const { type, query } = pendingAnalysis;
         setTimeout(() => {
             if (type === 'topic') handleAnalyze(query, true);
-            else if (type === 'qanda') handleQandAAnalyze(query);
             else if (type === 'stock') {
                 // If an inline analysis was pending, trigger it. Otherwise, trigger the main one.
                 if (analysisReport) {
@@ -1017,11 +981,9 @@ const MainPage: React.FC = () => {
     // Clear other states
     setStockAnalysisReport(null);
     setPositionalWarfareReport(null);
-    setQandaResult(null);
     setError(null);
     setStockError(null);
     setPositionalWarfareError(null);
-    setQandaError(null);
     setIsLoading(false); // Ensure loader is off
     
     setActiveTab('topic');
@@ -1152,8 +1114,8 @@ const MainPage: React.FC = () => {
   const showLatestNews = locale === 'zh';
   const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
   
-  const noReportLoaded = !analysisReport && !stockAnalysisReport && !positionalWarfareReport && !qandaResult;
-  const isLoadingAny = isLoading || isStockLoading || isPositionalWarfareLoading || isFindingLeader || isQandaLoading;
+  const noReportLoaded = !analysisReport && !stockAnalysisReport && !positionalWarfareReport;
+  const isLoadingAny = isLoading || isStockLoading || isPositionalWarfareLoading || isFindingLeader;
   const showDashboard = noReportLoaded && !isLoadingAny;
 
   return (
@@ -1232,7 +1194,7 @@ const MainPage: React.FC = () => {
             </div>
 
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="tablist" aria-label="分析模式">
+                <div className="grid grid-cols-3 sm:grid-cols-3 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
                        <DocumentTextIcon className="w-5 h-5" />
                        <span>{t('tabs.topic')}</span>
@@ -1244,10 +1206,6 @@ const MainPage: React.FC = () => {
                     <TabButton isActive={activeTab === 'positional'} onClick={() => setActiveTab('positional')}>
                       <SwordsIcon className="w-5 h-5" />
                       <span>{t('tabs.positional')}</span>
-                    </TabButton>
-                    <TabButton isActive={activeTab === 'qanda'} onClick={() => setActiveTab('qanda')} badge="HOT">
-                      <QuestionMarkCircleIcon className="w-5 h-5" />
-                      <span>{t('tabs.qanda')}</span>
                     </TabButton>
                 </div>
                 <div className="flex items-center gap-x-4 sm:gap-x-6">
@@ -1314,21 +1272,11 @@ const MainPage: React.FC = () => {
                         />
                     </div>
                 )}
-                {activeTab === 'qanda' && (
-                    <div className="space-y-8 animate-fade-in" role="tabpanel">
-                        <QandAInput
-                          query={qandaQuery}
-                          setQuery={setQandaQuery}
-                          onAnalyze={() => handleQandAAnalyze(qandaQuery)}
-                          isLoading={isQandaLoading}
-                        />
-                    </div>
-                )}
                 
                 {/* --- RESULTS / DASHBOARD --- */}
                 {isLoadingAny ? (
                   <Loader 
-                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isQandaLoading ? 'qanda' : isFindingLeader ? undefined : 'positional'}
+                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isFindingLeader ? undefined : 'positional'}
                     currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
                   />
                 ) : error ? (
@@ -1346,11 +1294,6 @@ const MainPage: React.FC = () => {
                         <p className="font-semibold">{t('errors.title')}</p>
                         <p className="text-sm mt-1">{positionalWarfareError}</p>
                     </div>
-                ) : qandaError ? (
-                    <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
-                        <p className="font-semibold">{t('errors.title')}</p>
-                        <p className="text-sm mt-1">{qandaError}</p>
-                    </div>
                 ) : analysisReport ? (
                     <AnalysisResult 
                         report={analysisReport} 
@@ -1367,8 +1310,6 @@ const MainPage: React.FC = () => {
                     <StockAnalysisResult report={stockAnalysisReport} onNewAnalysis={handleNewAnalysis} />
                 ) : positionalWarfareReport ? (
                     <PositionalWarfareResult report={positionalWarfareReport} onNewAnalysis={handleNewAnalysis} />
-                ) : qandaResult ? (
-                    <QandAResult result={qandaResult} onNewAnalysis={handleNewAnalysis} />
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">
@@ -1390,8 +1331,7 @@ const MainPage: React.FC = () => {
                         history={
                           activeTab === 'topic' ? topicHistory.map(h => ({ id: h.id, text: h.topic })) :
                           activeTab === 'stock' ? stockHistory.map(h => ({ id: h.id, text: h.query })) :
-                          activeTab === 'positional' ? positionalWarfareHistory.map(h => ({ id: h.id, text: h.leaderStockQuery })) :
-                          [] // No history for Q&A in this version
+                          positionalWarfareHistory.map(h => ({ id: h.id, text: h.leaderStockQuery }))
                         }
                         onSelect={
                           activeTab === 'topic' ? handleSelectTopicHistory :

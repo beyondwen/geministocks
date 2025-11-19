@@ -1,4 +1,4 @@
-import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus, QandAResultItem } from '../types';
+import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -605,64 +605,4 @@ export const getPositionalWarfareFollowerAnalysis = async (
     };
 
     return finalReport;
-};
-
-// Define interfaces for the expected Context7 API response
-interface Context7SearchResult {
-    title: string;
-    url: string;
-    snippet: string;
-}
-
-interface Context7ApiResponse {
-    results: Context7SearchResult[];
-}
-
-export const getSemanticSearchResult = async (query: string, locale: Locale): Promise<QandAResultItem> => {
-    if (!query.trim()) {
-        return { rephrasedQuestion: query, answer: "" };
-    }
-
-    const CONTEXT7_API_KEY = 'ctx7sk-b216260e-80fa-4c15-8c78-7f60d1142589';
-    const API_URL = `https://context7.com/api/v1/search?query=${encodeURIComponent(query)}`;
-
-    try {
-        const response = await fetch(API_URL, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${CONTEXT7_API_KEY}`,
-                'Content-Type': 'application/json',
-            }
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Context7 API request failed with status ${response.status}: ${errorBody}`);
-        }
-
-        const data: Context7ApiResponse = await response.json();
-
-        if (!data.results || data.results.length === 0) {
-            return { rephrasedQuestion: query, answer: "" }; // Return empty answer if no results
-        }
-        
-        // Format the results into a markdown string
-        const answer = data.results
-            .map((result, index) => {
-                return `${index + 1}. **[${result.title}](${result.url})**\n> ${result.snippet}`;
-            })
-            .join('\n\n');
-
-        return {
-            rephrasedQuestion: query, // Use original query as rephrased question
-            answer: answer,
-        };
-
-    } catch (error) {
-        console.error("Error calling Context7 API:", error);
-        if (error instanceof Error) {
-            throw new Error(`Q&A search failed. Reason: ${error.message}`);
-        }
-        throw new Error(`An unknown error occurred during the Q&A search call.`);
-    }
 };
