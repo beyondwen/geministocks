@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 // FIX: Import `getHotStocksFromAI` to resolve reference error.
-import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI, getSemanticSearchResult, getInvestmentTidbit } from './services/geminiService';
+import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI, getSemanticSearchResult } from './services/geminiService';
 // FIX: Import getCaseStudyData to be used when selecting a case study.
 import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile, QandAResultItem } from './types';
@@ -27,7 +27,6 @@ import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
 import QandAInput from './components/QandAInput';
 import QandAResult from './components/QandAResult';
-import InvestmentTidbit from './components/InvestmentTidbit';
 
 
 // --- Constants ---
@@ -42,13 +41,10 @@ const CREDITS_KEY = 'gemini-claude-credits';
 const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
 const BANNER_CLOSED_SESSION_KEY = 'gemini-daily-credit-banner-closed';
 const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
-const QANDA_USAGE_KEY = 'gemini-qanda-usage';
-const INVESTMENT_TIDBIT_KEY = 'gemini-investment-tidbit';
 
 
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
-const DAILY_QANDA_LIMIT = 3;
 
 
 // --- Model Usage Rules ---
@@ -570,7 +566,6 @@ const MainPage: React.FC = () => {
   const [qandaResult, setQandaResult] = useState<QandAResultItem | null>(null);
   const [isQandaLoading, setIsQandaLoading] = useState<boolean>(false);
   const [qandaError, setQandaError] = useState<string | null>(null);
-  const [qandaUsage, setQandaUsage] = useState({ count: 0, date: '' });
 
 
   // State for Inline Stock Analysis
@@ -596,11 +591,6 @@ const MainPage: React.FC = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [redemptionCode, setRedemptionCode] = useState('');
-  
-  // State for Investment Tidbit
-  const [investmentTidbit, setInvestmentTidbit] = useState<string | null>(null);
-  const [isTidbitLoading, setIsTidbitLoading] = useState<boolean>(true);
-  const [tidbitError, setTidbitError] = useState<string | null>(null);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -695,25 +685,6 @@ const MainPage: React.FC = () => {
           setIsBannerVisible(true);
       }
 
-      const storedQandaUsage = localStorage.getItem(QANDA_USAGE_KEY);
-      const today = new Date().toISOString().split('T')[0];
-      if (storedQandaUsage) {
-          const usageData = JSON.parse(storedQandaUsage);
-          if (usageData.date === today) {
-              setQandaUsage(usageData);
-          } else {
-              // Reset for the new day
-              const newUsage = { date: today, count: 0 };
-              localStorage.setItem(QANDA_USAGE_KEY, JSON.stringify(newUsage));
-              setQandaUsage(newUsage);
-          }
-      } else {
-          // Initialize for the first time
-          const newUsage = { date: today, count: 0 };
-          localStorage.setItem(QANDA_USAGE_KEY, JSON.stringify(newUsage));
-          setQandaUsage(newUsage);
-      }
-
     } catch (err) {
       console.error("Failed to load from localStorage", err);
     }
@@ -732,42 +703,6 @@ const MainPage: React.FC = () => {
     };
     fetchHotStocks();
   }, [locale, isRealtimeSearchEnabled]);
-
-  // Fetch daily investment tidbit
-  useEffect(() => {
-    const fetchTidbit = async () => {
-        setIsTidbitLoading(true);
-        setTidbitError(null);
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const storedTidbitData = localStorage.getItem(INVESTMENT_TIDBIT_KEY);
-
-            if (storedTidbitData) {
-                const { date, tidbit, locale: storedLocale } = JSON.parse(storedTidbitData);
-                if (date === today && tidbit && storedLocale === locale) {
-                    setInvestmentTidbit(tidbit);
-                    setIsTidbitLoading(false);
-                    return;
-                }
-            }
-
-            if (hasPaid) {
-                const tidbitText = await getInvestmentTidbit(locale); 
-                setInvestmentTidbit(tidbitText);
-                localStorage.setItem(INVESTMENT_TIDBIT_KEY, JSON.stringify({ date: today, tidbit: tidbitText, locale }));
-            } else {
-                setInvestmentTidbit(t('investmentTidbit.unlockPrompt'));
-            }
-        } catch (err) {
-            console.error("Failed to fetch investment tidbit:", err);
-            setTidbitError(t('investmentTidbit.error'));
-        } finally {
-            setIsTidbitLoading(false);
-        }
-    };
-
-    fetchTidbit();
-  }, [locale, hasPaid, t]);
 
   // SEO: Set meta tags and html lang
   useEffect(() => {
@@ -790,7 +725,6 @@ const MainPage: React.FC = () => {
     return { cost: ANALYSIS_CREDIT_COST, isPaywalled: !hasEnoughCredits };
   }, [credits]);
   
-  const isQandaLimitReached = qandaUsage.count >= DAILY_QANDA_LIMIT;
 
 
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
@@ -967,11 +901,6 @@ const MainPage: React.FC = () => {
   const handleQandAAnalyze = useCallback(async (query: string) => {
     if (!query.trim()) { setQandaError(t('errors.emptyQandA')); return; }
     
-    if (isQandaLimitReached) {
-        setQandaError(t('qandaInput.limitReached'));
-        return;
-    }
-    
     setActiveTab('qanda');
     setIsQandaLoading(true);
     handleClearAllResults();
@@ -985,11 +914,6 @@ const MainPage: React.FC = () => {
              setQandaResult(result);
         }
         
-        // This is a free action, but we track daily usage
-        const newUsage = { ...qandaUsage, count: qandaUsage.count + 1 };
-        localStorage.setItem(QANDA_USAGE_KEY, JSON.stringify(newUsage));
-        setQandaUsage(newUsage);
-
     } catch (err) {
         console.error(err);
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
@@ -997,7 +921,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsQandaLoading(false);
     }
-  }, [locale, t, qandaUsage, isQandaLimitReached]);
+  }, [locale, t]);
 
   const handleInlineStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (isPaywalled && !bypassCreditCheck) {
@@ -1298,6 +1222,15 @@ const MainPage: React.FC = () => {
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
+            <div className="flex justify-center mb-6 animate-fade-in">
+                <div className="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-default">
+                    <SparklesIcon className="w-4 h-4 text-blue-600 animate-pulse" />
+                    <span className="text-xs font-bold text-blue-800 tracking-wide">
+                        {t('header.poweredBy')}
+                    </span>
+                </div>
+            </div>
+
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
@@ -1388,8 +1321,6 @@ const MainPage: React.FC = () => {
                           setQuery={setQandaQuery}
                           onAnalyze={() => handleQandAAnalyze(qandaQuery)}
                           isLoading={isQandaLoading}
-                          isLimitReached={isQandaLimitReached}
-                          queriesLeft={DAILY_QANDA_LIMIT - qandaUsage.count}
                         />
                     </div>
                 )}
@@ -1441,11 +1372,6 @@ const MainPage: React.FC = () => {
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">
-                    <InvestmentTidbit 
-                        tidbit={investmentTidbit} 
-                        isLoading={isTidbitLoading} 
-                        error={tidbitError} 
-                    />
                     {activeTab === 'topic' && (
                        <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
                           {isCaseStudyVisible && (

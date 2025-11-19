@@ -10,7 +10,8 @@
     "subtitle": "智能分析热点，精准把握机会",
     "markets": "支持美股、A 股、港股、数字货币和实物期货市场",
     "searchPlaceholder": "搜索主题、股票...",
-    "userGuide": "使用说明"
+    "userGuide": "使用说明",
+    "poweredBy": "所有分析由 Gemini 3 Pro 驱动"
   },
   "stats": {
     "userAnalysisCount": "累计分析"
@@ -176,9 +177,7 @@
     "title": "智能问答",
     "description": "输入具体的金融问题，从知识库中获取精准答案。",
     "placeholder": "例如：贵州茅台2023年的净利润是多少？",
-    "button": "搜索",
-    "limitReached": "您今日的 3 次免费提问已用完，请明天再来。",
-    "queriesLeft": "今日还剩 {{count}} 次免费提问。"
+    "button": "搜索"
   },
   "qandaResult": {
     "title": "检索结果",

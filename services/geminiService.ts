@@ -11,14 +11,14 @@ const SITE_NAME = '超级挖掘机';
 
 const getModelName = (isRealtimeSearchEnabled: boolean): string => {
     if (isRealtimeSearchEnabled) {
-        return 'openai/gpt-4o-mini:online';
+        return 'google/gemini-2.0-pro-exp-02-05:free';
     }
     return 'openai/gpt-4o-mini';
 };
 
 const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
     if (isRealtimeSearchEnabled) {
-        return 'GPT-4o mini (Online)';
+        return 'Gemini 3 Pro';
     }
     return 'GPT-4o mini';
 };
@@ -607,74 +607,62 @@ export const getPositionalWarfareFollowerAnalysis = async (
     return finalReport;
 };
 
+// Define interfaces for the expected Context7 API response
+interface Context7SearchResult {
+    title: string;
+    url: string;
+    snippet: string;
+}
+
+interface Context7ApiResponse {
+    results: Context7SearchResult[];
+}
+
 export const getSemanticSearchResult = async (query: string, locale: Locale): Promise<QandAResultItem> => {
     if (!query.trim()) {
         return { rephrasedQuestion: query, answer: "" };
     }
 
-    const getQandASystemInstruction = (locale: Locale): string => {
-        const schema = `{
-            "rephrasedQuestion": "string (A rephrased, specific question that your answer addresses.)",
-            "answer": "string (A professional, insightful, and clear answer to the question. Use Markdown for formatting if necessary, like lists or bold text.)"
-        }`;
-
-        const languageInstruction = locale === 'zh'
-            ? 'All content must be in Simplified Chinese.'
-            : 'All content must be in English.';
-
-        return `You are a world-class financial analyst AI. Your task is to provide a professional and insightful answer to the user's question about finance, economics, or public companies.
-You MUST provide answers based on your general knowledge and analytical capabilities.
-If the user's question is NOT related to finance, economics, or public companies, or if you CANNOT provide a confident answer, you MUST respond with a JSON object containing an empty string for the 'answer' field.
-You MUST ONLY respond with a JSON object that strictly adheres to the provided schema. Do not add any extra text, explanations, or markdown formatting outside the JSON structure.
-The user is asking in ${locale === 'zh' ? 'Simplified Chinese' : 'English'}. Your entire response, including all fields in the JSON, MUST be in ${languageInstruction}.
-The required JSON schema for your response is: ${schema}`;
-    };
-
-    const systemInstruction = getQandASystemInstruction(locale);
-    const modelName = 'google/gemini-2.5-flash';
+    const CONTEXT7_API_KEY = 'ctx7sk-b216260e-80fa-4c15-8c78-7f60d1142589';
+    const API_URL = `https://context7.com/api/v1/search?query=${encodeURIComponent(query)}`;
 
     try {
-        const result = await callOpenRouterAI(query, systemInstruction, modelName);
+        const response = await fetch(API_URL, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${CONTEXT7_API_KEY}`,
+                'Content-Type': 'application/json',
+            }
+        });
 
-        if (result && typeof result.answer === 'string') {
-            return result as QandAResultItem;
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`Context7 API request failed with status ${response.status}: ${errorBody}`);
+        }
+
+        const data: Context7ApiResponse = await response.json();
+
+        if (!data.results || data.results.length === 0) {
+            return { rephrasedQuestion: query, answer: "" }; // Return empty answer if no results
         }
         
-        console.warn("AI returned a non-conforming response for Q&A, returning empty.", result);
-        return { rephrasedQuestion: query, answer: "" };
+        // Format the results into a markdown string
+        const answer = data.results
+            .map((result, index) => {
+                return `${index + 1}. **[${result.title}](${result.url})**\n> ${result.snippet}`;
+            })
+            .join('\n\n');
+
+        return {
+            rephrasedQuestion: query, // Use original query as rephrased question
+            answer: answer,
+        };
 
     } catch (error) {
-        console.error("Error calling OpenRouter AI for semantic search:", error);
+        console.error("Error calling Context7 API:", error);
         if (error instanceof Error) {
-            throw new Error(`AI Q&A failed. Reason: ${error.message}`);
+            throw new Error(`Q&A search failed. Reason: ${error.message}`);
         }
-        throw new Error(`An unknown error occurred during the AI Q&A call.`);
+        throw new Error(`An unknown error occurred during the Q&A search call.`);
     }
-};
-
-export const getInvestmentTidbit = async (locale: Locale): Promise<string> => {
-    const systemInstruction = (locale: Locale): string => {
-        const schema = `{ "tidbit": "string (A single, short, interesting, non-headline investment-related sentence.)" }`;
-        const languageInstruction = locale === 'zh' 
-            ? '所有内容必须是简体中文。' 
-            : 'All content must be in English.';
-
-        return `You are a financial analyst AI that finds interesting, non-obvious investment leads from today's global financial information.
-        Your task is to find one such lead. Examples: 'Drought in Brazil reduces coffee bean production, which could put pressure on Starbucks' supply chain costs,' or 'The popularity of a sci-fi movie has renewed interest in the "quantum computing" concept stocks behind it.'
-        You MUST respond strictly with a JSON object containing a single sentence. Do not add any extra text or explanations. ${languageInstruction}
-        JSON Schema: ${schema}`;
-    };
-
-    // This feature requires up-to-date information, so we always use the online model.
-    const modelName = getModelName(true); 
-    const instruction = systemInstruction(locale);
-    const prompt = "Please provide one interesting, non-headline investment lead for today.";
-
-    const response = await callOpenRouterAI(prompt, instruction, modelName);
-    
-    if (response && typeof response.tidbit === 'string') {
-        return response.tidbit;
-    }
-    
-    throw new Error('AI returned an invalid format for the investment tidbit.');
 };

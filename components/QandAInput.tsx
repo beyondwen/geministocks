@@ -7,11 +7,9 @@ interface QandAInputProps {
   setQuery: (query: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
-  isLimitReached: boolean;
-  queriesLeft: number;
 }
 
-const QandAInput: React.FC<QandAInputProps> = ({ query, setQuery, onAnalyze, isLoading, isLimitReached, queriesLeft }) => {
+const QandAInput: React.FC<QandAInputProps> = ({ query, setQuery, onAnalyze, isLoading }) => {
   const { t } = useI18n();
   
   const buttonText = t('qandaInput.button');
@@ -44,13 +42,13 @@ const QandAInput: React.FC<QandAInputProps> = ({ query, setQuery, onAnalyze, isL
               placeholder={t('qandaInput.placeholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              disabled={isLoading || isLimitReached}
+              disabled={isLoading}
               aria-describedby="qanda-input-description"
               autoComplete="off"
             />
             <button
               type="submit"
-              disabled={isLoading || !query.trim() || isLimitReached}
+              disabled={isLoading || !query.trim()}
               className="relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-3 bg-black text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-lg disabled:-translate-y-0 disabled:hover:shadow-lg whitespace-nowrap"
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
@@ -66,13 +64,6 @@ const QandAInput: React.FC<QandAInputProps> = ({ query, setQuery, onAnalyze, isL
                 <span className="relative z-10">{buttonText}</span>
               )}
             </button>
-        </div>
-        <div className="mt-4 text-center">
-            {isLimitReached ? (
-                <p className="text-sm font-semibold text-red-600">{t('qandaInput.limitReached')}</p>
-            ) : (
-                <p className="text-sm text-gray-500">{t('qandaInput.queriesLeft', { count: queriesLeft })}</p>
-            )}
         </div>
       </form>
     </div>
