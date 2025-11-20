@@ -41,24 +41,6 @@ export interface TieredSuggestions {
   watchlist: StockTicker[];
 }
 
-// --- New Types for Association Analysis ---
-export interface AssociationStockNode {
-  name: string;
-  ticker: string;
-  reason: string;
-}
-
-export interface AssociationTopicNode {
-  name: string;
-  reason: string;
-}
-
-export interface AssociationAnalysis {
-  relatedStocks: AssociationStockNode[];
-  // FIX: Corrected type `AssociationNode` to `AssociationTopicNode`
-  relatedTopics: AssociationTopicNode[];
-}
-
 export interface PolymarketData {
   question: string;
   yesOdds: number;
@@ -86,13 +68,6 @@ export interface TimeHorizonStrategy {
   shortTerm: string; // 1-3 months
   mediumTerm: string; // 3-12 months
   longTerm: string; // >1 year
-}
-
-export interface RiskFactor {
-  risk: string;
-  probability: 'High' | 'Medium' | 'Low';
-  impact: 'High' | 'Medium' | 'Low';
-  mitigation: string;
 }
 
 // --- New Types for Topic Analysis Enhancement ---
@@ -146,10 +121,10 @@ export interface AnalysisReport {
   summary: string;
   investmentScore: InvestmentScore;
   analysis: {
-    macroPolicy: string;
+    macroPolicy?: string; // Deprecated: Moved to policyAnalysis
     industryChain: IndustryChain | string;
-    companyFundamentals: string;
-    marketSentiment: MarketSentiment;
+    companyFundamentals?: string; // Deprecated: Covered by competitiveLandscape/techTrajectory
+    marketSentiment?: MarketSentiment;
   };
   marketSizeAndOutlook: {
     narrative: string;
@@ -167,10 +142,7 @@ export interface AnalysisReport {
     suggestion: string;
     timeHorizons: TimeHorizonStrategy;
   };
-  riskMatrix: RiskFactor[];
-  allocationCadenceAndOutlook: string;
   tieredSuggestions: TieredSuggestions;
-  associationAnalysis?: AssociationAnalysis;
   sources?: GroundingSource[];
   polymarketData?: PolymarketData;
 }
@@ -386,10 +358,21 @@ export interface PositionalWarfareHistoryEntry {
   report: PositionalWarfareReport;
 }
 
-// --- Q&A Types ---
-export interface QandAResultItem {
-    rephrasedQuestion: string;
-    answer: string;
+// --- Association Analysis Types ---
+
+export interface AssociationStockNode {
+  name: string;
+  reason: string;
+}
+
+export interface AssociationTopicNode {
+  name: string;
+  reason: string;
+}
+
+export interface AssociationAnalysis {
+  relatedStocks: AssociationStockNode[];
+  relatedTopics: AssociationTopicNode[];
 }
 
 // --- Deprecated Types (Kept for reference, can be removed later) ---

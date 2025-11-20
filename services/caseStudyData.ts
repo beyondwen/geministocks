@@ -1,3 +1,4 @@
+
 import type { AnalysisReport } from '../types';
 import type { Locale } from '../hooks/useI18n';
 
@@ -20,7 +21,7 @@ const CASE_STUDY_DATA_ZH: CaseStudy = {
             reason: "该产品代表了 AI 应用演进的重要方向，市场想象空间巨大，且由行业领导者 OpenAI 推出，成功概率较高。但仍面临技术、生态和监管挑战。"
         },
         analysis: {
-            macroPolicy: "随着 AI Agent 越来越多地处理个人数据和执行网络操作，各国监管机构可能会加强对数据隐私、算法透明度和潜在网络安全风险的审查。此外，大型科技公司利用 AI 巩固其生态系统优势，也可能引发新的反垄断担忧。",
+            // Removed redundant macroPolicy and companyFundamentals from the visual layer
             industryChain: {
                 upstream: [
                     { name: "AI 模型提供商", description: "OpenAI 提供核心的 GPT 模型能力。" },
@@ -35,20 +36,49 @@ const CASE_STUDY_DATA_ZH: CaseStudy = {
                     { name: "开发者生态", description: "第三方开发者可能基于 Agent 功能开发新的插件和应用。" }
                 ]
             },
-            companyFundamentals: "此举是 OpenAI 商业化战略的关键一步，旨在将其 AI 技术从单一的聊天接口扩展到更广泛的平台，创造新的订阅收入来源并构建强大的用户生态。这反映了公司从技术驱动向产品和平台驱动的转变。",
             marketSentiment: {
                 sentiment: "Positive",
-                description: "市场普遍对此持积极态度，认为这是 AI 应用落地的重大创新。Agent 模式和记忆功能被视为核心亮点，引发了对“AI原生浏览器”的广泛讨论和期待。催化剂包括 Windows 版本的发布、Agent 功能的增强以及与 ChatGPT Plus 订阅的深度绑定。"
+                description: "市场普遍对此持积极态度，认为这是 AI 应用落地的重大创新。"
             }
         },
         marketSizeAndOutlook: {
-            narrative: "全球浏览器市场由少数巨头主导，但 AI 的出现带来了新的变量。AI 浏览器不仅是信息入口，更是个人智能助理。未来，浏览器可能成为管理个人数字生活和工作的核心中枢，市场规模巨大。其前景取决于 Agent 功能的成熟度、生态系统的建立以及用户习惯的迁移。",
+            narrative: "全球浏览器市场由少数巨头主导，但 AI 的出现带来了新的变量。AI 浏览器不仅是信息入口，更是个人智能助理。未来，浏览器可能成为管理个人数字生活和工作的核心中枢，市场规模巨大。",
             tamSamSom: {
                 TAM: "约3000亿美元 (全球数字广告市场)",
                 SAM: "约500亿美元 (AI 驱动的生产力软件市场)",
                 SOM: "约50亿美元 (初期 AI 浏览器及插件市场)",
                 sourceOrMethodology: "基于现有市场报告和增长预测的估算"
             }
+        },
+        competitiveLandscape: {
+            summary: "OpenAI 凭借其模型优势，在 AI 原生功能上领先，但 Google 拥有庞大的用户基础和生态系统。Atlas 试图通过差异化体验突围。",
+            keyPlayers: [
+                { name: "Google", marketShare: "65%", techAdvantage: "庞大生态与 Chrome 垄断地位", revenueGrowth: "稳健", grossMargin: "高", stockPerformance: "+15%" },
+                { name: "Microsoft", marketShare: "5%", techAdvantage: "OpenAI 合作与 Copilot 整合", revenueGrowth: "快速", grossMargin: "高", stockPerformance: "+20%" },
+                { name: "OpenAI (Atlas)", marketShare: "<1%", techAdvantage: "最强 LLM 能力与 Agent", revenueGrowth: "极快", grossMargin: "N/A", stockPerformance: "N/A" }
+            ]
+        },
+        catalystTracker: {
+            recentNews: [
+                 { date: "2025-02-01", description: "OpenAI 正式发布 ChatGPT Atlas macOS 版。", impact: "Positive" },
+                 { date: "2025-02-05", description: "Google 宣布 Chrome 将深度集成 Gemini 2.0。", impact: "Neutral" }
+            ],
+            upcomingCatalysts: [
+                { date: "2025-Q2", event: "发布 Windows 版 Atlas 浏览器" },
+                { date: "2025-Q3", event: "开放 Agent 插件商店" }
+            ]
+        },
+        policyAnalysis: {
+            keyBodies: ["FTC (美国)", "欧盟委员会"],
+            currentPolicies: "关注大型科技公司对 AI 生态系统的垄断倾向。",
+            assessment: "Headwind",
+            potentialChanges: "随着 AI Agent 越来越多地处理个人数据和执行网络操作，各国监管机构可能会加强对数据隐私、算法透明度和潜在网络安全风险的审查。"
+        },
+        techTrajectory: {
+            coreTech: "基于 LLM 的网页理解与自动化操作 (Agent)。",
+            maturity: "Emerging",
+            innovationTrends: ["多模态交互", "端侧模型推理", "跨应用操作"],
+            moatAnalysis: "技术领先是其核心护城河，但浏览器内核依赖 Chromium 是潜在制约。"
         },
         scenarioAnalysis: [
             {
@@ -79,27 +109,6 @@ const CASE_STUDY_DATA_ZH: CaseStudy = {
                 longTerm: "长期持有 AI 基础设施的核心资产，并根据市场格局变化调整对浏览器厂商的配置。"
             }
         },
-        riskMatrix: [
-            {
-                risk: "技术成熟度风险",
-                probability: "Medium",
-                impact: "High",
-                mitigation: "关注 OpenAI 的技术发布和产品迭代速度，技术领先是其核心护城河。"
-            },
-            {
-                risk: "竞争风险",
-                probability: "High",
-                impact: "High",
-                mitigation: "分散投资，同时配置谷歌等现有巨头，对冲单一公司被颠覆的风险。"
-            },
-            {
-                risk: "监管风险",
-                probability: "Medium",
-                impact: "Medium",
-                mitigation: "关注全球主要经济体对 AI Agent 和数据隐私的监管政策动向。"
-            }
-        ],
-        allocationCadenceAndOutlook: "短期内，市场热情较高，相关概念股可能有溢价。建议在产品发布更多平台版本、用户数据初步验证后分批建仓。长期来看，AI 与各类终端的结合是大势所趋，浏览器是其中的关键一环，值得长期关注和配置。",
         tieredSuggestions: {
             coreHoldings: [
                 { name: "微软", ticker: "MSFT", market: "US", reason: "作为 OpenAI 的主要合作伙伴和云服务提供商，深度受益于 AI 应用的普及。同时其 Edge 浏览器也在积极整合 AI。", relevance: "High" }
@@ -110,16 +119,6 @@ const CASE_STUDY_DATA_ZH: CaseStudy = {
             ],
             watchlist: [
                 { name: "The Browser Company", ticker: "Private", market: "Other", reason: "其开发的 Arc 浏览器是 AI 浏览器领域的创新先锋，代表了行业的新方向，值得关注其发展动态。", relevance: "Low" }
-            ]
-        },
-        associationAnalysis: {
-            relatedStocks: [
-                { name: "微软", ticker: "MSFT", reason: "OpenAI 的主要战略投资者和技术合作伙伴。" },
-                { name: "谷歌", ticker: "GOOGL", reason: "Chrome 浏览器的开发者，是 Atlas 的主要竞争对手。" }
-            ],
-            relatedTopics: [
-                { name: "AI Agent", reason: "Atlas 浏览器的核心功能之一，是实现自动化操作的关键技术。" },
-                { name: "浏览器大战", reason: "AI 的加入可能引发新一轮的浏览器市场份额争夺战。" }
             ]
         }
     }
@@ -139,7 +138,6 @@ const CASE_STUDY_DATA_EN: CaseStudy = {
             reason: "This product represents a significant direction in the evolution of AI applications with vast market potential. Launched by industry leader OpenAI, it has a high probability of success, but still faces technical, ecological, and regulatory challenges."
         },
         analysis: {
-            macroPolicy: "As AI Agents handle more personal data and perform web operations, regulatory agencies worldwide may increase scrutiny on data privacy, algorithmic transparency, and potential cybersecurity risks. Furthermore, large tech companies using AI to solidify their ecosystem advantages could spark new antitrust concerns.",
             industryChain: {
                 upstream: [
                     { name: "AI Model Provider", description: "OpenAI provides the core GPT model capabilities." },
@@ -154,20 +152,49 @@ const CASE_STUDY_DATA_EN: CaseStudy = {
                     { name: "Developer Ecosystem", description: "Third-party developers may create new plugins and applications based on the Agent functionality." }
                 ]
             },
-            companyFundamentals: "This move is a key step in OpenAI's commercialization strategy, aiming to expand its AI technology from a single chat interface to a broader platform, creating new subscription revenue streams and building a strong user ecosystem. It reflects the company's shift from being technology-driven to product- and platform-driven.",
             marketSentiment: {
                 sentiment: "Positive",
-                description: "The market is generally positive, viewing this as a major innovation in AI application deployment. The Agent mode and memory function are seen as core highlights, sparking widespread discussion and anticipation for 'AI-native browsers'. Catalysts include the release of a Windows version, enhancement of Agent capabilities, and deep integration with the ChatGPT Plus subscription."
+                description: "The market is generally positive, viewing this as a major innovation in AI application deployment."
             }
         },
         marketSizeAndOutlook: {
-            narrative: "The global browser market is dominated by a few giants, but AI introduces new variables. An AI browser is not just an information portal but a personal intelligent assistant. In the future, browsers could become the central hub for managing personal digital life and work, representing a massive market size. Its outlook depends on the maturity of Agent functionality, the establishment of an ecosystem, and the migration of user habits.",
+            narrative: "The global browser market is dominated by a few giants, but AI introduces new variables. An AI browser is not just an information portal but a personal intelligent assistant. In the future, browsers could become the central hub for managing personal digital life and work, representing a massive market size.",
             tamSamSom: {
                 TAM: " ~$300 Billion (Global Digital Advertising Market)",
                 SAM: "~$50 Billion (AI-driven Productivity Software Market)",
                 SOM: "~$5 Billion (Initial AI Browser & Plugin Market)",
                 sourceOrMethodology: "Estimation based on existing market reports and growth forecasts"
             }
+        },
+        competitiveLandscape: {
+            summary: "OpenAI leads in AI-native features, but Google has a massive user base and ecosystem. Atlas attempts to break through with a differentiated experience.",
+            keyPlayers: [
+                { name: "Google", marketShare: "65%", techAdvantage: "Massive ecosystem & Chrome monopoly", revenueGrowth: "Steady", grossMargin: "High", stockPerformance: "+15%" },
+                { name: "Microsoft", marketShare: "5%", techAdvantage: "OpenAI partnership & Copilot", revenueGrowth: "Fast", grossMargin: "High", stockPerformance: "+20%" },
+                { name: "OpenAI (Atlas)", marketShare: "<1%", techAdvantage: "Best LLM & Agent capabilities", revenueGrowth: "Very Fast", grossMargin: "N/A", stockPerformance: "N/A" }
+            ]
+        },
+        catalystTracker: {
+             recentNews: [
+                 { date: "2025-02-01", description: "OpenAI officially releases ChatGPT Atlas for macOS.", impact: "Positive" },
+                 { date: "2025-02-05", description: "Google announces Chrome will deeply integrate Gemini 2.0.", impact: "Neutral" }
+            ],
+            upcomingCatalysts: [
+                { date: "2025-Q2", event: "Release of Windows version of Atlas" },
+                { date: "2025-Q3", event: "Opening of Agent Plugin Store" }
+            ]
+        },
+        policyAnalysis: {
+            keyBodies: ["FTC (USA)", "European Commission"],
+            currentPolicies: "Focus on monopolistic tendencies of big tech in the AI ecosystem.",
+            assessment: "Headwind",
+            potentialChanges: "As AI Agents handle more personal data and perform web operations, regulatory agencies worldwide may increase scrutiny on data privacy, algorithmic transparency, and potential cybersecurity risks."
+        },
+        techTrajectory: {
+            coreTech: "LLM-based web understanding and automated operations (Agent).",
+            maturity: "Emerging",
+            innovationTrends: ["Multimodal interaction", "On-device model inference", "Cross-application operations"],
+            moatAnalysis: "Technological leadership is its core moat, but dependence on Chromium is a potential constraint."
         },
         scenarioAnalysis: [
             {
@@ -198,27 +225,6 @@ const CASE_STUDY_DATA_EN: CaseStudy = {
                 longTerm: "Hold core assets in AI infrastructure for the long term and adjust allocations to browser manufacturers based on market landscape changes."
             }
         },
-        riskMatrix: [
-            {
-                risk: "Technology Maturity Risk",
-                probability: "Medium",
-                impact: "High",
-                mitigation: "Monitor OpenAI's tech releases and product iteration speed; technological leadership is its core moat."
-            },
-            {
-                risk: "Competitive Risk",
-                probability: "High",
-                impact: "High",
-                mitigation: "Diversify investments by also allocating to existing giants like Google to hedge against the risk of a single company being disrupted."
-            },
-            {
-                risk: "Regulatory Risk",
-                probability: "Medium",
-                impact: "Medium",
-                mitigation: "Stay informed about regulatory policy trends regarding AI Agents and data privacy in major global economies."
-            }
-        ],
-        allocationCadenceAndOutlook: "In the short term, market enthusiasm is high, and related concept stocks may be at a premium. It is advisable to build positions in batches after more platform versions are released and initial user data is validated. In the long term, the integration of AI with various terminals is a major trend, and the browser is a key part of it, deserving long-term attention and allocation.",
         tieredSuggestions: {
             coreHoldings: [
                 { name: "Microsoft", ticker: "MSFT", market: "US", reason: "As OpenAI's main partner and cloud service provider, it benefits deeply from the popularization of AI applications. Its Edge browser is also actively integrating AI.", relevance: "High" }
@@ -229,16 +235,6 @@ const CASE_STUDY_DATA_EN: CaseStudy = {
             ],
             watchlist: [
                 { name: "The Browser Company", ticker: "Private", market: "Other", reason: "Its Arc browser is an innovative pioneer in the AI browser space, representing a new direction for the industry. Its development is worth monitoring.", relevance: "Low" }
-            ]
-        },
-        associationAnalysis: {
-            relatedStocks: [
-                { name: "Microsoft", ticker: "MSFT", reason: "OpenAI's main strategic investor and technology partner." },
-                { name: "Google", ticker: "GOOGL", reason: "Developer of the Chrome browser and Atlas's main competitor." }
-            ],
-            relatedTopics: [
-                { name: "AI Agent", reason: "A core feature of the Atlas browser and the key technology for enabling automated operations." },
-                { name: "Browser Wars", reason: "The introduction of AI could trigger a new round of competition for browser market share." }
             ]
         }
     }

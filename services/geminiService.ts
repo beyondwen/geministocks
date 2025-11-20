@@ -1,3 +1,4 @@
+
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -10,17 +11,16 @@ const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
 const getModelName = (isRealtimeSearchEnabled: boolean): string => {
+    // Use Gemini 3 Pro Preview for real-time/paid users as requested
     if (isRealtimeSearchEnabled) {
-        return 'google/gemini-2.0-pro-exp-02-05:free';
+        return 'google/gemini-3-pro-preview';
     }
-    return 'openai/gpt-4o-mini';
+    // Use Grok 4.1 Fast for default/free users
+    return 'x-ai/grok-4.1-fast';
 };
 
 const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
-    if (isRealtimeSearchEnabled) {
-        return 'Gemini 3 Pro';
-    }
-    return 'GPT-4o mini';
+    return isRealtimeSearchEnabled ? 'Gemini 3 Pro' : 'Grok 4.1 Fast';
 };
 
 /**
@@ -49,7 +49,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         // The Grok model via OpenRouter has issues with `tool_choice` and `response_format`.
         // By NOT setting either, we rely on its instruction-following capability from the system prompt.
         if (!modelName.startsWith('x-ai/grok')) {
-            // For other models like Gemini, use the standard `response_format` for reliable JSON mode.
+            // For other models like Gemini, use the standard `response_format` for reliable JSON output.
             requestBody.response_format = { type: "json_object" };
         }
         
@@ -146,14 +146,13 @@ const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string)
     const commonInstructions = `You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information. You MUST respond strictly in JSON format. Do not add any extra text.`;
     const languageInstruction = locale === 'zh' ? 'All content must be in Simplified Chinese.' : 'All content must be in English.';
 
+    // Simplified Part 1: Remove macroPolicy, companyFundamentals. Keep industryChain and simplified sentiment.
     const part1Schema = `{
       "summary": "string (1-3 sentence summary)",
       "investmentScore": { "score": "number (1-100)", "reason": "string (brief justification for the score)" },
       "analysis": {
-        "macroPolicy": "string (must include specific macro data like CPI/PPI)",
         "industryChain": { "upstream": [{"name": "string", "description": "string"}], "midstream": [{"name": "string", "description": "string"}], "downstream": [{"name": "string", "description": "string"}] },
-        "companyFundamentals": "string",
-        "marketSentiment": { "sentiment": "'Positive' | 'Neutral' | 'Negative'", "description": "string" }
+        "marketSentiment": { "sentiment": "'Positive' | 'Neutral' | 'Negative'", "description": "string (Brief 1-sentence assessment of the current market mood)" }
       }
     }`;
 
@@ -174,6 +173,7 @@ const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string)
       "techTrajectory": { "coreTech": "string", "maturity": "'Emerging' | 'Maturing' | 'Mainstream'", "innovationTrends": ["string"], "moatAnalysis": "string" }
     }`;
 
+    // Simplified Part 3: Remove Risk Matrix, Allocation Outlook, Association Analysis
     const part3Schema = `{
       "scenarioAnalysis": [
         { "scenario": "'Bull Case'", "description": "string", "probability": "number", "keyDrivers": ["string"] },
@@ -184,16 +184,10 @@ const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string)
         "logic": "string", "suggestion": "string",
         "timeHorizons": { "shortTerm": "string", "mediumTerm": "string", "longTerm": "string" }
       },
-      "riskMatrix": [{ "risk": "string", "probability": "'High' | 'Medium' | 'Low'", "impact": "'High' | 'Medium' | 'Low'", "mitigation": "string" }],
-      "allocationCadenceAndOutlook": "string",
       "tieredSuggestions": {
         "coreHoldings": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string", "relevance": "'High'" }],
         "strategicSatellites": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string", "relevance": "'Medium'" }],
         "watchlist": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string", "relevance": "'Low'" }]
-      },
-      "associationAnalysis": {
-        "relatedStocks": [{ "name": "string", "ticker": "string", "reason": "string" }],
-        "relatedTopics": [{ "name": "string", "reason": "string" }]
       }
     }`;
 
@@ -248,12 +242,10 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
             "reason": "string (Brief reason for the score)"
           },
           "analysis": {
-            "macroPolicy": "string (How macro factors or policy could influence the outcome of this prediction)",
             "industryChain": "string (Which industry sectors are most affected if 'Yes' wins vs. if 'No' wins)",
-            "companyFundamentals": "string (Analyze which specific companies' fundamentals would be most impacted by either outcome)",
             "marketSentiment": {
               "sentiment": "'Positive' | 'Neutral' | 'Negative'",
-              "description": "string (Describe the current market sentiment surrounding this prediction and potential catalysts)"
+              "description": "string (Describe the current market sentiment surrounding this prediction)"
             }
           },
           "marketSizeAndOutlook": "string (Analyze the potential market impact of both a 'Yes' and 'No' outcome)",
@@ -262,7 +254,6 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
             "suggestion": "string (Provide actionable suggestions for how to position a portfolio for either outcome)",
             "risks": "string (What are the risks associated with trading this prediction?)"
           },
-          "allocationCadenceAndOutlook": "string (Guidance on timing and long-term outlook depending on the outcome)",
           "tieredSuggestions": {
             "coreHoldings": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string (A high-conviction asset to hold if you believe 'Yes' will happen)", "relevance": "'High'" }],
             "strategicSatellites": [{ "name": "string", "ticker": "string", "market": "'A-Share' | 'Hong Kong' | 'US' | 'Crypto' | 'Futures' | 'Other'", "reason": "string (A high-conviction asset to hold if you believe 'No' will happen)", "relevance": "'Medium'" }],

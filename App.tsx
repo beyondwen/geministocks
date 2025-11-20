@@ -1185,12 +1185,15 @@ const MainPage: React.FC = () => {
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
             <div className="flex justify-center mb-6 animate-fade-in">
-                <div className="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-default">
+                <button 
+                    onClick={() => !hasPaid && setIsPaymentModalOpen(true)}
+                    className={`inline-flex items-center gap-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-300 ${!hasPaid ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}`}
+                >
                     <SparklesIcon className="w-4 h-4 text-blue-600 animate-pulse" />
                     <span className="text-xs font-bold text-blue-800 tracking-wide">
                         {t('header.poweredBy')}
                     </span>
-                </div>
+                </button>
             </div>
 
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">

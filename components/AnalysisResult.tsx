@@ -1,11 +1,11 @@
+
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { toPng } from 'html-to-image';
-import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, RiskFactor, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory, StockAnalysisReport } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, LinkIcon, BuildingStorefrontIcon, ChartTrendingUpIcon, LightBulbIcon, ExclamationTriangleIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, ShieldCheckIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon, XIcon } from './icons/Icons';
+import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory, StockAnalysisReport } from '../types';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, ChartTrendingUpIcon, LightBulbIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon, XIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
-import AssociationAnalysisGraph from './AssociationAnalysisGraph';
 import { useI18n } from '../hooks/useI18n';
 import Loader from './Loader';
 import StockAnalysisResult from './StockAnalysisResult';
@@ -213,41 +213,6 @@ const TimeHorizonStrategyCard: React.FC<{ horizons: TimeHorizonStrategy }> = ({ 
                     <h4 className="font-semibold text-black">{t('timeHorizon.longTerm')}</h4>
                     <p className="text-sm text-gray-700 pl-4 border-l-2 border-gray-300 ml-1 mt-1"><TextRenderer text={horizons.longTerm}/></p>
                 </div>
-            </div>
-        </Card>
-    );
-};
-
-const RiskMatrixCard: React.FC<{ risks: RiskFactor[] }> = ({ risks }) => {
-    const { t } = useI18n();
-    const levelColors: {[key: string]: string} = {
-        'High': 'bg-red-100 text-red-800',
-        'Medium': 'bg-yellow-100 text-yellow-800',
-        'Low': 'bg-green-100 text-green-800',
-    };
-    return (
-        <Card title={t('riskMatrix.title')} icon={<ShieldCheckIcon className="w-5 h-5"/>} className="md:col-span-2">
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="text-left font-semibold text-black p-3 w-1/3">{t('riskMatrix.risk')}</th>
-                            <th className="text-center font-semibold text-black p-3">{t('riskMatrix.probability')}</th>
-                            <th className="text-center font-semibold text-black p-3">{t('riskMatrix.impact')}</th>
-                            <th className="text-left font-semibold text-black p-3 w-1/2">{t('riskMatrix.mitigation')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {risks.map((r, i) => (
-                            <tr key={i} className="border-b border-gray-200 last:border-b-0">
-                                <td className="p-3 font-medium text-black">{r.risk}</td>
-                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${levelColors[r.probability]}`}>{t(`riskLevels.${r.probability}`)}</span></td>
-                                <td className="p-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${levelColors[r.impact]}`}>{t(`riskLevels.${r.impact}`)}</span></td>
-                                <td className="p-3 text-gray-700">{r.mitigation}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
             </div>
         </Card>
     );
@@ -640,21 +605,16 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card title={t('analysisResult.macroTitle')} icon={<GlobeIcon className="w-5 h-5"/>}>
-                    {report.analysis?.macroPolicy ? <TextRenderer text={report.analysis.macroPolicy} keywords={keywords} /> : FallbackContent}
-                </Card>
-              
-                <Card title={t('analysisResult.sentimentTitle')} icon={<SparklesIcon className="w-5 h-5"/>}>
-                    {report.analysis?.marketSentiment ? (
-                        <>
-                            <div className="flex items-center space-x-4 mb-2">
-                              <span className="font-semibold text-black">{t('analysisResult.sentimentLabel')}</span>
-                              <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
-                            </div>
-                            <TextRenderer text={report.analysis.marketSentiment.description} keywords={keywords} />
-                        </>
-                    ) : FallbackContent}
-                </Card>
+                {/* Simplified Sentiment Card */}
+                {report.analysis?.marketSentiment && (
+                    <Card title={t('analysisResult.sentimentTitle')} icon={<SparklesIcon className="w-5 h-5"/>}>
+                        <div className="flex items-center space-x-4 mb-2">
+                            <span className="font-semibold text-black">{t('analysisResult.sentimentLabel')}</span>
+                            <SentimentIndicator sentiment={report.analysis.marketSentiment.sentiment} />
+                        </div>
+                        <TextRenderer text={report.analysis.marketSentiment.description} keywords={keywords} />
+                    </Card>
+                )}
 
                 <Card title={t('analysisResult.industryChainTitle')} className="md:col-span-2" icon={<DiagramIcon className="w-5 h-5"/>}>
                     {report.analysis?.industryChain ? (
@@ -666,10 +626,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
                     ) : FallbackContent}
                 </Card>
 
-                <Card title={t('analysisResult.fundamentalsTitle')} className="md:col-span-2" icon={<BuildingStorefrontIcon className="w-5 h-5"/>}>
-                    {report.analysis?.companyFundamentals ? <TextRenderer text={report.analysis.companyFundamentals} keywords={keywords} /> : FallbackContent}
-                </Card>
-              
                 {report.marketSizeAndOutlook && (
                     <MarketSizeCard 
                         narrative={report.marketSizeAndOutlook.narrative}
@@ -711,22 +667,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
                 
                 {report.investmentStrategy?.timeHorizons && <TimeHorizonStrategyCard horizons={report.investmentStrategy.timeHorizons} />}
 
-                {report.riskMatrix && <RiskMatrixCard risks={report.riskMatrix} />}
-              
-                {report.allocationCadenceAndOutlook && (
-                    <Card title={t('analysisResult.allocationTitle')} className="md:col-span-2" icon={<CalendarIcon className="w-5 h-5"/>}>
-                        <TextRenderer text={report.allocationCadenceAndOutlook} keywords={keywords} />
-                    </Card>
-                )}
-
-                {report.associationAnalysis && (
-                    <Card title={t('analysisResult.associationTitle')} className="md:col-span-2" icon={<LinkIcon className="w-5 h-5"/>}>
-                        <AssociationAnalysisGraph 
-                          analysis={report.associationAnalysis}
-                          originalTopic={userInput}
-                        />
-                    </Card>
-                )}
             </div>
             
             {report.tieredSuggestions && <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} onAnalyzeStock={onAnalyzeStock} />}

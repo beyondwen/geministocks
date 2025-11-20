@@ -1,3 +1,4 @@
+
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, TieredSuggestions, IndustryChain } from '../types';
 
 // Helper functions for building Markdown strings
@@ -73,17 +74,11 @@ export const analysisReportToMarkdown = (report: AnalysisReport, userInput: stri
     if(report.summary) md += h2('Overall Summary');
     if(report.summary) md += blockquote(report.summary);
 
-    if(report.analysis?.macroPolicy) md += h2('Macro & Policy');
-    if(report.analysis?.macroPolicy) md += `${report.analysis.macroPolicy}\n\n`;
-    
-    if(report.analysis?.marketSentiment) md += h2('Market Sentiment & Catalysts');
+    if(report.analysis?.marketSentiment) md += h2('Market Sentiment');
     if(report.analysis?.marketSentiment) md += `${bold('Sentiment:')} ${report.analysis.marketSentiment.sentiment}\n\n${report.analysis.marketSentiment.description}\n\n`;
 
     if(report.analysis?.industryChain) md += h2('Industry & Supply Chain');
     if(report.analysis?.industryChain) md += industryChainToMarkdown(report.analysis.industryChain);
-
-    if(report.analysis?.companyFundamentals) md += h2('Company Fundamentals');
-    if(report.analysis?.companyFundamentals) md += `${report.analysis.companyFundamentals}\n\n`;
 
     if (report.marketSizeAndOutlook) {
         md += h2('Market Size & Outlook');
@@ -158,13 +153,6 @@ export const analysisReportToMarkdown = (report: AnalysisReport, userInput: stri
             md += `- **Medium-Term (3-12 Mo):** ${report.investmentStrategy.timeHorizons.mediumTerm}\n`;
             md += `- **Long-Term (>1 Yr):** ${report.investmentStrategy.timeHorizons.longTerm}\n\n`;
         }
-    }
-
-    if (report.riskMatrix?.length) {
-        md += h2('Risk Matrix');
-        const headers = ['Risk', 'Probability', 'Impact', 'Mitigation'];
-        const rows = report.riskMatrix.map(r => [r.risk, r.probability, r.impact, r.mitigation]);
-        md += table(headers, rows);
     }
 
     if(report.tieredSuggestions) md += h2('Tiered Suggestions');
