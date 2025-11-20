@@ -1,3 +1,4 @@
+
 {
   "meta": {
     "title": "Super Digger | AI-Powered Investment Research & Stock Analysis Tool",
@@ -11,7 +12,7 @@
     "markets": "Supports US, A-share, HK stocks, crypto, and commodity futures markets",
     "searchPlaceholder": "Search topics, stocks...",
     "userGuide": "User Guide",
-    "poweredBy": "Advanced analysis powered by Gemini 3 Pro"
+    "poweredBy": "Powered by Grok 4.1 Fast"
   },
   "stats": {
     "userAnalysisCount": "Analyses"

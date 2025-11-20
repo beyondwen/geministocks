@@ -11,17 +11,79 @@ const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
 const getModelName = (isRealtimeSearchEnabled: boolean): string => {
-    // Use Gemini 3 Pro Preview for real-time/paid users as requested
-    if (isRealtimeSearchEnabled) {
-        return 'google/gemini-3-pro-preview';
-    }
-    // Use Grok 4.1 Fast for default/free users
+    // Always use Grok 4.1 Fast as requested
     return 'x-ai/grok-4.1-fast';
 };
 
 const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
-    return isRealtimeSearchEnabled ? 'Gemini 3 Pro' : 'Grok 4.1 Fast';
+    return 'Grok 4.1 Fast';
 };
+
+/**
+ * Extracts a valid JSON object or array from a string using a balanced brace algorithm.
+ * This handles cases where the AI appends garbage text or extra braces after the valid JSON.
+ */
+function extractJson(text: string): string {
+    let startIndex = text.indexOf('{');
+    let arrayStartIndex = text.indexOf('[');
+    
+    // Determine if we are looking for an object or an array
+    // We prefer the one that appears first.
+    let isObject = true;
+    if (arrayStartIndex !== -1 && (startIndex === -1 || arrayStartIndex < startIndex)) {
+        startIndex = arrayStartIndex;
+        isObject = false;
+    }
+
+    if (startIndex === -1) return text; // No JSON start found
+
+    const openChar = isObject ? '{' : '[';
+    const closeChar = isObject ? '}' : ']';
+    
+    let balance = 0;
+    let inString = false;
+    let isEscaped = false;
+    let endIndex = -1;
+
+    for (let i = startIndex; i < text.length; i++) {
+        const char = text[i];
+
+        if (isEscaped) {
+            isEscaped = false;
+            continue;
+        }
+
+        if (char === '\\') {
+            isEscaped = true;
+            continue;
+        }
+
+        if (char === '"') {
+            inString = !inString;
+            continue;
+        }
+
+        if (!inString) {
+            if (char === openChar) {
+                balance++;
+            } else if (char === closeChar) {
+                balance--;
+                if (balance === 0) {
+                    endIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (endIndex !== -1) {
+        return text.substring(startIndex, endIndex + 1);
+    }
+    
+    // If we couldn't balance the braces (e.g. truncated output), 
+    // we fallback to the substring from start, though it might fail parsing.
+    return text.substring(startIndex);
+}
 
 /**
  * A generic helper function to call the OpenRouter API.
@@ -77,36 +139,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             throw new Error('Received an empty response from the AI model.');
         }
 
-        // FIX: Clean the response to handle models that wrap JSON in Markdown or other text.
-        let jsonString = content;
-        const firstBraceIndex = jsonString.indexOf('{');
-        const firstBracketIndex = jsonString.indexOf('[');
-        
-        let startIndex = -1;
-        if (firstBraceIndex !== -1 && firstBracketIndex !== -1) {
-            startIndex = Math.min(firstBraceIndex, firstBracketIndex);
-        } else if (firstBraceIndex !== -1) {
-            startIndex = firstBraceIndex;
-        } else {
-            startIndex = firstBracketIndex;
-        }
-
-        const lastBraceIndex = jsonString.lastIndexOf('}');
-        const lastBracketIndex = jsonString.lastIndexOf(']');
-        
-        let endIndex = -1;
-        if (lastBraceIndex !== -1 && lastBracketIndex !== -1) {
-            endIndex = Math.max(lastBraceIndex, lastBracketIndex);
-        } else if (lastBraceIndex !== -1) {
-            endIndex = lastBraceIndex;
-        } else {
-            endIndex = lastBracketIndex;
-        }
-
-
-        if (startIndex !== -1 && endIndex > startIndex) {
-            jsonString = jsonString.substring(startIndex, endIndex + 1);
-        }
+        // Use the robust extractor to find the valid JSON part
+        const jsonString = extractJson(content);
 
         // FIX: The AI model can sometimes generate malformed JSON.
         // This block attempts to parse, and on any SyntaxError, applies fixes and retries.
