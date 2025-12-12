@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const ClockIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -96,7 +97,6 @@ export const CheckCircleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
     </svg>
 );
 
-// FIX: Added missing CalendarIcon component.
 export const CalendarIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18" />
@@ -238,5 +238,19 @@ export const PlusIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 export const QuestionMarkCircleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+    </svg>
+);
+
+export const SnowflakeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.25v19.5m0 0a2.25 2.25 0 0 1-2.25-2.25 2.25 2.25 0 0 1 2.25-2.25 2.25 2.25 0 0 1 2.25 2.25Zm0 0a2.25 2.25 0 0 0 2.25-2.25 2.25 2.25 0 0 0-2.25-2.25 2.25 2.25 0 0 0-2.25 2.25ZM6.375 5.5l11.25 13m0 0a2.25 2.25 0 0 1-3 0 2.25 2.25 0 0 1 3 0 2.25 2.25 0 0 1 0 0Zm0 0a2.25 2.25 0 0 0-3 0 2.25 2.25 0 0 0 3 0 2.25 2.25 0 0 0 0 0ZM3.536 12h16.928m0 0a2.25 2.25 0 0 1-1.591-3.841 2.25 2.25 0 0 1 1.591 3.841Zm0 0a2.25 2.25 0 0 0-1.591-3.841 2.25 2.25 0 0 0 1.591 3.841Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.375 18.5 17.625 5.5m0 0a2.25 2.25 0 0 1 0 3 2.25 2.25 0 0 1 0-3 2.25 2.25 0 0 1 0 0Zm0 0a2.25 2.25 0 0 0 0 3 2.25 2.25 0 0 0 0-3 2.25 2.25 0 0 0 0 0ZM12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+    </svg>
+);
+
+export const SantaHatIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 21a2.5 2.5 0 1 1-5 0m5 0a2.5 2.5 0 1 0-5 0M2 21h15m-5-2.5A12.5 12.5 0 0 1 12 6a4.5 4.5 0 1 1 9 0 12.5 12.5 0 0 1-5 12.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" fill="currentColor" className="text-red-500 opacity-20" d="M7 18.5a7.5 7.5 0 0 1 10-10 7.5 7.5 0 0 1-3 10H7Z" />
     </svg>
 );

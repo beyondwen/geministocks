@@ -15,7 +15,7 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon, QuestionMarkCircleIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon, QuestionMarkCircleIcon, SantaHatIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
@@ -26,6 +26,7 @@ import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
+import Snowfall from './components/Snowfall';
 
 
 // --- Constants ---
@@ -1134,6 +1135,7 @@ const MainPage: React.FC = () => {
 
   return (
     <>
+      <Snowfall />
       {isBannerVisible && <AnnouncementBanner onClose={handleCloseBanner} />}
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
@@ -1159,13 +1161,16 @@ const MainPage: React.FC = () => {
               title={t('imageModal.title')}
           />
       )}
-      <div className="min-h-screen">
+      <div className="min-h-screen relative z-10">
          <header className="sticky top-0 z-30 w-full bg-[#FBFBFA]/80 backdrop-blur-sm border-b border-stone-200/90">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Left side: Logo & Title */}
                     <div className="flex items-center gap-x-3">
-                        <RadarIcon className="w-8 h-8 text-black" />
+                        <div className="relative">
+                            <RadarIcon className="w-8 h-8 text-black" />
+                            <SantaHatIcon className="absolute -top-3 -right-2 w-6 h-6 rotate-12 drop-shadow-md" />
+                        </div>
                         <h1 className="text-xl font-semibold text-gray-800">
                             {t('header.title')}
                         </h1>
@@ -1198,18 +1203,6 @@ const MainPage: React.FC = () => {
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
-            <div className="flex justify-center mb-6 animate-fade-in">
-                <button 
-                    onClick={() => !hasPaid && setIsPaymentModalOpen(true)}
-                    className={`inline-flex items-center gap-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-300 ${!hasPaid ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}`}
-                >
-                    <SparklesIcon className="w-4 h-4 text-blue-600 animate-pulse" />
-                    <span className="text-xs font-bold text-blue-800 tracking-wide">
-                        {t('header.poweredBy')}
-                    </span>
-                </button>
-            </div>
-
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
                 <div className="grid grid-cols-3 sm:grid-cols-3 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
