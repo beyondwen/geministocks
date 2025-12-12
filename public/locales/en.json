@@ -12,7 +12,8 @@
     "markets": "Supports US, A-share, HK stocks, crypto, and commodity futures markets",
     "searchPlaceholder": "Search topics, stocks...",
     "userGuide": "User Guide",
-    "poweredBy": "Powered by Grok 4.1 Fast"
+    "poweredBy": "Powered by Grok 4.1 Fast",
+    "merryChristmas": "Merry Christmas!"
   },
   "stats": {
     "userAnalysisCount": "Analyses"
@@ -358,7 +359,7 @@
     "purposeTitle": "Application Purpose",
     "purposeText": "\"Super Digger\" is an intelligent investment research tool designed to transform complex, unstructured financial news, research reports, or market themes into clear, multi-dimensional investment strategy analysis reports using cutting-edge AI technology. Our goal is to help investors save time, quickly grasp key information, discover potential investment opportunities, and understand the associated risks.",
     "featuresTitle": "Core Features",
-    "feature1": "Four-Dimensional Integrated Analysis: Reports provide a comprehensive investment perspective by analyzing from four dimensions: macro & policy, industry & supply chain, company fundamentals, and market sentiment & catalysts.",
+    "feature1": "Four-Dimensional Integrated Analysis: Reports provide a comprehensive investment perspective by analyzing from four dimensions: macro & policy, industry & supply chain, company fundamentals, and market sentiment to help you find opportunities in US, HK, and A-share markets.",
     "feature2": "Structured Report Output: AI analysis results are presented in a structured format, making the content clear and easy to understand, moving away from lengthy and complex texts.",
     "feature3": "Data Visualization: Tools like industry chain diagrams and stock association graphs make data and relationships clear at a glance.",
     "feature4": "History & Playback: Automatically saves your analysis history for easy review and comparison at any time.",

@@ -1203,6 +1203,16 @@ const MainPage: React.FC = () => {
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
+            <div className="flex justify-center mb-6 animate-fade-in">
+                <div className="inline-flex items-center gap-x-2 px-6 py-2 rounded-full bg-red-50 border border-red-100 shadow-sm">
+                    <SantaHatIcon className="w-5 h-5 text-red-500" />
+                    <span className="text-sm font-bold text-red-700 tracking-wide font-serif italic">
+                        {t('header.merryChristmas')}
+                    </span>
+                    <span className="text-xl">🎄</span>
+                </div>
+            </div>
+
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
                 <div className="grid grid-cols-3 sm:grid-cols-3 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
