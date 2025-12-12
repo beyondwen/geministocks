@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -314,7 +315,20 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         ) : (
           <ul className="space-y-4">
             {articles.length > 0 ? articles.map((article, index) => (
-              <li key={`${article.link}-${index}`} className="group border-b border-gray-200 pb-4 last:border-b-0">
+              <li key={`${article.link}-${index}`} className="group relative border-b border-gray-200 pb-4 last:border-b-0 hover:bg-gray-50/80 transition-colors duration-300 rounded-xl p-3 -mx-3">
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-2xl shadow-floating opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-30 pointer-events-none">
+                    <div className="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
+                        <span className="font-bold text-gray-100">{article.sourceName}</span>
+                        <span className="font-mono text-gray-400 text-[10px]">{new Date(article.pubDate).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-gray-300 leading-relaxed line-clamp-6">
+                        {stripHtml(article.description)}
+                    </p>
+                    {/* Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-[6px] border-transparent border-t-gray-900/95"></div>
+                </div>
+
                 <div className="flex items-center gap-x-2 mb-1 flex-wrap">
                     <button 
                       onClick={() => setSelectedArticle(article)} 
