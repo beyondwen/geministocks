@@ -11,12 +11,12 @@ const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
 const getModelName = (isRealtimeSearchEnabled: boolean): string => {
-    // Always use Grok 4.1 Fast as requested
-    return 'x-ai/grok-4.1-fast';
+    // Updated to use Gemini 3 Flash Preview via OpenRouter
+    return 'google/gemini-3-flash-preview';
 };
 
 const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
-    return 'Grok 4.1 Fast';
+    return 'Gemini 3 Flash';
 };
 
 /**
@@ -108,10 +108,8 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         };
 
         // Handle model-specific parameters for JSON output.
-        // The Grok model via OpenRouter has issues with `tool_choice` and `response_format`.
-        // By NOT setting either, we rely on its instruction-following capability from the system prompt.
+        // For Gemini 3 and other models, use the standard `response_format` for reliable JSON output.
         if (!modelName.startsWith('x-ai/grok')) {
-            // For other models like Gemini, use the standard `response_format` for reliable JSON output.
             requestBody.response_format = { type: "json_object" };
         }
         
@@ -148,7 +146,6 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             return JSON.parse(jsonString);
         } catch (e) {
             // Broaden the condition to catch any SyntaxError for auto-correction.
-            // AI models can return various forms of malformed JSON, and specific message checks can be brittle across different browsers/environments.
             if (e instanceof SyntaxError) {
                 console.warn("Initial JSON parsing failed due to SyntaxError. Attempting to auto-correct.", e);
                 try {
