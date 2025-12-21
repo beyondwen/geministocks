@@ -6,7 +6,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
-const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtM2QyNWM4NzRjOWM4ODJhZjVmYTM3ZDA0MmMxMmY0ZjEyZGYxYzIyZWNjMzE5ZTUyMzdkM2E4ZjdmYjE2NTgxNg==';
+const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtOGQ3YjdlODgwZTNlODRiYWM0OTM3N2ZjMjQyZmE5YWM3MmE3ZmVhMzZhODY1ODViNTMyNzdjNDI1MTJlZDVkMQ==';
 const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
@@ -471,7 +471,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
-        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
+        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\`字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
         10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空数组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}
