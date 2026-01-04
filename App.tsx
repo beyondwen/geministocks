@@ -15,7 +15,7 @@ import Loader from './components/Loader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
-import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon, QuestionMarkCircleIcon, SantaHatIcon } from './components/icons/Icons';
+import { NewspaperIcon, SparklesIcon, ChartBarIcon, DocumentTextIcon, SwordsIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon, QuestionMarkCircleIcon } from './components/icons/Icons';
 import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
@@ -26,7 +26,6 @@ import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
-import Snowfall from './components/Snowfall';
 
 
 // --- Constants ---
@@ -113,7 +112,6 @@ interface NewsSource {
 
 const NEWS_SOURCES: NewsSource[] = [
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
-  { id: 'kagi', name: 'Kagi 新闻', url: 'https://news.kagi.com/world_zh-Hans.xml' },
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
   { id: 'solidot', name: '奇客', url: 'https://www.solidot.org/index.rss' },
@@ -121,7 +119,6 @@ const NEWS_SOURCES: NewsSource[] = [
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '36氪': 'bg-gray-100 text-gray-800',
-  'Kagi 新闻': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
   '奇客': 'bg-gray-100 text-gray-800',
@@ -1135,7 +1132,6 @@ const MainPage: React.FC = () => {
 
   return (
     <>
-      <Snowfall />
       {isBannerVisible && <AnnouncementBanner onClose={handleCloseBanner} />}
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
@@ -1167,10 +1163,7 @@ const MainPage: React.FC = () => {
                 <div className="flex items-center justify-between h-16">
                     {/* Left side: Logo & Title */}
                     <div className="flex items-center gap-x-3">
-                        <div className="relative">
-                            <RadarIcon className="w-8 h-8 text-black" />
-                            <SantaHatIcon className="absolute -top-3 -right-2 w-6 h-6 rotate-12 drop-shadow-md" />
-                        </div>
+                        <RadarIcon className="w-8 h-8 text-black" />
                         <h1 className="text-xl font-semibold text-gray-800">
                             {t('header.title')}
                         </h1>
@@ -1203,16 +1196,6 @@ const MainPage: React.FC = () => {
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
-            <div className="flex justify-center mb-6 animate-fade-in">
-                <div className="inline-flex items-center gap-x-2 px-6 py-2 rounded-full bg-red-50 border border-red-100 shadow-sm">
-                    <SantaHatIcon className="w-5 h-5 text-red-500" />
-                    <span className="text-sm font-bold text-red-700 tracking-wide font-serif italic">
-                        {t('header.merryChristmas')}
-                    </span>
-                    <span className="text-xl">🎄</span>
-                </div>
-            </div>
-
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
                 <div className="grid grid-cols-3 sm:grid-cols-3 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>

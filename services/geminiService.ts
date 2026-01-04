@@ -6,17 +6,17 @@ import { GoogleGenAI, Type } from '@google/genai';
 // --- OpenRouter Configuration ---
 const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // The API key is Base64 encoded for basic obfuscation in the client-side code.
-const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtOGQ3YjdlODgwZTNlODRiYWM0OTM3N2ZjMjQyZmE5YWM3MmE3ZmVhMzZhODY1ODViNTMyNzdjNDI1MTJlZDVkMQ==';
+const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtNTYwMGVhMDFhYWRkNTZhNTEyOWFlNTZiNmMyMjczY2I2OWMyM2E2OTY1OTRhOWMwNmM0ZWQ5ZmZjNzlkZDQxMA==';
 const SITE_URL = 'https://mastersgo.cc';
 const SITE_NAME = '超级挖掘机';
 
 const getModelName = (isRealtimeSearchEnabled: boolean): string => {
-    // Updated to use Gemini 3 Flash Preview via OpenRouter
-    return 'google/gemini-3-flash-preview';
+    // Always use Grok 4.1 Fast as requested
+    return 'x-ai/grok-4.1-fast';
 };
 
 const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
-    return 'Gemini 3 Flash';
+    return 'Grok 4.1 Fast';
 };
 
 /**
@@ -108,8 +108,10 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         };
 
         // Handle model-specific parameters for JSON output.
-        // For Gemini 3 and other models, use the standard `response_format` for reliable JSON output.
+        // The Grok model via OpenRouter has issues with `tool_choice` and `response_format`.
+        // By NOT setting either, we rely on its instruction-following capability from the system prompt.
         if (!modelName.startsWith('x-ai/grok')) {
+            // For other models like Gemini, use the standard `response_format` for reliable JSON output.
             requestBody.response_format = { type: "json_object" };
         }
         
@@ -146,6 +148,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             return JSON.parse(jsonString);
         } catch (e) {
             // Broaden the condition to catch any SyntaxError for auto-correction.
+            // AI models can return various forms of malformed JSON, and specific message checks can be brittle across different browsers/environments.
             if (e instanceof SyntaxError) {
                 console.warn("Initial JSON parsing failed due to SyntaxError. Attempting to auto-correct.", e);
                 try {
@@ -471,7 +474,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
-        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\`字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
+        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
         10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空数组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}
