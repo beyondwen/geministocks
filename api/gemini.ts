@@ -54,6 +54,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: 'system', content: systemInstruction || '' },
         { role: 'user', content: prompt }
       ],
+      // Explicitly set max_tokens to prevent OpenRouter from reserving credits for the full context window (e.g. 30k+),
+      // which causes 402 errors if the account balance is low.
+      max_tokens: 4096, 
     };
 
     // Handle model-specific parameters for JSON output.
