@@ -3,12 +3,9 @@ import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, Lead
 import type { Locale } from '../hooks/useI18n';
 import { GoogleGenAI, Type } from '@google/genai';
 
-// --- OpenRouter Configuration ---
-const API_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
-// The API key is Base64 encoded for basic obfuscation in the client-side code.
-const OPENROUTER_API_KEY_B64 = 'c2stb3ItdjEtNTYwMGVhMDFhYWRkNTZhNTEyOWFlNTZiNmMyMjczY2I2OWMyM2E2OTY1OTRhOWMwNmM0ZWQ5ZmZjNzlkZDQxMA==';
-const SITE_URL = 'https://mastersgo.cc';
-const SITE_NAME = '超级挖掘机';
+// --- Configuration ---
+// Note: API Key is now handled securely on the server side (api/gemini.ts)
+// The OPENROUTER_API_KEY_B64 has been removed for security.
 
 const getModelName = (isRealtimeSearchEnabled: boolean): string => {
     // Always use Grok 4.1 Fast as requested
@@ -86,7 +83,7 @@ function extractJson(text: string): string {
 }
 
 /**
- * A generic helper function to call the OpenRouter API.
+ * A generic helper function to call the backend AI proxy.
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
@@ -94,37 +91,17 @@ function extractJson(text: string): string {
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
     try {
-        // Construct the base request body.
-        const requestBody: {
-            model: string;
-            messages: { role: string; content: string }[];
-            response_format?: { type: string };
-        } = {
-            model: modelName,
-            messages: [
-                { role: 'system', content: systemInstruction },
-                { role: 'user', content: prompt }
-            ],
-        };
-
-        // Handle model-specific parameters for JSON output.
-        // The Grok model via OpenRouter has issues with `tool_choice` and `response_format`.
-        // By NOT setting either, we rely on its instruction-following capability from the system prompt.
-        if (!modelName.startsWith('x-ai/grok')) {
-            // For other models like Gemini, use the standard `response_format` for reliable JSON output.
-            requestBody.response_format = { type: "json_object" };
-        }
-        
-        const response = await fetch(API_BASE_URL, {
+        // Send request to our own serverless backend
+        const response = await fetch('/api/gemini', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${atob(OPENROUTER_API_KEY_B64)}`,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': SITE_URL,
-                // FIX: URL-encode the site title to handle non-ASCII characters in HTTP headers.
-                'X-Title': encodeURIComponent(SITE_NAME),
             },
-            body: JSON.stringify(requestBody),
+            body: JSON.stringify({
+                prompt,
+                systemInstruction,
+                modelName
+            }),
         });
 
         if (!response.ok) {
@@ -133,7 +110,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         }
 
         const data = await response.json();
-        const content = data.choices[0]?.message?.content;
+        const content = data.choices?.[0]?.message?.content;
 
         if (!content) {
             throw new Error('Received an empty response from the AI model.');
@@ -170,7 +147,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         }
 
     } catch (error) {
-        console.error('Error calling OpenRouter AI:', error);
+        console.error('Error calling AI Service:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during the API call.';
         throw new Error(`AI analysis failed. Reason: ${errorMessage}`);
     }
