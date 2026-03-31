@@ -1,24 +1,25 @@
 
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
-import { GoogleGenAI, Type } from '@google/genai';
+import { jsonrepair } from 'jsonrepair';
 
-// --- Configuration ---
-// Note: API Key is now handled securely on the server side (api/gemini.ts)
-// The OPENROUTER_API_KEY_B64 has been removed for security.
+// Initialize OpenRouter API Key
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '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';
 
-const getModelName = (isRealtimeSearchEnabled: boolean): string => {
-    // Always use Grok 4.1 Fast as requested
+const getModelName = (): string => {
     return 'x-ai/grok-4.1-fast';
 };
 
-const getModelDisplayName = (isRealtimeSearchEnabled: boolean): string => {
+const getModelDisplayName = (): string => {
     return 'Grok 4.1 Fast';
 };
 
 /**
- * Extracts a valid JSON object or array from a string using a balanced brace algorithm.
- * This handles cases where the AI appends garbage text or extra braces after the valid JSON.
+ * Extracts the likely JSON part from a string.
+ * It looks for the first '{' or '['. 
+ * If it finds a balanced closing brace, it returns that segment.
+ * If the string ends prematurely (truncated), it returns from the start brace to the end of the string,
+ * allowing jsonrepair to fix the unclosed structures.
  */
 function extractJson(text: string): string {
     let startIndex = text.indexOf('{');
@@ -77,13 +78,13 @@ function extractJson(text: string): string {
         return text.substring(startIndex, endIndex + 1);
     }
     
-    // If we couldn't balance the braces (e.g. truncated output), 
-    // we fallback to the substring from start, though it might fail parsing.
+    // If we couldn't balance the braces (e.g. truncated output due to max_tokens), 
+    // we return the substring from the start. `jsonrepair` will handle closing it.
     return text.substring(startIndex);
 }
 
 /**
- * A generic helper function to call the backend AI proxy.
+ * A generic helper function to call the OpenRouter AI.
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
@@ -91,17 +92,22 @@ function extractJson(text: string): string {
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
     try {
-        // Send request to our own serverless backend
-        const response = await fetch('/api/gemini', {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'Super Digger'
             },
             body: JSON.stringify({
-                prompt,
-                systemInstruction,
-                modelName
-            }),
+                model: modelName,
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: prompt }
+                ],
+                response_format: { type: 'json_object' }
+            })
         });
 
         if (!response.ok) {
@@ -116,34 +122,18 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             throw new Error('Received an empty response from the AI model.');
         }
 
-        // Use the robust extractor to find the valid JSON part
-        const jsonString = extractJson(content);
+        // 1. Extract the JSON part (remove markdown wrappers like ```json ... ```)
+        const rawJsonString = extractJson(content);
 
-        // FIX: The AI model can sometimes generate malformed JSON.
-        // This block attempts to parse, and on any SyntaxError, applies fixes and retries.
+        // 2. Use jsonrepair to fix truncated or malformed JSON
+        // This handles unclosed braces, missing quotes, missing commas, etc.
         try {
-            return JSON.parse(jsonString);
+            const repairedJsonString = jsonrepair(rawJsonString);
+            return JSON.parse(repairedJsonString);
         } catch (e) {
-            // Broaden the condition to catch any SyntaxError for auto-correction.
-            // AI models can return various forms of malformed JSON, and specific message checks can be brittle across different browsers/environments.
-            if (e instanceof SyntaxError) {
-                console.warn("Initial JSON parsing failed due to SyntaxError. Attempting to auto-correct.", e);
-                try {
-                    // Correction attempt 1: Add missing commas between properties ending with quotes, brackets, or braces, and a new property.
-                    let correctedJson = jsonString.replace(/([}\]"])\s*(")/g, "$1,$2");
-                    
-                    // Correction attempt 2: Add missing commas between objects in an array.
-                    correctedJson = correctedJson.replace(/}(?=\s*\{)/g, '},');
-                    
-                    return JSON.parse(correctedJson);
-                } catch (correctionError) {
-                    console.error("Auto-correction of JSON failed. The error is likely more complex.", correctionError);
-                    // Re-throw a more informative error after a failed correction attempt.
-                    throw new Error(`Failed to parse AI response after attempting auto-correction. The response was: ${content}`);
-                }
-            }
-            // If the error is not a SyntaxError, re-throw it immediately.
-            throw e;
+            console.error("JSON Repair failed. Raw content:", content);
+            // Re-throw a more informative error
+            throw new Error(`Failed to parse AI response. The model output was likely too corrupted to repair.`);
         }
 
     } catch (error) {
@@ -209,9 +199,9 @@ const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string)
     };
 };
 
-export const getAnalysis = async (topic: string, onProgress: (stepIndex: number) => void, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
-    const modelDisplayName = getModelDisplayName(isRealtimeSearchEnabled);
+export const getAnalysis = async (topic: string, onProgress: (stepIndex: number) => void, locale: Locale): Promise<AnalysisReport> => {
+    const modelName = getModelName();
+    const modelDisplayName = getModelDisplayName();
     const { part1System, part2System, part3System } = getAnalysisSystemInstructions(locale, modelDisplayName);
 
     const prompt = `Please analyze the following text: --- ${topic} ---`;
@@ -306,7 +296,7 @@ export const getPolymarketAnalysis = async (url: string, locale: Locale, isRealt
         ---
     `;
 
-    return callOpenRouterAI(prompt, systemInstruction, modelName);
+    return callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
 };
 
 const getStockAnalysisSystemInstruction = (locale: Locale): string => {
@@ -412,7 +402,7 @@ export const getStockAnalysis = async (
         ---
     `;
 
-    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callOpenRouterAI(prompt, systemInstruction, modelName);
+    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
     
     onProgress(1); // "Aggregating institutional research..."
     
@@ -486,7 +476,7 @@ export const getResearchReportAnalysis = async (stockQuery: string, locale: Loca
     `;
 
     try {
-        const result = await callOpenRouterAI(prompt, systemInstruction, modelName);
+        const result = await callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
         // Basic validation to ensure the AI returns a somewhat correct structure
         if (result && Array.isArray(result.epsForecasts) && result.targetPriceSummary && Array.isArray(result.recentReports)) {
             return result;
@@ -520,8 +510,8 @@ const getHotStocksSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getHotStocksFromAI = async (locale: Locale, isRealtimeSearchEnabled: boolean): Promise<{name: string; ticker: string}[]> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+export const getHotStocksFromAI = async (locale: Locale): Promise<{name: string; ticker: string}[]> => {
+    const modelName = getModelName();
     const systemInstruction = getHotStocksSystemInstruction(locale);
     const prompt = "Please provide the list of the 10 hottest stocks in the last 24 hours.";
 
@@ -563,7 +553,7 @@ export const findIndustryLeader = async (
 ): Promise<LeaderStockProfile> => {
     const modelName = getModelName(isRealtimeSearchEnabled);
     const systemInstruction = getFindLeaderInstruction(locale);
-    return await callOpenRouterAI(query, systemInstruction, modelName);
+    return await callGeminiAI(query, systemInstruction, modelName, isRealtimeSearchEnabled);
 };
 
 export const getPositionalWarfareFollowerAnalysis = async (
@@ -577,18 +567,18 @@ export const getPositionalWarfareFollowerAnalysis = async (
 
     onProgress(1); // Screening for followers
     const step2Prompt = locale === 'zh' ? `龙头股票资料: ${JSON.stringify(leaderProfile)}` : `Leader Stock Profile: ${JSON.stringify(leaderProfile)}`;
-    const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName);
+    const screeningResult = await callGeminiAI(step2Prompt, step2System, modelName, isRealtimeSearchEnabled);
     const candidates = screeningResult.candidates || [];
     if (candidates.length === 0) throw new Error(locale === 'zh' ? "未能找到合适的潜力补涨股。" : "Could not find suitable follower candidates.");
 
     onProgress(2); // Analyzing candidate financials
     const step3Prompt = locale === 'zh' ? `公司列表: ${JSON.stringify(candidates)}` : `Companies List: ${JSON.stringify(candidates)}`;
-    const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName);
+    const metricsResult = await callGeminiAI(step3Prompt, step3System, modelName, isRealtimeSearchEnabled);
     const detailedCandidates = metricsResult.detailedCandidates || [];
 
     onProgress(3); // Synthesizing final strategy
     const step4Prompt = locale === 'zh' ? `龙头股票: ${JSON.stringify(leaderProfile)}\n\n潜力补涨股及指标: ${JSON.stringify(detailedCandidates)}` : `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
-    const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName);
+    const finalAnalysis = await callGeminiAI(step4Prompt, step4System, modelName, isRealtimeSearchEnabled);
     
     // Merge the final analysis with the detailed candidate data
     const finalFollowers = detailedCandidates.map((candidate: any) => {

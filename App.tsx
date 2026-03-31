@@ -4,8 +4,6 @@ import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 // FIX: Import `getHotStocksFromAI` to resolve reference error.
 import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI } from './services/geminiService';
-// FIX: Import getCaseStudyData to be used when selecting a case study.
-import { getCaseStudyData } from './services/caseStudyData';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
@@ -22,7 +20,6 @@ import PositionalWarfareResult from './components/PositionalWarfareResult';
 import UserGuideModal from './components/UserGuideModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
-import CaseStudyCard from './components/CaseStudyCard';
 import PaymentModal from './components/PaymentModal';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
@@ -34,7 +31,6 @@ const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
-const CASE_STUDY_CLOSED_KEY = 'gemini-case-study-closed';
 const USER_ID_KEY = 'gemini-user-id';
 const CREDITS_KEY = 'gemini-claude-credits';
 const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
@@ -583,9 +579,7 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isUserGuideModalOpen, setIsUserGuideModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [isCaseStudyVisible, setIsCaseStudyVisible] = useState(true);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
-  const [isRealtimeSearchEnabled, setIsRealtimeSearchEnabled] = useState<boolean>(false);
   const [hasPaid, setHasPaid] = useState<boolean>(false);
 
 
@@ -678,11 +672,6 @@ const MainPage: React.FC = () => {
         setUserAnalysisCount(JSON.parse(storedUserCount));
       }
       
-      const isCaseStudyClosed = localStorage.getItem(CASE_STUDY_CLOSED_KEY);
-      if (isCaseStudyClosed === 'true') {
-          setIsCaseStudyVisible(false);
-      }
-
       const isBannerClosed = sessionStorage.getItem(BANNER_CLOSED_SESSION_KEY);
       if (isBannerClosed !== 'true') {
           setIsBannerVisible(true);
@@ -697,7 +686,7 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     const fetchHotStocks = async () => {
       try {
-        const stocks = await getHotStocksFromAI(locale, isRealtimeSearchEnabled);
+        const stocks = await getHotStocksFromAI(locale);
         setHotStocks(stocks);
       } catch (err) {
         console.error("Failed to fetch hot stocks:", err);
@@ -705,7 +694,7 @@ const MainPage: React.FC = () => {
       }
     };
     fetchHotStocks();
-  }, [locale, isRealtimeSearchEnabled]);
+  }, [locale]);
 
   // SEO: Set meta tags and html lang
   useEffect(() => {
@@ -781,8 +770,8 @@ const MainPage: React.FC = () => {
 
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
         const report = isPolymarketUrl 
-            ? await getPolymarketAnalysis(topic, locale, isRealtimeSearchEnabled)
-            : await getAnalysis(topic, setTopicProgress, locale, isRealtimeSearchEnabled);
+            ? await getPolymarketAnalysis(topic, locale)
+            : await getAnalysis(topic, setTopicProgress, locale);
         
         setAnalysisReport(report);
         recordAnalysisTimestamp();
@@ -800,7 +789,7 @@ const MainPage: React.FC = () => {
         setIsLoading(false);
         setTopicProgress(0);
     }
-  }, [topicHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [topicHistory, locale, t, cost, isPaywalled, credits]);
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
@@ -819,7 +808,7 @@ const MainPage: React.FC = () => {
     try {
         setCredits(useCredits(cost));
 
-        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setStockProgress, locale, isRealtimeSearchEnabled);
+        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setStockProgress, locale);
 
         setStockAnalysisReport(combinedReport);
         recordAnalysisTimestamp();
@@ -837,7 +826,7 @@ const MainPage: React.FC = () => {
         setIsStockLoading(false);
         setStockProgress(0);
     }
-  }, [stockHistory, locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [stockHistory, locale, t, cost, isPaywalled, credits]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
@@ -849,7 +838,7 @@ const MainPage: React.FC = () => {
     handleClearAllResults();
 
     try {
-        const leaderProfile = await findIndustryLeader(query, locale, isRealtimeSearchEnabled);
+        const leaderProfile = await findIndustryLeader(query, locale);
         setPotentialLeader(leaderProfile);
         setIsConfirmingLeader(true);
     } catch (err) {
@@ -859,7 +848,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsFindingLeader(false);
     }
-  }, [locale, t, isRealtimeSearchEnabled]);
+  }, [locale, t]);
   
   const handleConfirmLeaderAndAnalyze = useCallback(async (bypassCreditCheck = false) => {
     if (!potentialLeader) return;
@@ -877,7 +866,7 @@ const MainPage: React.FC = () => {
     try {
         setCredits(useCredits(cost));
         
-        const report = await getPositionalWarfareFollowerAnalysis(potentialLeader, setPositionalWarfareProgress, locale, isRealtimeSearchEnabled);
+        const report = await getPositionalWarfareFollowerAnalysis(potentialLeader, setPositionalWarfareProgress, locale);
 
         setPositionalWarfareReport(report);
         recordAnalysisTimestamp();
@@ -897,7 +886,7 @@ const MainPage: React.FC = () => {
         setPositionalWarfareProgress(0);
         setPotentialLeader(null);
     }
-  }, [potentialLeader, leaderStockQuery, positionalWarfareHistory, locale, t, cost, isPaywalled, isRealtimeSearchEnabled]);
+  }, [potentialLeader, leaderStockQuery, positionalWarfareHistory, locale, t, cost, isPaywalled]);
 
 
   const handleInlineStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
@@ -914,7 +903,7 @@ const MainPage: React.FC = () => {
 
     try {
         setCredits(useCredits(cost));
-        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setInlineStockProgress, locale, isRealtimeSearchEnabled);
+        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setInlineStockProgress, locale);
         setInlineStockAnalysisReport(combinedReport);
         // Do not add to history for inline analysis to keep the main history clean
     } catch (err) {
@@ -925,7 +914,7 @@ const MainPage: React.FC = () => {
     } finally {
         setIsInlineStockLoading(false);
     }
-  }, [locale, t, cost, isPaywalled, credits, isRealtimeSearchEnabled]);
+  }, [locale, t, cost, isPaywalled, credits]);
 
   const clearInlineStockAnalysis = () => {
     setInlineStockAnalysisReport(null);
@@ -982,33 +971,6 @@ const MainPage: React.FC = () => {
     setStockQuery(query);
     handleStockAnalyze(query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSelectCaseStudy = useCallback(() => {
-    const caseStudy = getCaseStudyData(locale);
-    
-    setUserInput(caseStudy.topic);
-    setAnalysisReport(caseStudy.report);
-    
-    // Clear other states
-    setStockAnalysisReport(null);
-    setPositionalWarfareReport(null);
-    setError(null);
-    setStockError(null);
-    setPositionalWarfareError(null);
-    setIsLoading(false); // Ensure loader is off
-    
-    setActiveTab('topic');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [locale]);
-
-  const handleCloseCaseStudy = () => {
-    setIsCaseStudyVisible(false);
-    try {
-        localStorage.setItem(CASE_STUDY_CLOSED_KEY, 'true');
-    } catch (err) {
-        console.error("Failed to save to localStorage", err);
-    }
   };
 
   const handleRedeemCode = useCallback(() => {
@@ -1124,7 +1086,6 @@ const MainPage: React.FC = () => {
   };
 
   const showLatestNews = locale === 'zh';
-  const gridShouldBeTwoColumns = isCaseStudyVisible && showLatestNews;
   
   const noReportLoaded = !analysisReport && !stockAnalysisReport && !positionalWarfareReport;
   const isLoadingAny = isLoading || isStockLoading || isPositionalWarfareLoading || isFindingLeader;
@@ -1211,29 +1172,6 @@ const MainPage: React.FC = () => {
                       <span>{t('tabs.positional')}</span>
                     </TabButton>
                 </div>
-                <div className="flex items-center gap-x-4 sm:gap-x-6">
-                    <div className="flex items-center gap-x-2 relative group">
-                        <label htmlFor="realtime-search-toggle" className={`text-sm font-medium transition-colors ${!hasPaid ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'}`}>
-                            {t('controls.realtimeSearch')}
-                        </label>
-                        <button
-                            id="realtime-search-toggle"
-                            role="switch"
-                            aria-checked={isRealtimeSearchEnabled}
-                            onClick={() => hasPaid && setIsRealtimeSearchEnabled(!isRealtimeSearchEnabled)}
-                            disabled={!hasPaid}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 ${isRealtimeSearchEnabled ? 'bg-black' : 'bg-gray-200'} ${!hasPaid ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        >
-                            <span aria-hidden="true" className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isRealtimeSearchEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                        </button>
-                        {!hasPaid && (
-                            <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 w-max hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10" role="tooltip">
-                                {t('controls.realtimeSearchTooltip')}
-                                <div className="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 transform bg-gray-800"></div>
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
 
             <div className="space-y-8">
@@ -1317,10 +1255,7 @@ const MainPage: React.FC = () => {
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">
                     {activeTab === 'topic' && (
-                       <div className={`grid grid-cols-1 ${gridShouldBeTwoColumns ? 'lg:grid-cols-2' : ''} gap-8 items-start`}>
-                          {isCaseStudyVisible && (
-                            <CaseStudyCard onSelect={handleSelectCaseStudy} onClose={handleCloseCaseStudy} />
-                          )}
+                       <div className="grid grid-cols-1 gap-8 items-start">
                           {showLatestNews && <LatestNews 
                             onAnalyze={handleNewsSelect} 
                             sources={NEWS_SOURCES}

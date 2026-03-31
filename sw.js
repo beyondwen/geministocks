@@ -38,7 +38,7 @@ self.addEventListener('activate', event => {
 // Fetch event handler with a stale-while-revalidate strategy
 self.addEventListener('fetch', event => {
   // Ignore API calls and non-GET requests
-  if (event.request.url.includes('/api/gemini') || event.request.method !== 'GET') {
+  if (event.request.url.includes('generativelanguage.googleapis.com') || event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return;
   }
