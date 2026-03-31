@@ -21,7 +21,6 @@ import UserGuideModal from './components/UserGuideModal';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import PaymentModal from './components/PaymentModal';
-import AnnouncementBanner from './components/AnnouncementBanner';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
 
 
@@ -33,8 +32,6 @@ const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const USER_ID_KEY = 'gemini-user-id';
 const CREDITS_KEY = 'gemini-claude-credits';
-const LAST_DAILY_CREDIT_AWARD_DATE_KEY = 'gemini-daily-credit-award-date';
-const BANNER_CLOSED_SESSION_KEY = 'gemini-daily-credit-banner-closed';
 const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
 
 
@@ -44,9 +41,6 @@ const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 // --- Model Usage Rules ---
 const ANALYSIS_CREDIT_COST = 1;
-
-// --- New Credit System Rules ---
-const DAILY_FREE_CREDITS_AWARD = 1;
 
 // --- User/Credit/Usage Helper Functions ---
 const getUserId = (): string => {
@@ -110,14 +104,12 @@ const NEWS_SOURCES: NewsSource[] = [
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
-  { id: 'solidot', name: '奇客', url: 'https://www.solidot.org/index.rss' },
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '36氪': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
-  '奇客': 'bg-gray-100 text-gray-800',
 };
 
 
@@ -579,7 +571,6 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isUserGuideModalOpen, setIsUserGuideModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [isBannerVisible, setIsBannerVisible] = useState(false);
   const [hasPaid, setHasPaid] = useState<boolean>(false);
 
 
@@ -638,17 +629,6 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     // Initialize user ID
     getUserId();
-
-    // Daily Credits (runs once per day)
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        const lastAwardDate = localStorage.getItem(LAST_DAILY_CREDIT_AWARD_DATE_KEY);
-        if (lastAwardDate !== today) {
-            addCredits(DAILY_FREE_CREDITS_AWARD);
-            localStorage.setItem(LAST_DAILY_CREDIT_AWARD_DATE_KEY, today);
-            setToast({ message: t('toasts.dailyCreditsAwarded', { count: DAILY_FREE_CREDITS_AWARD }), type: 'success' });
-        }
-    } catch (e) { console.error("Failed to award daily credits:", e); }
     
     // Set credits state from the now-updated localStorage
     setCredits(getCredits());
@@ -671,16 +651,11 @@ const MainPage: React.FC = () => {
       if (storedUserCount) {
         setUserAnalysisCount(JSON.parse(storedUserCount));
       }
-      
-      const isBannerClosed = sessionStorage.getItem(BANNER_CLOSED_SESSION_KEY);
-      if (isBannerClosed !== 'true') {
-          setIsBannerVisible(true);
-      }
 
     } catch (err) {
       console.error("Failed to load from localStorage", err);
     }
-  }, [t]);
+  }, []);
 
   // Fetch dynamic hot stocks when language changes
   useEffect(() => {
@@ -1011,15 +986,6 @@ const MainPage: React.FC = () => {
     }
   }, [redemptionCode, t]);
 
-  const handleCloseBanner = () => {
-    setIsBannerVisible(false);
-    try {
-        sessionStorage.setItem(BANNER_CLOSED_SESSION_KEY, 'true');
-    } catch (e) {
-        console.error("Failed to write to sessionStorage", e);
-    }
-  };
-
   const handleNewAnalysis = () => {
     handleClearAllResults();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1093,7 +1059,6 @@ const MainPage: React.FC = () => {
 
   return (
     <>
-      {isBannerVisible && <AnnouncementBanner onClose={handleCloseBanner} />}
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
@@ -1131,7 +1096,15 @@ const MainPage: React.FC = () => {
                     </div>
 
                     {/* Right side: Controls */}
-                    <div className="flex items-center gap-x-6">
+                    <div className="flex items-center gap-x-4 sm:gap-x-6">
+                        <a 
+                            href="https://mastergo.lovable.app/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
+                        >
+                            <span>金融工具箱</span>
+                        </a>
                         <button 
                             onClick={() => setIsUserGuideModalOpen(true)} 
                             className="hidden sm:flex items-center gap-x-1.5 text-sm font-medium text-gray-600 hover:text-black transition-colors"
