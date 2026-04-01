@@ -11,11 +11,18 @@ import {
   logoutUser,
   getCurrentSession,
   refreshUserData,
+  createGoogleSession,
   type User,
   type AuthSession,
   type LoginCredentials,
   type RegisterData
 } from '../services/authService'
+import {
+  loginWithGoogle as googleLogin,
+  linkGoogleAccount,
+  unlinkGoogleAccount,
+  isGoogleLinked
+} from '../services/googleAuthService'
 import {
   syncCredits,
   fullSync,
@@ -45,6 +52,10 @@ interface UseAuthReturn {
   // Auth actions
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, username: string) => Promise<void>
+  loginWithGoogle: (userId: string, username: string, isNewUser: boolean) => Promise<void>
+  linkGoogle: () => Promise<void>
+  unlinkGoogle: () => Promise<void>
+  isGoogleAccountLinked: () => Promise<boolean>
   logout: () => void
   
   // Data actions
@@ -184,6 +195,74 @@ export function useAuth(): UseAuthReturn {
   }, [])
 
   /**
+   * Login with Google (called after OAuth callback)
+   */
+  const loginWithGoogle = useCallback(async (userId: string, username: string, isNewUser: boolean) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Create session for the Google user
+      const session = await createGoogleSession(userId)
+      setUser(session.user)
+
+      // Migrate local data if new user
+      if (isNewUser) {
+        await migrateLocalDataToDb(session.user.id)
+      }
+
+      // Sync data
+      const { credits: userCredits } = await fullSync(session.user.id)
+      setCredits(userCredits.balance)
+      setSyncStatus(getSyncStatus())
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Google 登录失败'
+      setError(message)
+      throw e
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  /**
+   * Link Google account to current user
+   */
+  const linkGoogle = useCallback(async () => {
+    if (!user) {
+      throw new Error('请先登录')
+    }
+
+    // This will redirect to Google OAuth
+    const { initiateGoogleLogin } = await import('../services/googleAuthService')
+    await initiateGoogleLogin(user.id)
+  }, [user])
+
+  /**
+   * Unlink Google account
+   */
+  const unlinkGoogle = useCallback(async () => {
+    if (!user) {
+      throw new Error('请先登录')
+    }
+
+    await unlinkGoogleAccount(user.id)
+    
+    // Refresh user data
+    const refreshedUser = await refreshUserData(user.id)
+    if (refreshedUser) {
+      setUser(refreshedUser)
+    }
+  }, [user])
+
+  /**
+   * Check if Google account is linked
+   */
+  const isGoogleAccountLinked = useCallback(async (): Promise<boolean> => {
+    if (!user) return false
+    return isGoogleLinked(user.id)
+  }, [user])
+
+  /**
    * Logout
    */
   const logout = useCallback(() => {
@@ -295,6 +374,10 @@ export function useAuth(): UseAuthReturn {
     syncStatus,
     login,
     register,
+    loginWithGoogle,
+    linkGoogle,
+    unlinkGoogle,
+    isGoogleAccountLinked,
     logout,
     syncData,
     addCredits,

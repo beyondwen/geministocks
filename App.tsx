@@ -35,6 +35,7 @@ import PaymentModal from './components/PaymentModal';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
+import GoogleAuthCallback from './components/GoogleAuthCallback';
 import { useAuth } from './hooks/useAuth';
 
 
@@ -602,6 +603,7 @@ const MainPage: React.FC = () => {
   
   // Authentication State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [showGoogleCallback, setShowGoogleCallback] = useState(false);
   const {
     user,
     isAuthenticated,
@@ -611,6 +613,7 @@ const MainPage: React.FC = () => {
     syncStatus,
     login,
     register,
+    loginWithGoogle,
     logout,
     syncData,
     addCredits: addAuthCredits,
@@ -618,6 +621,14 @@ const MainPage: React.FC = () => {
     getUserId: getAuthUserId,
     clearError
   } = useAuth();
+  
+  // Check for Google OAuth callback on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('code') && urlParams.has('state')) {
+      setShowGoogleCallback(true);
+    }
+  }, []);
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -1156,6 +1167,22 @@ const MainPage: React.FC = () => {
         isLoading={isAuthLoading}
         error={authError}
       />
+      {showGoogleCallback && (
+        <GoogleAuthCallback
+          onSuccess={async (userId, username, isNewUser) => {
+            await loginWithGoogle(userId, username, isNewUser);
+            setShowGoogleCallback(false);
+            setToast({ 
+              message: isNewUser ? '账户创建成功！已赠送15积分' : '登录成功！数据已同步', 
+              type: 'success' 
+            });
+          }}
+          onError={(error) => {
+            setShowGoogleCallback(false);
+            setToast({ message: error, type: 'info' });
+          }}
+        />
+      )}
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => {
