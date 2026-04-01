@@ -2,14 +2,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-// FIX: Import `getHotStocksFromAI` to resolve reference error.
-import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI } from './services/geminiService';
+// Use streaming service with fallback to legacy
+import { 
+  getAnalysisWithStreaming, 
+  getStockAnalysisWithStreaming,
+  getStockAnalysis,
+  findIndustryLeader, 
+  getPositionalWarfareFollowerAnalysis, 
+  getPolymarketAnalysis, 
+  getHotStocksFromAI 
+} from './services/streamingService';
+import { getAnalysis } from './services/geminiService';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
 import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
+import StreamingLoader from './components/StreamingLoader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
@@ -565,6 +575,12 @@ const MainPage: React.FC = () => {
   const [inlineStockProgress, setInlineStockProgress] = useState<number>(0);
   const [inlineStockError, setInlineStockError] = useState<string | null>(null);
 
+  // Streaming Progress State
+  const [streamingTopicProgress, setStreamingTopicProgress] = useState<number>(0);
+  const [streamingStockProgress, setStreamingStockProgress] = useState<number>(0);
+  const [partialTopicData, setPartialTopicData] = useState<Partial<AnalysisReport> | null>(null);
+  const [partialStockData, setPartialStockData] = useState<Partial<StockAnalysisReport> | null>(null);
+
   // Common State
   const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -739,14 +755,29 @@ const MainPage: React.FC = () => {
     setIsLoading(true);
     handleClearAllResults();
     setTopicProgress(0);
+    setStreamingTopicProgress(0);
+    setPartialTopicData(null);
 
     try {
         setCredits(useCredits(cost));
 
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
-        const report = isPolymarketUrl 
-            ? await getPolymarketAnalysis(topic, locale)
-            : await getAnalysis(topic, setTopicProgress, locale);
+        
+        let report: AnalysisReport;
+        if (isPolymarketUrl) {
+            report = await getPolymarketAnalysis(topic, locale);
+        } else {
+            // Use streaming analysis with progress callback
+            report = await getAnalysisWithStreaming(
+                topic, 
+                setTopicProgress, 
+                locale,
+                (progress, data) => {
+                    setStreamingTopicProgress(progress);
+                    setPartialTopicData(data);
+                }
+            );
+        }
         
         setAnalysisReport(report);
         recordAnalysisTimestamp();
@@ -763,6 +794,8 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
         setTopicProgress(0);
+        setStreamingTopicProgress(0);
+        setPartialTopicData(null);
     }
   }, [topicHistory, locale, t, cost, isPaywalled, credits]);
 
@@ -779,11 +812,22 @@ const MainPage: React.FC = () => {
     setIsStockLoading(true);
     handleClearAllResults();
     setStockProgress(0);
+    setStreamingStockProgress(0);
+    setPartialStockData(null);
 
     try {
         setCredits(useCredits(cost));
 
-        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setStockProgress, locale);
+        // Use streaming analysis with progress callback
+        const combinedReport = await getStockAnalysisWithStreaming(
+            stockQueryToAnalyze, 
+            setStockProgress, 
+            locale,
+            (progress, data) => {
+                setStreamingStockProgress(progress);
+                setPartialStockData(data);
+            }
+        );
 
         setStockAnalysisReport(combinedReport);
         recordAnalysisTimestamp();
@@ -800,6 +844,8 @@ const MainPage: React.FC = () => {
     } finally {
         setIsStockLoading(false);
         setStockProgress(0);
+        setStreamingStockProgress(0);
+        setPartialStockData(null);
     }
   }, [stockHistory, locale, t, cost, isPaywalled, credits]);
 
@@ -1189,10 +1235,21 @@ const MainPage: React.FC = () => {
                 
                 {/* --- RESULTS / DASHBOARD --- */}
                 {isLoadingAny ? (
-                  <Loader 
-                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isFindingLeader ? undefined : 'positional'}
-                    currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
-                  />
+                  <>
+                    {/* Show streaming loader with progress when streaming data is available */}
+                    {(streamingTopicProgress > 0 || streamingStockProgress > 0) ? (
+                      <StreamingLoader
+                        progress={isLoading ? streamingTopicProgress : streamingStockProgress}
+                        isStreaming={isLoading || isStockLoading}
+                        type={isLoading ? 'topic' : isStockLoading ? 'stock' : 'positional'}
+                      />
+                    ) : (
+                      <Loader 
+                        taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isFindingLeader ? undefined : 'positional'}
+                        currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
+                      />
+                    )}
+                  </>
                 ) : error ? (
                     <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
                         <p className="font-semibold">{t('errors.title')}</p>

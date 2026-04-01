@@ -3,8 +3,9 @@ import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, Lead
 import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
 
-// Initialize OpenRouter API Key
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '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';
+// Initialize OpenRouter API Key - prefer server-side API routes for security
+// This client-side key is only used as a fallback when streaming API is unavailable
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
     return 'x-ai/grok-4.1-fast';
@@ -284,8 +285,8 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
 };
 
 
-export const getPolymarketAnalysis = async (url: string, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+export const getPolymarketAnalysis = async (url: string, locale: Locale): Promise<AnalysisReport> => {
+    const modelName = getModelName();
     const systemInstruction = getPolymarketAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -296,7 +297,7 @@ export const getPolymarketAnalysis = async (url: string, locale: Locale, isRealt
         ---
     `;
 
-    return callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
+    return callOpenRouterAI(prompt, systemInstruction, modelName);
 };
 
 const getStockAnalysisSystemInstruction = (locale: Locale): string => {
@@ -386,13 +387,12 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
 
 
 export const getStockAnalysis = async (
-    stockQuery: string, 
-    onProgress: (stepIndex: number) => void,
-    locale: Locale, 
-    isRealtimeSearchEnabled: boolean
-): Promise<StockAnalysisReport> => {
+  stockQuery: string,
+  onProgress: (stepIndex: number) => void,
+  locale: Locale
+  ): Promise<StockAnalysisReport> => {
     onProgress(0); // "Analyzing core fundamentals..."
-    const modelName = getModelName(isRealtimeSearchEnabled);
+    const modelName = getModelName();
     const systemInstruction = getStockAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -402,11 +402,11 @@ export const getStockAnalysis = async (
         ---
     `;
 
-    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
+    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callOpenRouterAI(prompt, systemInstruction, modelName);
     
     onProgress(1); // "Aggregating institutional research..."
     
-    const researchData = await getResearchReportAnalysis(stockQuery, locale, isRealtimeSearchEnabled);
+    const researchData = await getResearchReportAnalysis(stockQuery, locale);
     
     onProgress(2); // "Synthesizing professional-grade report..."
 
@@ -464,8 +464,8 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getResearchReportAnalysis = async (stockQuery: string, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<ResearchReportConsensus> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+export const getResearchReportAnalysis = async (stockQuery: string, locale: Locale): Promise<ResearchReportConsensus> => {
+    const modelName = getModelName();
     const systemInstruction = getResearchReportAnalysisSystemInstruction(locale);
 
     const prompt = `
@@ -476,7 +476,7 @@ export const getResearchReportAnalysis = async (stockQuery: string, locale: Loca
     `;
 
     try {
-        const result = await callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
+        const result = await callOpenRouterAI(prompt, systemInstruction, modelName);
         // Basic validation to ensure the AI returns a somewhat correct structure
         if (result && Array.isArray(result.epsForecasts) && result.targetPriceSummary && Array.isArray(result.recentReports)) {
             return result;
@@ -547,38 +547,36 @@ const getFollowerAnalysisInstructions = (locale: Locale) => {
 }
 
 export const findIndustryLeader = async (
-    query: string,
-    locale: Locale,
-    isRealtimeSearchEnabled: boolean
-): Promise<LeaderStockProfile> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+  query: string,
+  locale: Locale
+  ): Promise<LeaderStockProfile> => {
+    const modelName = getModelName();
     const systemInstruction = getFindLeaderInstruction(locale);
-    return await callGeminiAI(query, systemInstruction, modelName, isRealtimeSearchEnabled);
+    return await callOpenRouterAI(query, systemInstruction, modelName);
 };
 
 export const getPositionalWarfareFollowerAnalysis = async (
-    leaderProfile: LeaderStockProfile,
-    onProgress: (stepIndex: number) => void,
-    locale: Locale,
-    isRealtimeSearchEnabled: boolean
-): Promise<PositionalWarfareReport> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+  leaderProfile: LeaderStockProfile,
+  onProgress: (stepIndex: number) => void,
+  locale: Locale
+  ): Promise<PositionalWarfareReport> => {
+    const modelName = getModelName();
     const { step2System, step3System, step4System } = getFollowerAnalysisInstructions(locale);
 
     onProgress(1); // Screening for followers
     const step2Prompt = locale === 'zh' ? `龙头股票资料: ${JSON.stringify(leaderProfile)}` : `Leader Stock Profile: ${JSON.stringify(leaderProfile)}`;
-    const screeningResult = await callGeminiAI(step2Prompt, step2System, modelName, isRealtimeSearchEnabled);
+    const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName);
     const candidates = screeningResult.candidates || [];
     if (candidates.length === 0) throw new Error(locale === 'zh' ? "未能找到合适的潜力补涨股。" : "Could not find suitable follower candidates.");
 
     onProgress(2); // Analyzing candidate financials
     const step3Prompt = locale === 'zh' ? `公司列表: ${JSON.stringify(candidates)}` : `Companies List: ${JSON.stringify(candidates)}`;
-    const metricsResult = await callGeminiAI(step3Prompt, step3System, modelName, isRealtimeSearchEnabled);
+    const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName);
     const detailedCandidates = metricsResult.detailedCandidates || [];
 
     onProgress(3); // Synthesizing final strategy
     const step4Prompt = locale === 'zh' ? `龙头股票: ${JSON.stringify(leaderProfile)}\n\n潜力补涨股及指标: ${JSON.stringify(detailedCandidates)}` : `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
-    const finalAnalysis = await callGeminiAI(step4Prompt, step4System, modelName, isRealtimeSearchEnabled);
+    const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName);
     
     // Merge the final analysis with the detailed candidate data
     const finalFollowers = detailedCandidates.map((candidate: any) => {
