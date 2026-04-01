@@ -2,6 +2,7 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
+import { captureError, addBreadcrumb } from './sentry';
 
 // Initialize OpenRouter API Key - prefer server-side API routes for security
 // This client-side key is only used as a fallback when streaming API is unavailable
@@ -92,6 +93,9 @@ function extractJson(text: string): string {
  * @returns The JSON-parsed response from the model.
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
+    // Add breadcrumb for debugging
+    addBreadcrumb('ai', 'Calling OpenRouter API', { model: modelName, promptLength: prompt.length });
+    
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -139,6 +143,16 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 
     } catch (error) {
         console.error('Error calling AI Service:', error);
+        
+        // Capture error in Sentry with context
+        if (error instanceof Error) {
+            captureError(error, {
+                model: modelName,
+                promptLength: prompt.length,
+                systemInstructionLength: systemInstruction.length,
+            });
+        }
+        
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during the API call.';
         throw new Error(`AI analysis failed. Reason: ${errorMessage}`);
     }
@@ -441,7 +455,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
-        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
+        9.  **近期研报**: 从筛选列表中选择最新的3份��报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
         10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空数组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}
