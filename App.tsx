@@ -33,6 +33,9 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import PaymentModal from './components/PaymentModal';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
+import AuthModal from './components/AuthModal';
+import UserMenu from './components/UserMenu';
+import { useAuth } from './hooks/useAuth';
 
 
 // --- Constants ---
@@ -597,6 +600,25 @@ const MainPage: React.FC = () => {
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [redemptionCode, setRedemptionCode] = useState('');
   
+  // Authentication State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const {
+    user,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    error: authError,
+    credits: authCredits,
+    syncStatus,
+    login,
+    register,
+    logout,
+    syncData,
+    addCredits: addAuthCredits,
+    useCredits: useAuthCredits,
+    getUserId: getAuthUserId,
+    clearError
+  } = useAuth();
+  
   // Effect to hide toast after a delay
   useEffect(() => {
     if (toast) {
@@ -644,10 +666,10 @@ const MainPage: React.FC = () => {
   };
   
   useEffect(() => {
-    // Initialize user ID
+    // Initialize user ID (for anonymous users)
     getUserId();
     
-    // Set credits state from the now-updated localStorage
+    // Set credits state from the now-updated localStorage (fallback for anonymous)
     setCredits(getCredits());
 
     // Load history and settings from localStorage
@@ -673,6 +695,13 @@ const MainPage: React.FC = () => {
       console.error("Failed to load from localStorage", err);
     }
   }, []);
+  
+  // Sync credits from auth hook when user logs in
+  useEffect(() => {
+    if (isAuthenticated && authCredits !== undefined) {
+      setCredits(authCredits);
+    }
+  }, [isAuthenticated, authCredits]);
 
   // Fetch dynamic hot stocks when language changes
   useEffect(() => {
@@ -1108,6 +1137,25 @@ const MainPage: React.FC = () => {
     <>
       <CacheStats />
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          clearError();
+        }}
+        onLogin={async (email, password) => {
+          await login(email, password);
+          setIsAuthModalOpen(false);
+          setToast({ message: '登录成功！数据已同步', type: 'success' });
+        }}
+        onRegister={async (email, password, username) => {
+          await register(email, password, username);
+          setIsAuthModalOpen(false);
+          setToast({ message: '注册成功！已赠送10积分', type: 'success' });
+        }}
+        isLoading={isAuthLoading}
+        error={authError}
+      />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => {
@@ -1161,13 +1209,26 @@ const MainPage: React.FC = () => {
                             <AcademicCapIcon className="w-5 h-5" />
                             <span>{t('header.userGuide')}</span>
                         </button>
-                        <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
-                            <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
-                            <span className="sm:hidden">💎 {credits}</span>
-                            <button onClick={() => setIsPaymentModalOpen(true)} className="font-semibold text-gray-800 hover:text-black text-xs animated-underline">
-                                ({t('controls.addCredits')})
-                            </button>
-                        </div>
+                        {/* Credits display for anonymous users */}
+                        {!isAuthenticated && (
+                          <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
+                              <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
+                              <span className="sm:hidden">💎 {credits}</span>
+                              <button onClick={() => setIsPaymentModalOpen(true)} className="font-semibold text-gray-800 hover:text-black text-xs animated-underline">
+                                  ({t('controls.addCredits')})
+                              </button>
+                          </div>
+                        )}
+                        {/* User menu (shows login button or user profile) */}
+                        <UserMenu
+                            user={user}
+                            credits={credits}
+                            isLoading={isAuthLoading}
+                            onLoginClick={() => setIsAuthModalOpen(true)}
+                            onLogout={logout}
+                            onSync={syncData}
+                            syncStatus={syncStatus}
+                        />
                         <div className="hidden sm:block">
                             <LanguageSwitcher />
                         </div>
