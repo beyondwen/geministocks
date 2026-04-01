@@ -28,6 +28,7 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import UserGuideModal from './components/UserGuideModal';
+import { CacheStats } from './components/CacheStats';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import PaymentModal from './components/PaymentModal';
@@ -1105,6 +1106,7 @@ const MainPage: React.FC = () => {
 
   return (
     <>
+      <CacheStats />
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
