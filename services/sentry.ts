@@ -1,103 +1,155 @@
-import * as Sentry from '@sentry/react'
+// Sentry integration with graceful fallback when not installed
+// Note: Sentry is optional - the app works fine without it
+
+let Sentry: any = null
+let isSentryInitialized = false
+
+// Dynamically try to load Sentry, but gracefully handle if not installed
+async function loadSentry() {
+  if (isSentryInitialized) return
+  isSentryInitialized = true
+
+  try {
+    // @ts-ignore - Sentry is optional
+    const sentryModule = await import('@sentry/react')
+    Sentry = sentryModule.default || sentryModule
+  } catch (error) {
+    console.info('[Sentry] Not installed or import failed. Error tracking disabled.')
+    Sentry = null
+  }
+}
 
 // Initialize Sentry for error tracking and performance monitoring
 export function initSentry() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN
+  if (!Sentry) {
+    const dsn = import.meta.env.VITE_SENTRY_DSN
 
-  if (!dsn) {
-    console.warn('[Sentry] DSN not configured. Error tracking is disabled.')
+    if (!dsn) {
+      console.info('[Sentry] DSN not configured. Error tracking is disabled.')
+      return
+    }
+
+    console.warn('[Sentry] Package not available. Error tracking is disabled.')
     return
   }
 
-  Sentry.init({
-    dsn,
-    environment: import.meta.env.MODE || 'development',
-    
-    // Performance monitoring
-    tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
-    
-    // Session replay for debugging
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
+  const dsn = import.meta.env.VITE_SENTRY_DSN
 
-    // Integration options
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
-      }),
-    ],
+  if (!dsn) {
+    console.info('[Sentry] DSN not configured. Error tracking is disabled.')
+    return
+  }
 
-    // Filter out known non-critical errors
-    beforeSend(event, hint) {
-      const error = hint.originalException
+  try {
+    Sentry.init({
+      dsn,
+      environment: import.meta.env.MODE || 'development',
 
-      // Ignore network errors that are expected
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        return null
-      }
+      // Performance monitoring
+      tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
 
-      // Ignore user-initiated aborts
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return null
-      }
+      // Session replay for debugging
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
 
-      return event
-    },
+      // Integration options
+      integrations: [
+        Sentry.browserTracingIntegration(),
+        Sentry.replayIntegration({
+          maskAllText: false,
+          blockAllMedia: false,
+        }),
+      ],
 
-    // Add custom tags
-    initialScope: {
-      tags: {
-        app: 'gemini-stocks',
-        version: '1.0.0',
+      // Filter out known non-critical errors
+      beforeSend(event: any, hint: any) {
+        const error = hint.originalException
+
+        // Ignore network errors that are expected
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          return null
+        }
+
+        // Ignore user-initiated aborts
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return null
+        }
+
+        return event
       },
-    },
-  })
 
-  console.log('[Sentry] Initialized successfully')
+      // Add custom tags
+      initialScope: {
+        tags: {
+          app: 'gemini-stocks',
+          version: '1.0.0',
+        },
+      },
+    })
+
+    console.log('[Sentry] Initialized successfully')
+  } catch (error) {
+    console.warn('[Sentry] Initialization failed:', error)
+  }
 }
 
-// Custom error boundary wrapper
-export const SentryErrorBoundary = Sentry.ErrorBoundary
+// Custom error boundary wrapper - fallback if Sentry not available
+export const SentryErrorBoundary = Sentry?.ErrorBoundary || function DefaultErrorBoundary(props: any) {
+  return props.children
+}
 
-// Manual error capture utilities
+// Manual error capture utilities with graceful fallback
 export function captureError(error: Error, context?: Record<string, any>) {
-  Sentry.captureException(error, {
-    extra: context,
-  })
+  if (Sentry?.captureException) {
+    Sentry.captureException(error, { extra: context })
+  } else {
+    console.error('[Error Captured]', error, context)
+  }
 }
 
 export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info') {
-  Sentry.captureMessage(message, level)
+  if (Sentry?.captureMessage) {
+    Sentry.captureMessage(message, level)
+  } else {
+    console.log(`[${level.toUpperCase()}]`, message)
+  }
 }
 
 // Set user context for better debugging
 export function setUserContext(userId: string, extra?: Record<string, any>) {
-  Sentry.setUser({
-    id: userId,
-    ...extra,
-  })
+  if (Sentry?.setUser) {
+    Sentry.setUser({
+      id: userId,
+      ...extra,
+    })
+  }
 }
 
 // Add breadcrumb for tracking user actions
 export function addBreadcrumb(
-  category: string, 
-  message: string, 
+  category: string,
+  message: string,
   data?: Record<string, any>
 ) {
-  Sentry.addBreadcrumb({
-    category,
-    message,
-    data,
-    level: 'info',
-  })
+  if (Sentry?.addBreadcrumb) {
+    Sentry.addBreadcrumb({
+      category,
+      message,
+      data,
+      level: 'info',
+    })
+  }
 }
 
 // Performance transaction helpers
 export function startTransaction(name: string, op: string) {
-  return Sentry.startSpan({ name, op }, () => {})
+  if (Sentry?.startSpan) {
+    return Sentry.startSpan({ name, op }, () => {})
+  }
+  return null
 }
 
-// Re-export Sentry for direct access if needed
-export { Sentry }
+// Initialize Sentry on module load (try-catch to handle missing package)
+loadSentry().catch(() => {
+  // Silently fail if Sentry not installed
+})
