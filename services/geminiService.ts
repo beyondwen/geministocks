@@ -228,6 +228,52 @@ const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string)
     };
 };
 
+/**
+ * Detects if a query requires real-time web search based on content analysis.
+ * Market-sensitive queries (stocks, crypto, current events) need real-time data.
+ * Historical or conceptual queries can use cached/model knowledge.
+ */
+const detectNeedsWebSearch = (topic: string): boolean => {
+    const lowerTopic = topic.toLowerCase();
+    
+    // Patterns that indicate need for real-time data
+    const realTimePatterns = [
+        // Stock tickers and market terms
+        /\b[A-Z]{1,5}\b/,  // Stock tickers like AAPL, NVDA
+        /股票|stock|shares|equity/i,
+        /市场|market|trading|交易/i,
+        /价格|price|估值|valuation/i,
+        /财报|earnings|quarterly|季报|年报/i,
+        /ipo|上市|listing/i,
+        // Crypto
+        /比特币|bitcoin|btc|eth|crypto|加密货币/i,
+        // Current events
+        /最新|latest|recent|今天|today|本周|this week/i,
+        /新闻|news|announcement|公告/i,
+        // Companies and industries
+        /公司|company|企业|corporation/i,
+        /行业|industry|sector|板块/i,
+    ];
+    
+    // Patterns that indicate historical/conceptual (no real-time needed)
+    const historicalPatterns = [
+        /历史|history|historical/i,
+        /理论|theory|concept|概念/i,
+        /经典|classic|传统/i,
+        /\b(19|18)\d{2}\b/,  // Years like 1990, 1850
+    ];
+    
+    // Check if any historical pattern matches
+    const isHistorical = historicalPatterns.some(pattern => pattern.test(lowerTopic));
+    if (isHistorical) return false;
+    
+    // Check if any real-time pattern matches
+    const needsRealTime = realTimePatterns.some(pattern => pattern.test(topic));
+    
+    // Default to enabling web search for most financial queries
+    return needsRealTime || lowerTopic.length > 10;
+};
+
 export const getAnalysis = async (topic: string, onProgress: (stepIndex: number) => void, locale: Locale): Promise<AnalysisReport> => {
     const modelName = getModelName();
     const modelDisplayName = getModelDisplayName();
@@ -235,19 +281,20 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
 
     const prompt = `Please analyze the following text: --- ${topic} ---`;
 
-    // Enable web search for real-time market data and news
-    const enableWebSearch = true;
+    // Smart web search: only enable for market-sensitive queries
+    const enableWebSearch = detectNeedsWebSearch(topic);
 
     onProgress(0); // "Running core analysis..."
-    const part1Result = await callOpenRouterAI(prompt, part1System, modelName, enableWebSearch);
     
-    onProgress(1); // "Performing deep dives..."
-    const part2Result = await callOpenRouterAI(prompt, part2System, modelName, enableWebSearch);
-
-    onProgress(2); // "Formulating strategy & suggestions..."
-    const part3Result = await callOpenRouterAI(prompt, part3System, modelName, enableWebSearch);
+    // OPTIMIZATION: Run all 3 AI calls in parallel instead of sequentially
+    // This reduces total time from (T1 + T2 + T3) to max(T1, T2, T3)
+    const [part1Result, part2Result, part3Result] = await Promise.all([
+        callOpenRouterAI(prompt, part1System, modelName, enableWebSearch),
+        callOpenRouterAI(prompt, part2System, modelName, enableWebSearch),
+        callOpenRouterAI(prompt, part3System, modelName, enableWebSearch),
+    ]);
     
-    onProgress(3); // "Finalizing report..."
+    onProgress(3); // "Finalizing report..." (skip intermediate steps since parallel)
 
     // Combine results from all parts
     const finalReport: AnalysisReport = {
