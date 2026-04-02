@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { captureReactError, trackEvent } from '../services/monitoringService'
+import { getI18n } from '../hooks/useI18n'
 
 interface Props {
   children: ReactNode
@@ -14,8 +15,8 @@ interface State {
 }
 
 /**
- * React 错误边界组件
- * 捕获子组件树中的 JavaScript 错误，记录错误并显示备用 UI
+ * React Error Boundary Component
+ * Catches JavaScript errors in child components, logs errors and displays fallback UI
  */
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -32,10 +33,10 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // 记录错误到监控服务
+    // Log error to monitoring service
     captureReactError(error, errorInfo)
     
-    // 记录事件
+    // Track event
     trackEvent({
       name: 'react_error_boundary_triggered',
       category: 'error',
@@ -45,13 +46,13 @@ class ErrorBoundary extends Component<Props, State> {
       }
     })
 
-    // 更新状态
+    // Update state
     this.setState({ errorInfo })
 
-    // 调用自定义错误处理
+    // Call custom error handler
     this.props.onError?.(error, errorInfo)
 
-    // 控制台输出
+    // Console output
     console.error('[ErrorBoundary] Caught error:', error)
     console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack)
   }
@@ -80,16 +81,18 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // 如果提供了自定义 fallback，使用它
+      // Use custom fallback if provided
       if (this.props.fallback) {
         return this.props.fallback
       }
 
-      // 默认错误 UI
+      const { t } = getI18n()
+
+      // Default error UI
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-            {/* 错误图标 */}
+            {/* Error icon */}
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg 
                 className="w-8 h-8 text-red-600" 
@@ -106,17 +109,17 @@ class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
 
-            {/* 错误标题 */}
+            {/* Error title */}
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              出了点问题
+              {t('error.somethingWentWrong')}
             </h2>
 
-            {/* 错误描述 */}
+            {/* Error description */}
             <p className="text-gray-600 mb-6">
-              应用遇到了意外错误。我们已记录此问题并将尽快修复。
+              {t('error.unexpectedError')}
             </p>
 
-            {/* 错误详情 (开发环境显示) */}
+            {/* Error details (show in dev environment) */}
             {import.meta.env.DEV && this.state.error && (
               <div className="bg-gray-100 rounded-lg p-4 mb-6 text-left">
                 <p className="text-sm font-mono text-red-600 break-all">
@@ -130,19 +133,19 @@ class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
-            {/* 操作按钮 */}
+            {/* Action buttons */}
             <div className="flex gap-3 justify-center">
               <button
                 onClick={this.handleRetry}
                 className="px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
               >
-                重试
+                {t('error.retry')}
               </button>
               <button
                 onClick={this.handleReload}
                 className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
               >
-                刷新页面
+                {t('error.refreshPage')}
               </button>
             </div>
 

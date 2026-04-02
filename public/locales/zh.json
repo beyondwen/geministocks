@@ -489,6 +489,62 @@
   },
   "welcome": {
     "firstVisitBonus": "欢迎使用！您已获得 {{count}} 点免费信用点。"
+  },
+  "subscription": {
+    "plans": "订阅计划",
+    "plan": "计划",
+    "selectPlan": "选择计划",
+    "changePlan": "更改计划",
+    "recommended": "推荐",
+    "currentPlan": "当前计划",
+    "unlimitedAnalysis": "无限次分析",
+    "analysisPerMonth": "{{count}} 次/月",
+    "creditsPerMonth": "{{count}} 积分/月",
+    "priorityQueue": "优先处理队列",
+    "premiumModels": "高级 AI 模型",
+    "cancelSubscription": "取消订阅",
+    "confirmCancel": "确定要取消订阅吗？",
+    "perMonth": "/月",
+    "active": "活跃",
+    "canceled": "已取消",
+    "paused": "已暂停",
+    "pastDue": "逾期",
+    "renewsAt": "续约日期",
+    "monthlyAnalyses": "本月分析次数",
+    "monthlyBonusCredits": "每月积分奖励",
+    "specialPrivileges": "特权特性",
+    "managePlan": "管理订阅",
+    "changeOption": "切换计划",
+    "liteInfo": "Lite 用户每月享受 {{count}} 次分析次数，到期自动重置",
+    "proInfo": "无限次分析，随时使用，无需等待",
+    "noSubscription": "您未订阅任何计划。订阅以获得无限分析和每月积分奖励。",
+    "viewPlans": "查看订阅计划",
+    "cancellationInfo": "可随时取消订阅。取消后，您仍可继续使用当前订阅周期的所有功能，直到续约日期。"
+  },
+  "error": {
+    "somethingWentWrong": "出了点问题",
+    "unexpectedError": "应用遇到了意外错误。",
+    "retry": "重试",
+    "refreshPage": "刷新页面",
+    "contactSupport": "联系支持",
+    "loadingPlansFailed": "加载订阅计划失败，请重试。",
+    "subscriptionFailed": "更新订阅失败，请重试。",
+    "loginFailed": "登录失败，请重试。",
+    "processing": "处理中...",
+    "goingThroughLogin": "正在处理登录..."
+  },
+  "time": {
+    "never": "从未",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}} 分钟前",
+    "hoursAgo": "{{count}} 小时前",
+    "daysAgo": "{{count}} 天前"
+  },
+  "support": {
+    "supportAuthor": "支持作者",
+    "description": "如果觉得超级挖掘机对您有帮助，请考虑支持作者。",
+    "description2": "您的支持激励我们不断改进服务。",
+    "buyMeACoffee": "请我喝杯咖啡"
   }
 }
 }

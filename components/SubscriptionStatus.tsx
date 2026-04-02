@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserSubscription } from '../services/subscriptionService';
+import { useI18n } from '../hooks/useI18n';
 
 interface SubscriptionStatusProps {
   subscription: UserSubscription | null;
@@ -12,17 +13,19 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
   onManageClick,
   onUpgradeClick,
 }) => {
+  const { t } = useI18n();
+
   if (!subscription) {
     return (
       <div className="rounded-lg bg-secondary/50 border border-border p-4">
         <p className="text-sm text-muted-foreground">
-          您未订阅任何计划。订阅以获得无限分析和每月积分奖励。
+          {t('subscription.noSubscription')}
         </p>
         <button
           onClick={onUpgradeClick}
           className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-sm font-medium"
         >
-          查看订阅计划
+          {t('subscription.viewPlans')}
         </button>
       </div>
     );
@@ -35,11 +38,14 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
     past_due: 'bg-orange-500/10 text-orange-700 border-orange-200',
   };
 
-  const statusLabels = {
-    active: '活跃',
-    canceled: '已取消',
-    paused: '已暂停',
-    past_due: '逾期',
+  const getStatusLabel = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      active: t('subscription.active'),
+      canceled: t('subscription.canceled'),
+      paused: t('subscription.paused'),
+      past_due: t('subscription.pastDue'),
+    };
+    return statusMap[status] || status;
   };
 
   const renewsAtDate = new Date(subscription.renewsAt);
@@ -52,7 +58,7 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {subscription.plan?.name} 计划
+            {subscription.plan?.name} {t('subscription.plan')}
           </h3>
           <p className="text-sm text-muted-foreground">
             {subscription.plan?.description}
@@ -60,53 +66,53 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
         </div>
         <div
           className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-            statusColors[subscription.status]
+            statusColors[subscription.status as keyof typeof statusColors]
           }`}
         >
-          {statusLabels[subscription.status]}
+          {getStatusLabel(subscription.status)}
         </div>
       </div>
 
       <div className="space-y-3 mb-6 pb-6 border-b border-border">
-        {/* 月度分析次数 */}
+        {/* Monthly analyses count */}
         {subscription.plan?.analysisLimitPerMonth && (
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">本月分析次数</span>
+            <span className="text-sm text-muted-foreground">{t('subscription.monthlyAnalyses')}</span>
             <span className="text-sm font-medium">
               {subscription.currentMonthAnalyses} / {subscription.plan.analysisLimitPerMonth}
             </span>
           </div>
         )}
 
-        {/* 月度奖励积分 */}
+        {/* Monthly bonus credits */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">每月积分奖励</span>
+          <span className="text-sm text-muted-foreground">{t('subscription.monthlyBonusCredits')}</span>
           <span className="text-sm font-medium">
-            +{subscription.plan?.monthlyBonusCredits} 积分
+            +{subscription.plan?.monthlyBonusCredits}
           </span>
         </div>
 
-        {/* 续约日期 */}
+        {/* Renewal date */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">续约日期</span>
+          <span className="text-sm text-muted-foreground">{t('subscription.renewsAt')}</span>
           <span className="text-sm font-medium">
-            {renewsAtDate.toLocaleDateString('zh-CN')} ({daysUntilRenewal} 天后)
+            {renewsAtDate.toLocaleDateString('en-US')} ({t('time.daysAgo', { count: daysUntilRenewal })})
           </span>
         </div>
 
-        {/* 特殊特性 */}
+        {/* Special privileges */}
         {(subscription.plan?.priorityQueue || subscription.plan?.unlockPremiumModels) && (
           <div className="flex items-start gap-2">
-            <span className="text-sm text-muted-foreground flex-shrink-0">特权特性</span>
+            <span className="text-sm text-muted-foreground flex-shrink-0">{t('subscription.specialPrivileges')}</span>
             <div className="flex flex-wrap gap-2">
               {subscription.plan.priorityQueue && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                  优先队列
+                  {t('subscription.priorityQueue')}
                 </span>
               )}
               {subscription.plan.unlockPremiumModels && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                  高级模型
+                  {t('subscription.premiumModels')}
                 </span>
               )}
             </div>
@@ -114,26 +120,26 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
         )}
       </div>
 
-      {/* 操作按钮 */}
+      {/* Action buttons */}
       <div className="flex gap-3">
         <button
           onClick={onUpgradeClick}
           className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-sm font-medium transition-colors"
         >
-          更改计划
+          {t('subscription.changeOption')}
         </button>
         <button
           onClick={onManageClick}
           className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 text-sm font-medium transition-colors"
         >
-          管理订阅
+          {t('subscription.managePlan')}
         </button>
       </div>
 
-      {/* 取消订阅信息 */}
+      {/* Cancellation info */}
       {subscription.status === 'active' && (
         <p className="mt-4 text-xs text-muted-foreground">
-          可随时取消订阅。取消后，您仍可继续使用当前订阅周期的所有功能，直到续约日期。
+          {t('subscription.cancellationInfo')}
         </p>
       )}
     </div>

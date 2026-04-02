@@ -489,5 +489,61 @@
   },
   "welcome": {
     "firstVisitBonus": "Welcome! You've received {{count}} free credits to get started."
+  },
+  "subscription": {
+    "plans": "Subscription Plans",
+    "plan": "Plan",
+    "selectPlan": "Select a Plan",
+    "changePlan": "Change Plan",
+    "recommended": "Recommended",
+    "currentPlan": "Current Plan",
+    "unlimitedAnalysis": "Unlimited Analysis",
+    "analysisPerMonth": "{{count}} analyses/month",
+    "creditsPerMonth": "{{count}} credits/month",
+    "priorityQueue": "Priority Queue",
+    "premiumModels": "Premium AI Models",
+    "cancelSubscription": "Cancel Subscription",
+    "confirmCancel": "Are you sure you want to cancel your subscription?",
+    "perMonth": "/month",
+    "active": "Active",
+    "canceled": "Canceled",
+    "paused": "Paused",
+    "pastDue": "Past Due",
+    "renewsAt": "Renews at",
+    "monthlyAnalyses": "Monthly Analyses",
+    "monthlyBonusCredits": "Monthly Bonus Credits",
+    "specialPrivileges": "Special Privileges",
+    "managePlan": "Manage Plan",
+    "changeOption": "Switch Plan",
+    "liteInfo": "Lite users get {{count}} analyses per month, automatically reset when expired",
+    "proInfo": "Unlimited analysis, available anytime, no need to wait",
+    "noSubscription": "You haven't subscribed to any plan. Subscribe to get unlimited analysis and monthly credit rewards.",
+    "viewPlans": "View Plans",
+    "cancellationInfo": "You can cancel anytime. After cancellation, you can still use all features of the current subscription period until the renewal date."
+  },
+  "error": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedError": "The app encountered an unexpected error.",
+    "retry": "Retry",
+    "refreshPage": "Refresh Page",
+    "contactSupport": "Contact Support",
+    "loadingPlansFailed": "Failed to load subscription plans. Please try again.",
+    "subscriptionFailed": "Failed to update subscription. Please try again.",
+    "loginFailed": "Login failed. Please try again.",
+    "processing": "Processing...",
+    "goingThroughLogin": "Going through login process..."
+  },
+  "time": {
+    "never": "Never",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago"
+  },
+  "support": {
+    "supportAuthor": "Support the Author",
+    "description": "If you find Super Digger helpful, please consider supporting the author.",
+    "description2": "Your support motivates us to continuously improve the service.",
+    "buyMeACoffee": "Buy Me A Coffee"
   }
 }

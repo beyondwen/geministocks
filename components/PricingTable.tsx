@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SubscriptionPlan } from '../services/subscriptionService';
+import { useI18n } from '../hooks/useI18n';
 
 interface PricingTableProps {
   plans: SubscriptionPlan[];
@@ -14,23 +15,25 @@ export const PricingTable: React.FC<PricingTableProps> = ({
   onSelectPlan,
   loading = false,
 }) => {
+  const { t } = useI18n();
+
   const getFeatures = (plan: SubscriptionPlan) => {
     const features: string[] = [];
 
     if (plan.analysisLimitPerMonth !== null) {
-      features.push(`${plan.analysisLimitPerMonth}次分析/月`);
+      features.push(t('subscription.analysisPerMonth', { count: plan.analysisLimitPerMonth }));
     } else {
-      features.push('无限次分析');
+      features.push(t('subscription.unlimitedAnalysis'));
     }
 
-    features.push(`${plan.monthlyBonusCredits}积分/月`);
+    features.push(t('subscription.creditsPerMonth', { count: plan.monthlyBonusCredits }));
 
     if (plan.priorityQueue) {
-      features.push('优先处理队列');
+      features.push(t('subscription.priorityQueue'));
     }
 
     if (plan.unlockPremiumModels) {
-      features.push('解锁高级 AI 模型');
+      features.push(t('subscription.premiumModels'));
     }
 
     return features;
@@ -41,10 +44,10 @@ export const PricingTable: React.FC<PricingTableProps> = ({
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-foreground mb-4">
-            订阅计划
+            {t('subscription.plans')}
           </h2>
           <p className="text-lg text-muted-foreground">
-            选择适合您的订阅计划，享受无限分析体验
+            {t('subscription.selectPlan')}
           </p>
         </div>
 
@@ -62,26 +65,26 @@ export const PricingTable: React.FC<PricingTableProps> = ({
                     : 'border-border hover:border-primary/50'
                 } ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}
               >
-                {/* 推荐标签 */}
+                {/* Recommended badge */}
                 {isFeatured && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <span className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
-                      推荐
+                      {t('subscription.recommended')}
                     </span>
                   </div>
                 )}
 
-                {/* 当前计划标签 */}
+                {/* Current plan badge */}
                 {isCurrentPlan && (
                   <div className="absolute top-4 right-4">
                     <span className="bg-green-500/20 text-green-700 px-3 py-1 rounded text-xs font-semibold">
-                      当前计划
+                      {t('subscription.currentPlan')}
                     </span>
                   </div>
                 )}
 
                 <div className="p-8">
-                  {/* 计划名称 */}
+                  {/* Plan name */}
                   <h3 className="text-2xl font-bold text-foreground mb-2">
                     {plan.name}
                   </h3>
@@ -89,17 +92,17 @@ export const PricingTable: React.FC<PricingTableProps> = ({
                     {plan.description}
                   </p>
 
-                  {/* 价格 */}
+                  {/* Price */}
                   <div className="mb-6">
                     <div className="flex items-baseline">
                       <span className="text-4xl font-bold text-foreground">
                         ${(plan.priceCents / 100).toFixed(2)}
                       </span>
-                      <span className="ml-2 text-muted-foreground">/月</span>
+                      <span className="ml-2 text-muted-foreground">{t('subscription.perMonth')}</span>
                     </div>
                   </div>
 
-                  {/* 按钮 */}
+                  {/* Button */}
                   <button
                     onClick={() => onSelectPlan(plan.id)}
                     disabled={loading || isCurrentPlan}
@@ -111,10 +114,10 @@ export const PricingTable: React.FC<PricingTableProps> = ({
                         : 'bg-secondary text-secondary-foreground hover:bg-secondary/90 disabled:opacity-50'
                     }`}
                   >
-                    {loading ? '处理中...' : isCurrentPlan ? '当前计划' : '选择计划'}
+                    {loading ? t('error.processing') : isCurrentPlan ? t('subscription.currentPlan') : t('subscription.selectPlan')}
                   </button>
 
-                  {/* 特性列表 */}
+                  {/* Features list */}
                   <div className="space-y-4">
                     {getFeatures(plan).map((feature, index) => (
                       <div key={index} className="flex items-start">
@@ -124,11 +127,11 @@ export const PricingTable: React.FC<PricingTableProps> = ({
                     ))}
                   </div>
 
-                  {/* 额外信息 */}
+                  {/* Additional info */}
                   {plan.slug === 'lite' && (
                     <div className="mt-6 pt-6 border-t border-border">
                       <p className="text-xs text-muted-foreground">
-                        Lite 用户每月享受 {plan.analysisLimitPerMonth} 次分析次数，到期自动重置
+                        {t('subscription.liteInfo', { count: plan.analysisLimitPerMonth })}
                       </p>
                     </div>
                   )}
@@ -136,7 +139,7 @@ export const PricingTable: React.FC<PricingTableProps> = ({
                   {(plan.slug === 'pro' || plan.slug === 'premium') && (
                     <div className="mt-6 pt-6 border-t border-border">
                       <p className="text-xs text-muted-foreground">
-                        无限次分析，随时使用，无需等待
+                        {t('subscription.proInfo')}
                       </p>
                     </div>
                   )}

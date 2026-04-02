@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SubscriptionPlan, getSubscriptionPlans, createSubscription, updateSubscriptionPlan, cancelSubscription } from '../services/subscriptionService';
 import PricingTable from './PricingTable';
+import { useI18n } from '../hooks/useI18n';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useI18n();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setPlans(availablePlans);
       setError(null);
     } catch (err) {
-      setError('加载订阅计划失败，请重试');
+      setError(t('error.loadingPlansFailed'));
       console.error('Failed to load subscription plans:', err);
     } finally {
       setLoading(false);
@@ -53,17 +55,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }
 
       if (currentPlanId) {
-        // 升级或降级现有订阅
+        // Update existing subscription
         await updateSubscriptionPlan(userId, planId);
       } else {
-        // 创建新订阅
+        // Create new subscription
         await createSubscription(userId, planId);
       }
 
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '订阅失败，请重试');
+      setError(err instanceof Error ? err.message : t('error.subscriptionFailed'));
       console.error('Failed to update subscription:', err);
     } finally {
       setLoading(false);
@@ -71,7 +73,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const handleCancelSubscription = async () => {
-    if (!currentPlanId || !confirm('确定要取消订阅吗？')) return;
+    if (!currentPlanId || !confirm(t('subscription.confirmCancel'))) return;
 
     try {
       setLoading(true);
@@ -79,7 +81,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '取消订阅失败，请重试');
+      setError(err instanceof Error ? err.message : t('error.subscriptionFailed'));
       console.error('Failed to cancel subscription:', err);
     } finally {
       setLoading(false);
@@ -91,10 +93,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-background rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        {/* 头部 */}
+        {/* Header */}
         <div className="sticky top-0 bg-background border-b border-border p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-foreground">
-            {currentPlanId ? '更改订阅计划' : '选择订阅计划'}
+            {currentPlanId ? t('subscription.changePlan') : t('subscription.selectPlan')}
           </h2>
           <button
             onClick={onClose}
@@ -105,7 +107,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </button>
         </div>
 
-        {/* 内容 */}
+        {/* Content */}
         <div className="p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
@@ -118,7 +120,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <div className="inline-block animate-spin">
                 <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full"></div>
               </div>
-              <p className="mt-4 text-muted-foreground">加载中...</p>
+              <p className="mt-4 text-muted-foreground">{t('error.processing')}</p>
             </div>
           ) : (
             <>
@@ -129,7 +131,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 loading={loading}
               />
 
-              {/* 底部操作栏 */}
+              {/* Bottom action bar */}
               <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
                 {currentPlanId && (
                   <button
@@ -137,7 +139,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     disabled={loading}
                     className="px-6 py-2 text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
                   >
-                    取消订阅
+                    {t('subscription.cancelSubscription')}
                   </button>
                 )}
                 <div className="flex-1"></div>
@@ -146,7 +148,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   disabled={loading}
                   className="px-6 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 font-medium disabled:opacity-50"
                 >
-                  关闭
+                  {t('controls.close')}
                 </button>
               </div>
 
