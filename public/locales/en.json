@@ -486,5 +486,8 @@
     "line3": "Before making any investment decisions, please conduct independent due diligence and consult with a professional financial advisor. We are not liable for any direct or indirect losses resulting from the use of this application's content.",
     "line4": "By continuing to use this service, you acknowledge that you have read, understood, and agreed to this disclaimer.",
     "acceptButton": "I have read and agree"
+  },
+  "welcome": {
+    "firstVisitBonus": "Welcome! You've received {{count}} free credits to get started."
   }
 }

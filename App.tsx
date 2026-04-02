@@ -44,6 +44,8 @@ const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const USER_ID_KEY = 'gemini-user-id';
 const CREDITS_KEY = 'gemini-claude-credits';
 const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
+const FIRST_VISIT_KEY = 'gemini-first-visit-rewarded';
+const FIRST_VISIT_BONUS_CREDITS = 3;
 
 
 const MAX_ANALYSES_PER_HOUR = 12;
@@ -649,8 +651,26 @@ const MainPage: React.FC = () => {
     // Initialize user ID (for anonymous users)
     getUserId();
     
-    // Set credits state from the now-updated localStorage (fallback for anonymous)
-    setCredits(getCredits());
+    // Check if this is a first-time visitor and award bonus credits
+    try {
+      const hasReceivedFirstVisitBonus = localStorage.getItem(FIRST_VISIT_KEY);
+      if (!hasReceivedFirstVisitBonus) {
+        // First-time visitor: award bonus credits
+        const newCredits = addCredits(FIRST_VISIT_BONUS_CREDITS);
+        setCredits(newCredits);
+        localStorage.setItem(FIRST_VISIT_KEY, 'true');
+        // Show welcome toast after a brief delay
+        setTimeout(() => {
+          setToast({ message: t('welcome.firstVisitBonus', { count: FIRST_VISIT_BONUS_CREDITS }), type: 'success' });
+        }, 500);
+      } else {
+        // Returning visitor: just load existing credits
+        setCredits(getCredits());
+      }
+    } catch (e) {
+      // Fallback if localStorage fails
+      setCredits(getCredits());
+    }
 
     // Load history and settings from localStorage
     try {
