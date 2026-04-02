@@ -90,13 +90,34 @@ function extractJson(text: string): string {
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
+ * @param enableWebSearch Whether to enable real-time web search for latest data.
  * @returns The JSON-parsed response from the model.
  */
-async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
+async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
     // Add breadcrumb for debugging
-    addBreadcrumb('ai', 'Calling OpenRouter API', { model: modelName, promptLength: prompt.length });
+    addBreadcrumb('ai', 'Calling OpenRouter API', { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
     
     try {
+        // Build request body with optional web search plugin
+        const requestBody: any = {
+            model: modelName,
+            messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: prompt }
+            ],
+            response_format: { type: 'json_object' }
+        };
+
+        // Enable web search plugin for real-time market data and news
+        if (enableWebSearch) {
+            requestBody.plugins = [
+                {
+                    id: 'web',
+                    max_results: 5 // Fetch up to 5 search results for context
+                }
+            ];
+        }
+
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -105,14 +126,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'Super Digger'
             },
-            body: JSON.stringify({
-                model: modelName,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
-                ],
-                response_format: { type: 'json_object' }
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -221,14 +235,17 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
 
     const prompt = `Please analyze the following text: --- ${topic} ---`;
 
+    // Enable web search for real-time market data and news
+    const enableWebSearch = true;
+
     onProgress(0); // "Running core analysis..."
-    const part1Result = await callOpenRouterAI(prompt, part1System, modelName);
+    const part1Result = await callOpenRouterAI(prompt, part1System, modelName, enableWebSearch);
     
     onProgress(1); // "Performing deep dives..."
-    const part2Result = await callOpenRouterAI(prompt, part2System, modelName);
+    const part2Result = await callOpenRouterAI(prompt, part2System, modelName, enableWebSearch);
 
     onProgress(2); // "Formulating strategy & suggestions..."
-    const part3Result = await callOpenRouterAI(prompt, part3System, modelName);
+    const part3Result = await callOpenRouterAI(prompt, part3System, modelName, enableWebSearch);
     
     onProgress(3); // "Finalizing report..."
 
@@ -311,7 +328,8 @@ export const getPolymarketAnalysis = async (url: string, locale: Locale): Promis
         ---
     `;
 
-    return callOpenRouterAI(prompt, systemInstruction, modelName);
+    // Enable web search to get latest prediction market data
+    return callOpenRouterAI(prompt, systemInstruction, modelName, true);
 };
 
 const getStockAnalysisSystemInstruction = (locale: Locale): string => {
@@ -416,7 +434,8 @@ export const getStockAnalysis = async (
         ---
     `;
 
-    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callOpenRouterAI(prompt, systemInstruction, modelName);
+    // Enable web search to get latest stock prices, news, and market data
+    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callOpenRouterAI(prompt, systemInstruction, modelName, true);
     
     onProgress(1); // "Aggregating institutional research..."
     
@@ -490,7 +509,8 @@ export const getResearchReportAnalysis = async (stockQuery: string, locale: Loca
     `;
 
     try {
-        const result = await callOpenRouterAI(prompt, systemInstruction, modelName);
+        // Enable web search to get latest research reports and analyst ratings
+        const result = await callOpenRouterAI(prompt, systemInstruction, modelName, true);
         // Basic validation to ensure the AI returns a somewhat correct structure
         if (result && Array.isArray(result.epsForecasts) && result.targetPriceSummary && Array.isArray(result.recentReports)) {
             return result;
@@ -529,7 +549,8 @@ export const getHotStocksFromAI = async (locale: Locale): Promise<{name: string;
     const systemInstruction = getHotStocksSystemInstruction(locale);
     const prompt = "Please provide the list of the 10 hottest stocks in the last 24 hours.";
 
-    const response = await callOpenRouterAI(prompt, systemInstruction, modelName);
+    // Enable web search to get real-time trending stocks
+    const response = await callOpenRouterAI(prompt, systemInstruction, modelName, true);
     if (response && Array.isArray(response.stocks)) {
       return response.stocks;
     }
@@ -566,7 +587,8 @@ export const findIndustryLeader = async (
   ): Promise<LeaderStockProfile> => {
     const modelName = getModelName();
     const systemInstruction = getFindLeaderInstruction(locale);
-    return await callOpenRouterAI(query, systemInstruction, modelName);
+    // Enable web search to find current industry leaders with real-time data
+    return await callOpenRouterAI(query, systemInstruction, modelName, true);
 };
 
 export const getPositionalWarfareFollowerAnalysis = async (
@@ -577,20 +599,23 @@ export const getPositionalWarfareFollowerAnalysis = async (
     const modelName = getModelName();
     const { step2System, step3System, step4System } = getFollowerAnalysisInstructions(locale);
 
+    // Enable web search for all steps to get real-time market data
+    const enableWebSearch = true;
+
     onProgress(1); // Screening for followers
     const step2Prompt = locale === 'zh' ? `龙头股票资料: ${JSON.stringify(leaderProfile)}` : `Leader Stock Profile: ${JSON.stringify(leaderProfile)}`;
-    const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName);
+    const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName, enableWebSearch);
     const candidates = screeningResult.candidates || [];
     if (candidates.length === 0) throw new Error(locale === 'zh' ? "未能找到合适的潜力补涨股。" : "Could not find suitable follower candidates.");
 
     onProgress(2); // Analyzing candidate financials
     const step3Prompt = locale === 'zh' ? `公司列表: ${JSON.stringify(candidates)}` : `Companies List: ${JSON.stringify(candidates)}`;
-    const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName);
+    const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName, enableWebSearch);
     const detailedCandidates = metricsResult.detailedCandidates || [];
 
     onProgress(3); // Synthesizing final strategy
     const step4Prompt = locale === 'zh' ? `龙头股票: ${JSON.stringify(leaderProfile)}\n\n潜力补涨股及指标: ${JSON.stringify(detailedCandidates)}` : `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
-    const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName);
+    const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName, enableWebSearch);
     
     // Merge the final analysis with the detailed candidate data
     const finalFollowers = detailedCandidates.map((candidate: any) => {
