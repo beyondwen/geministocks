@@ -9,11 +9,11 @@ import { captureError, addBreadcrumb } from './sentry';
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
-    return 'qwen/qwen3.6-plus-preview:free';
+    return 'qwen/qwen3.6-plus:free';
 };
 
 const getModelDisplayName = (): string => {
-    return 'Qwen 3.6 Plus Preview';
+    return 'Qwen 3.6 Plus';
 };
 
 /**
