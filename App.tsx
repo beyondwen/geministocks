@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import ErrorBoundary from './components/ErrorBoundary';
+import { initializeMonitoring, trackEvent, trackError } from './services/monitoringService';
 // Use streaming service with fallback to legacy
 import { 
   getAnalysisWithStreaming, 
@@ -624,6 +626,15 @@ const MainPage: React.FC = () => {
   
   // Check for Google OAuth callback on mount
   useEffect(() => {
+    // Initialize monitoring system
+    initializeMonitoring();
+    
+    // Track app initialization
+    trackEvent('app_initialized', {
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    });
+    
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') && urlParams.has('state')) {
       setShowGoogleCallback(true);
@@ -1451,12 +1462,14 @@ const MainPage: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/about" element={<AboutPage />} />
-      </Routes>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/about" element={<AboutPage />} />
+        </Routes>
+      </HashRouter>
+    </ErrorBoundary>
   );
 };
 
