@@ -28,7 +28,8 @@
     "addCredits": "充值",
     "costPerUse": "{{count}}点/次",
     "realtimeSearch": "实时搜索",
-    "realtimeSearchTooltip": "进行任意一次真实付费即可解锁实时联网搜索功能"
+    "realtimeSearchTooltip": "进行任意一次真实付费即可解锁实时联网搜索功能",
+    "close": "关闭"
   },
   "tabs": {
     "topic": "挖掘",

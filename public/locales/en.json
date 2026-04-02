@@ -28,7 +28,8 @@
     "addCredits": "Add",
     "costPerUse": "{{count}} credits/use",
     "realtimeSearch": "Real-time Search",
-    "realtimeSearchTooltip": "Make any real payment to unlock the real-time web search feature"
+    "realtimeSearchTooltip": "Make any real payment to unlock the real-time web search feature",
+    "close": "Close"
   },
   "tabs": {
     "topic": "Dig",
