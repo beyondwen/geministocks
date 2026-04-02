@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
-  "regions": ["hkg1", "sin1", "nrt1"],
+  "regions": ["sfo1"],
   "headers": [
     {
       "source": "/(.*)",
