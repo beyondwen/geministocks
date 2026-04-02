@@ -2,8 +2,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import ErrorBoundary from './components/ErrorBoundary';
-import { initializeMonitoring, trackEvent, trackError } from './services/monitoringService';
 // Use streaming service with fallback to legacy
 import { 
   getAnalysisWithStreaming, 
@@ -35,10 +33,6 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import PaymentModal from './components/PaymentModal';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
-import AuthModal from './components/AuthModal';
-import UserMenu from './components/UserMenu';
-import GoogleAuthCallback from './components/GoogleAuthCallback';
-import { useAuth } from './hooks/useAuth';
 
 
 // --- Constants ---
@@ -603,43 +597,7 @@ const MainPage: React.FC = () => {
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [redemptionCode, setRedemptionCode] = useState('');
   
-  // Authentication State
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [showGoogleCallback, setShowGoogleCallback] = useState(false);
-  const {
-    user,
-    isAuthenticated,
-    isLoading: isAuthLoading,
-    error: authError,
-    credits: authCredits,
-    syncStatus,
-    login,
-    register,
-    loginWithGoogle,
-    logout,
-    syncData,
-    addCredits: addAuthCredits,
-    useCredits: useAuthCredits,
-    getUserId: getAuthUserId,
-    clearError
-  } = useAuth();
-  
-  // Check for Google OAuth callback on mount
-  useEffect(() => {
-    // Initialize monitoring system
-    initializeMonitoring();
-    
-    // Track app initialization
-    trackEvent('app_initialized', {
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString()
-    });
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('code') && urlParams.has('state')) {
-      setShowGoogleCallback(true);
-    }
-  }, []);
+
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -718,12 +676,7 @@ const MainPage: React.FC = () => {
     }
   }, []);
   
-  // Sync credits from auth hook when user logs in
-  useEffect(() => {
-    if (isAuthenticated && authCredits !== undefined) {
-      setCredits(authCredits);
-    }
-  }, [isAuthenticated, authCredits]);
+
 
   // Fetch dynamic hot stocks when language changes
   useEffect(() => {
@@ -1159,41 +1112,6 @@ const MainPage: React.FC = () => {
     <>
       <CacheStats />
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => {
-          setIsAuthModalOpen(false);
-          clearError();
-        }}
-        onLogin={async (email, password) => {
-          await login(email, password);
-          setIsAuthModalOpen(false);
-          setToast({ message: '登录成功！数据已同步', type: 'success' });
-        }}
-        onRegister={async (email, password, username) => {
-          await register(email, password, username);
-          setIsAuthModalOpen(false);
-          setToast({ message: '注册成功！已赠送10积分', type: 'success' });
-        }}
-        isLoading={isAuthLoading}
-        error={authError}
-      />
-      {showGoogleCallback && (
-        <GoogleAuthCallback
-          onSuccess={async (userId, username, isNewUser) => {
-            await loginWithGoogle(userId, username, isNewUser);
-            setShowGoogleCallback(false);
-            setToast({ 
-              message: isNewUser ? '账户创建成功！已赠送15积分' : '登录成功！数据已同步', 
-              type: 'success' 
-            });
-          }}
-          onError={(error) => {
-            setShowGoogleCallback(false);
-            setToast({ message: error, type: 'info' });
-          }}
-        />
-      )}
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => {
@@ -1247,26 +1165,14 @@ const MainPage: React.FC = () => {
                             <AcademicCapIcon className="w-5 h-5" />
                             <span>{t('header.userGuide')}</span>
                         </button>
-                        {/* Credits display for anonymous users */}
-                        {!isAuthenticated && (
-                          <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
-                              <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
-                              <span className="sm:hidden">💎 {credits}</span>
-                              <button onClick={() => setIsPaymentModalOpen(true)} className="font-semibold text-gray-800 hover:text-black text-xs animated-underline">
-                                  ({t('controls.addCredits')})
-                              </button>
-                          </div>
-                        )}
-                        {/* User menu (shows login button or user profile) */}
-                        <UserMenu
-                            user={user}
-                            credits={credits}
-                            isLoading={isAuthLoading}
-                            onLoginClick={() => setIsAuthModalOpen(true)}
-                            onLogout={logout}
-                            onSync={syncData}
-                            syncStatus={syncStatus}
-                        />
+                        {/* Credits display */}
+                        <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
+                            <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
+                            <span className="sm:hidden">💎 {credits}</span>
+                            <button onClick={() => setIsPaymentModalOpen(true)} className="font-semibold text-gray-800 hover:text-black text-xs animated-underline">
+                                ({t('controls.addCredits')})
+                            </button>
+                        </div>
                         <div className="hidden sm:block">
                             <LanguageSwitcher />
                         </div>
@@ -1462,14 +1368,12 @@ const MainPage: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/about" element={<AboutPage />} />
-        </Routes>
-      </HashRouter>
-    </ErrorBoundary>
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/about" element={<AboutPage />} />
+      </Routes>
+    </HashRouter>
   );
 };
 

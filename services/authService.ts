@@ -16,8 +16,6 @@ export interface User {
   created_at: string
   last_login_at?: string
   total_analyses_count: number
-  google_id?: string
-  auth_provider?: 'email' | 'google'
 }
 
 export interface AuthSession {
@@ -329,109 +327,4 @@ export function isAuthenticated(): boolean {
 export function getCurrentUserId(): string | null {
   const session = getCurrentSession()
   return session?.user.id || null
-}
-
-/**
- * Create session for Google OAuth login
- */
-export async function createGoogleSession(userId: string): Promise<AuthSession> {
-  const sql = getDb()
-  
-  // Fetch user data
-  const users = await sql`
-    SELECT id, email, username, avatar_url, google_id, created_at, last_login_at, total_analyses_count
-    FROM users WHERE id = ${userId}
-  `
-  
-  if (users.length === 0) {
-    throw new Error('User not found')
-  }
-  
-  const dbUser = users[0]
-  
-  // Create session
-  const token = generateSessionToken()
-  const expiresAt = Date.now() + (SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
-  
-  const user: User = {
-    id: dbUser.id,
-    email: dbUser.email,
-    username: dbUser.username,
-    avatar_url: dbUser.avatar_url,
-    google_id: dbUser.google_id,
-    created_at: dbUser.created_at,
-    last_login_at: dbUser.last_login_at,
-    total_analyses_count: dbUser.total_analyses_count || 0,
-    auth_provider: dbUser.google_id ? 'google' : 'email'
-  }
-  
-  const session: AuthSession = { user, token, expiresAt }
-  
-  // Save session to localStorage
-  saveSession(session)
-  
-  return session
-}
-
-/**
- * Update session with new user data
- */
-export function updateSession(user: Partial<User>): void {
-  const session = getCurrentSession()
-  if (!session) return
-  
-  const updatedSession: AuthSession = {
-    ...session,
-    user: { ...session.user, ...user }
-  }
-  
-  saveSession(updatedSession)
-}
-
-/**
- * Check if user has password set
- */
-export async function hasPasswordSet(userId: string): Promise<boolean> {
-  const sql = getDb()
-  
-  const settings = await sql`
-    SELECT preferences FROM user_settings WHERE user_id = ${userId}
-  `
-  
-  return settings.length > 0 && !!(settings[0].preferences as any)?.passwordHash
-}
-
-/**
- * Set password for user (for Google users who want to add email login)
- */
-export async function setPassword(userId: string, password: string): Promise<void> {
-  const sql = getDb()
-  const now = new Date().toISOString()
-  
-  const passwordHash = await hashPassword(password)
-  
-  // Check if settings exist
-  const existing = await sql`
-    SELECT user_id FROM user_settings WHERE user_id = ${userId}
-  `
-  
-  if (existing.length > 0) {
-    // Update existing settings
-    const currentSettings = await sql`
-      SELECT preferences FROM user_settings WHERE user_id = ${userId}
-    `
-    const preferences = { ...(currentSettings[0]?.preferences || {}), passwordHash }
-    
-    await sql`
-      UPDATE user_settings 
-      SET preferences = ${JSON.stringify(preferences)}, updated_at = ${now}
-      WHERE user_id = ${userId}
-    `
-  } else {
-    // Create new settings
-    await sql`
-      INSERT INTO user_settings (user_id, created_at, updated_at, preferences)
-      VALUES (${userId}, ${now}, ${now}, ${JSON.stringify({ passwordHash })})
-    `
-  }
 }
