@@ -1,6 +1,5 @@
 
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
-import { toPng } from 'html-to-image';
 import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory, StockAnalysisReport } from '../types';
 import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, ChartTrendingUpIcon, LightBulbIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon, XIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
@@ -9,6 +8,7 @@ import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
 import Loader from './Loader';
 import StockAnalysisResult from './StockAnalysisResult';
+import { exportElementAsImage, generateExportFilename } from '../utils/exportUtils';
 
 
 const GlobeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -444,7 +444,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
     inlineError,
     onClearInlineReport
 }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -461,42 +461,42 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
 
     const inputKeywords = userInput
       .toLowerCase()
-      .split(/[\s,.;:!?()"“”—-]+/) 
+      .split(/[\s,.;:!?()"""—-]+/) 
       .filter(word => word.length > 2);
 
     return [...new Set([...stockKeywords, ...inputKeywords])]
       .filter(Boolean)
       .sort((a, b) => b.length - a.length);
   }, [report, userInput]);
-
-  const handleExportImage = useCallback(() => {
+  
+  const handleExportImage = useCallback(async () => {
     if (exportRef.current === null) {
       return;
     }
     setIsExporting(true);
     setExportError(null);
 
-    toPng(exportRef.current, {
-      cacheBust: true,
-      pixelRatio: 2, // For higher resolution images
-    })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        const topic = report.summary?.substring(0, 30).replace(/\s+/g, '_').replace(/[^\w-]/g, '') || 'report';
-        link.download = `Investment_Analysis_Report_${topic}.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch((err) => {
-        console.error('Failed to export image:', err);
-        setExportError(t('analysisResult.exportError'));
-      })
-      .finally(() => {
-        setIsExporting(false);
+    try {
+      // Generate dynamic filename based on report content and current theme/context
+      const reportTitle = report.summary?.substring(0, 50) || 
+                         userInput?.substring(0, 50) || 
+                         'report';
+      const filename = generateExportFilename('analysis', reportTitle, locale);
+
+      await exportElementAsImage({
+        element: exportRef.current,
+        filename,
+        pixelRatio: 2,
+        format: 'png',
+        backgroundColor: '#ffffff',
       });
-  }, [report, t]);
+    } catch (err) {
+      console.error('Failed to export image:', err);
+      setExportError(t('analysisResult.exportError'));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [report, userInput, locale, t]);
   
   const handlePrint = useCallback(() => {
     setIsPreparingPdf(true);

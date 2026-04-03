@@ -1,9 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { toPng } from 'html-to-image';
 import type { PositionalWarfareReport, LeaderStockProfile, FollowerCandidate, StockFinancialMetrics } from '../types';
 import TextRenderer from './TextRenderer';
 import { ExternalLinkIcon, DownloadIcon, DocumentArrowDownIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
+import { exportElementAsImage, generateExportFilename } from '../utils/exportUtils';
 
 const generateStockLink = (ticker: string, market: string): string => {
     if (!market) return `https://www.google.com/finance/q=${encodeURIComponent(ticker)}`;
@@ -299,7 +299,7 @@ interface PositionalWarfareResultProps {
 }
 
 const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ report, onNewAnalysis }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -313,34 +313,32 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
     return [...new Set([...leaderKeywords, ...followerKeywords])].filter(Boolean);
   }, [report]);
 
-  const handleExportImage = useCallback(() => {
+  const handleExportImage = useCallback(async () => {
     if (exportRef.current === null) {
       return;
     }
     setIsExporting(true);
     setExportError(null);
 
-    toPng(exportRef.current, {
-      cacheBust: true,
-      pixelRatio: 2, // For higher resolution images
-    })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        const topic = report.leaderStock.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-        link.download = `Positional_Warfare_Report_${topic || 'report'}.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch((err) => {
-        console.error('Failed to export image:', err);
-        setExportError(t('analysisResult.exportError'));
-      })
-      .finally(() => {
-        setIsExporting(false);
+    try {
+      // Generate dynamic filename based on leader stock name
+      const leaderName = report.leaderStock.name;
+      const filename = generateExportFilename('positional', leaderName, locale);
+
+      await exportElementAsImage({
+        element: exportRef.current,
+        filename,
+        pixelRatio: 2,
+        format: 'png',
+        backgroundColor: '#ffffff',
       });
-  }, [report, t]);
+    } catch (err) {
+      console.error('Failed to export image:', err);
+      setExportError(t('analysisResult.exportError'));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [report, locale, t]);
 
   const handlePrint = useCallback(() => {
     setIsPreparingPdf(true);
