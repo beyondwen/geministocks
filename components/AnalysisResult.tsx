@@ -548,6 +548,34 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
         </div>
       )}
 
+      {/* Data Freshness Indicator */}
+      {report.dataFreshness && (
+        <div className="no-print flex items-center justify-end gap-2 text-xs text-gray-500">
+          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${
+            report.dataFreshness.isRealTimeEnabled 
+              ? 'bg-green-50 text-green-700' 
+              : 'bg-gray-100 text-gray-600'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              report.dataFreshness.isRealTimeEnabled ? 'bg-green-500' : 'bg-gray-400'
+            }`}></span>
+            {report.dataFreshness.isRealTimeEnabled 
+              ? (locale === 'zh' ? '实时数据' : 'Real-time Data')
+              : (locale === 'zh' ? '缓存数据' : 'Cached Data')
+            }
+          </span>
+          <span>
+            {locale === 'zh' ? '生成于: ' : 'Generated: '}
+            {new Date(report.dataFreshness.generatedAt).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </span>
+        </div>
+      )}
+
       <div className="no-print relative flex justify-between items-center gap-x-2">
         <button
           onClick={onNewAnalysis}

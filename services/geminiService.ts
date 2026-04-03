@@ -173,7 +173,17 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 }
 
 const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string) => {
-    const commonInstructions = `You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information. You MUST respond strictly in JSON format. Do not add any extra text.`;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const commonInstructions = `You are a top-tier financial analyst with real-time market access. Today's date is ${today}. 
+
+CRITICAL DATA REQUIREMENTS:
+1. You MUST search for and incorporate the LATEST market data, news, and prices from today or the most recent trading day.
+2. When mentioning stock prices, always include the date (e.g., "As of ${today}, AAPL trades at $XXX").
+3. For news and catalysts, prioritize events from the last 7 days. Always include specific dates.
+4. If real-time data is unavailable, clearly state "Data as of [date]" to indicate data freshness.
+5. Never use outdated information without disclosure.
+
+You MUST respond strictly in JSON format. Do not add any extra text.`;
     const languageInstruction = locale === 'zh' ? 'All content must be in Simplified Chinese.' : 'All content must be in English.';
 
     // Simplified Part 1: Remove macroPolicy, companyFundamentals. Keep industryChain and simplified sentiment.
@@ -296,12 +306,18 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
     
     onProgress(3); // "Finalizing report..." (skip intermediate steps since parallel)
 
-    // Combine results from all parts
+    // Combine results from all parts with data freshness metadata
+    const now = new Date();
     const finalReport: AnalysisReport = {
         ...part1Result,
         ...part2Result,
         ...part3Result,
         modelUsed: modelDisplayName,
+        dataFreshness: {
+            generatedAt: now.toISOString(),
+            dataAsOf: now.toISOString().split('T')[0],
+            isRealTimeEnabled: enableWebSearch,
+        },
     };
     
     return finalReport;

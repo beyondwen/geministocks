@@ -116,8 +116,18 @@ export interface TechTrajectory {
 }
 
 
+// Data freshness metadata for tracking real-time data quality
+export interface DataFreshness {
+  generatedAt: string;      // ISO timestamp when report was generated
+  dataAsOf?: string;        // Date of the most recent data used
+  marketDataDate?: string;  // Date of market/price data
+  newsDataDate?: string;    // Date of most recent news included
+  isRealTimeEnabled: boolean; // Whether web search was used
+}
+
 export interface AnalysisReport {
   modelUsed?: string;
+  dataFreshness?: DataFreshness; // New: Track data freshness
   summary: string;
   investmentScore: InvestmentScore;
   analysis: {

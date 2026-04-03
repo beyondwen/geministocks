@@ -3,18 +3,70 @@ import type { AnalysisReport, StockAnalysisReport } from '../types'
 /**
  * 分析缓存服务
  * 使用内存缓存 + 时间戳来减少 AI API 调用
- * 相同查询 24 小时内复用结果
+ * 
+ * 分层 TTL 策略:
+ * - 股价数据: 5 分钟 (市场敏感)
+ * - 新闻数据: 1 小时 (时效性要求)
+ * - 分析报告: 4 小时 (综合性报告)
+ * - 历史/概念: 24 小时 (不常变化)
  */
+
+// 缓存 TTL 常量 (毫秒)
+export const CACHE_TTL = {
+  PRICE_SENSITIVE: 5 * 60 * 1000,      // 5 minutes - for real-time price queries
+  NEWS_SENSITIVE: 60 * 60 * 1000,       // 1 hour - for news-related queries
+  ANALYSIS_REPORT: 4 * 60 * 60 * 1000,  // 4 hours - for comprehensive analysis
+  HISTORICAL: 24 * 60 * 60 * 1000,      // 24 hours - for historical/conceptual queries
+} as const;
+
+/**
+ * 根据查询内容智能判断 TTL
+ */
+export function determineCacheTTL(query: string): number {
+  const lowerQuery = query.toLowerCase();
+  
+  // 股价敏感查询 - 5分钟缓存
+  const priceSensitivePatterns = [
+    /当前|current|实时|real.?time|now|今天|today/i,
+    /股价|price|行情|quote|涨跌/i,
+  ];
+  if (priceSensitivePatterns.some(p => p.test(lowerQuery))) {
+    return CACHE_TTL.PRICE_SENSITIVE;
+  }
+  
+  // 新闻敏感查询 - 1小时缓存
+  const newsSensitivePatterns = [
+    /新闻|news|公告|announcement|最新|latest/i,
+    /财报|earnings|季报|quarterly/i,
+  ];
+  if (newsSensitivePatterns.some(p => p.test(lowerQuery))) {
+    return CACHE_TTL.NEWS_SENSITIVE;
+  }
+  
+  // 历史/概念查询 - 24小时缓存
+  const historicalPatterns = [
+    /历史|history|historical/i,
+    /理论|theory|concept|概念/i,
+    /\b(19|18)\d{2}\b/, // Years like 1990, 1850
+  ];
+  if (historicalPatterns.some(p => p.test(lowerQuery))) {
+    return CACHE_TTL.HISTORICAL;
+  }
+  
+  // 默认使用分析报告 TTL - 4小时
+  return CACHE_TTL.ANALYSIS_REPORT;
+}
 
 interface CacheEntry<T> {
   data: T
   timestamp: number
   ttl: number // milliseconds
+  dataFreshness?: string // 数据新鲜度标记
 }
 
 class CacheManager<T> {
   private cache: Map<string, CacheEntry<T>> = new Map()
-  private readonly defaultTTL = 24 * 60 * 60 * 1000 // 24 hours
+  private readonly defaultTTL = CACHE_TTL.ANALYSIS_REPORT // 4 hours default
 
   /**
    * 生成缓存键 - 基于查询内容进行哈希
