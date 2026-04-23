@@ -9,11 +9,11 @@ import { captureError, addBreadcrumb } from './sentry';
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
-    return 'tencent/hy3-preview:free';
+    return 'x-ai/grok-4.1-fast';
 };
 
 const getModelDisplayName = (): string => {
-    return 'Tencent Hy3 Preview';
+    return 'Grok 4.1 Fast';
 };
 
 /**
