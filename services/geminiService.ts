@@ -9,11 +9,11 @@ import { captureError, addBreadcrumb } from './sentry';
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
-    return 'qwen/qwen3.6-plus:free';
+    return 'tencent/hy3-preview:free';
 };
 
 const getModelDisplayName = (): string => {
-    return 'Qwen 3.6 Plus';
+    return 'Tencent Hy3 Preview';
 };
 
 /**
@@ -450,7 +450,7 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
         你的任务是完成以下所有模块的分析：
         1.  **基本信息**: 公司简介、投资评分、市场情绪。
         2.  **财务与估值**: 过去3年的财务趋势、明确的估值判断（低估/合理/高估）及目标价、与2-3个核心竞品的量化对比。
-        3.  **战略分析**: SWOT、投资论点（看涨/看跌）、风险分析。
+        3.  **战略分析**: SWOT、��资论点（看涨/看跌）、风险分析。
         4.  **管理层与内部人动态**: 核心高管简介、过去6个月的内部人交易总结。
         5.  **技术分析快照**: 总结技术面貌，提供14日RSI值及解读、当前股价与50日和200日均线的关系。
         6.  **深度财务健康度**: 获取公司的偿债能力（资产负债率）、运营效率（ROE）和流动性（流动比率），并必须找到对应的行业平均值进行对比。
