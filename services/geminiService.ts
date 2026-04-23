@@ -9,11 +9,11 @@ import { captureError, addBreadcrumb } from './sentry';
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
-    return 'x-ai/grok-4.1-fast';
+    return 'xiaomi/mimo-v2.5';
 };
 
 const getModelDisplayName = (): string => {
-    return 'Grok 4.1 Fast';
+    return 'Xiaomi MiMo V2.5';
 };
 
 /**
