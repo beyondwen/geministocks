@@ -5,7 +5,8 @@ import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
 // API Provider Configuration: 'ssgoo' or 'openrouter'
-const API_PROVIDER: 'ssgoo' | 'openrouter' = 'ssgoo';
+// SSGoo is currently experiencing 504 timeouts, using OpenRouter as fallback
+const API_PROVIDER: 'ssgoo' | 'openrouter' = 'openrouter';
 
 // OpenRouter API Configuration (fallback)
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
