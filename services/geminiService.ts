@@ -4,28 +4,15 @@ import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
-// SSGoo Claude API Configuration
-const SSGOO_API_BASE_URL = 'https://ai.ssgoo.net';
-const SSGOO_API_KEY = import.meta.env.VITE_SSGOO_API_KEY || 'sk-8777097c73ebb54f18086ca0378cc930b3a03da32d983869146425bea6e9219c';
-
-// Legacy OpenRouter API Key (kept for fallback)
+// OpenRouter API Configuration
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
-// API Provider Selection: 'ssgoo' (Claude) or 'openrouter'
-const API_PROVIDER: 'ssgoo' | 'openrouter' = 'ssgoo';
-
 const getModelName = (): string => {
-    if (API_PROVIDER === 'ssgoo') {
-        return 'claude-sonnet-4-6';
-    }
-    return 'xiaomi/mimo-v2.5';
+    return 'x-ai/grok-4.1-fast';
 };
 
 const getModelDisplayName = (): string => {
-    if (API_PROVIDER === 'ssgoo') {
-        return 'Claude Sonnet 4-6';
-    }
-    return 'Xiaomi MiMo V2.5';
+    return 'Grok 4.1 Fast';
 };
 
 /**
@@ -98,70 +85,46 @@ function extractJson(text: string): string {
 }
 
 /**
- * A generic helper function to call the AI API (SSGoo Claude or OpenRouter).
+ * A generic helper function to call the OpenRouter AI.
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
- * @param enableWebSearch Whether to enable real-time web search for latest data (OpenRouter only).
+ * @param enableWebSearch Whether to enable real-time web search for latest data.
  * @returns The JSON-parsed response from the model.
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
     // Add breadcrumb for debugging
-    addBreadcrumb('ai', `Calling ${API_PROVIDER} API`, { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
+    addBreadcrumb('ai', 'Calling OpenRouter API', { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
     
     try {
-        let apiUrl: string;
-        let headers: Record<string, string>;
-        let requestBody: any;
+        // Build request body with optional web search plugin
+        const requestBody: any = {
+            model: modelName,
+            messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: prompt }
+            ],
+            response_format: { type: 'json_object' }
+        };
 
-        if (API_PROVIDER === 'ssgoo') {
-            // SSGoo Claude API Configuration
-            apiUrl = `${SSGOO_API_BASE_URL}/v1/chat/completions`;
-            headers = {
-                'Authorization': `Bearer ${SSGOO_API_KEY}`,
-                'Content-Type': 'application/json',
-            };
-            requestBody = {
-                model: modelName,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: 8192,
-            };
-            // Note: Claude via SSGoo may not support response_format, so we enforce JSON in the system prompt
-        } else {
-            // OpenRouter API Configuration (fallback)
-            apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
-            headers = {
+        // Enable web search plugin for real-time market data and news
+        if (enableWebSearch) {
+            requestBody.plugins = [
+                {
+                    id: 'web',
+                    max_results: 5
+                }
+            ];
+        }
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'Super Digger'
-            };
-            requestBody = {
-                model: modelName,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
-                ],
-                response_format: { type: 'json_object' }
-            };
-
-            // Enable web search plugin for real-time market data and news (OpenRouter only)
-            if (enableWebSearch) {
-                requestBody.plugins = [
-                    {
-                        id: 'web',
-                        max_results: 5
-                    }
-                ];
-            }
-        }
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers,
+            },
             body: JSON.stringify(requestBody)
         });
 
@@ -574,7 +537,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
         9.  **近期研报**: 从筛选列表中选择最新的3份��报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
-        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空数组。所有内容必须是简体中文。
+        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空��组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}
     `;
