@@ -109,32 +109,62 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         let response: Response;
 
         if (API_PROVIDER === 'ssgoo') {
-            // Use SSGoo proxy (server-side) to avoid CORS issues
-            response = await fetch('/api/ssgoo-proxy', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    prompt,
-                    systemInstruction,
-                    modelName,
-                    maxTokens: 8192
-                })
-            });
+            // Call SSGoo API via Vite proxy (dev) or Vercel serverless (prod)
+            // In dev mode, Vite proxies /api/ssgoo-direct to SSGoo
+            // In prod mode, the Vercel serverless function handles it
+            const isDevMode = import.meta.env.DEV;
+            
+            if (isDevMode) {
+                // Development: Use Vite proxy to call SSGoo directly
+                response = await fetch('/api/ssgoo-direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: modelName,
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: prompt }
+                        ],
+                        max_tokens: 8192
+                    })
+                });
+            } else {
+                // Production: Use Vercel serverless function
+                response = await fetch('/api/ssgoo-proxy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt,
+                        systemInstruction,
+                        modelName,
+                        maxTokens: 8192
+                    })
+                });
+            }
 
             if (!response.ok) {
                 const errorBody = await response.text();
                 throw new Error(`SSGoo API request failed with status ${response.status}: ${errorBody}`);
             }
 
-            const proxyResponse = await response.json();
-            if (!proxyResponse.success) {
-                throw new Error(proxyResponse.error || 'SSGoo API request failed');
+            const responseData = await response.json();
+            
+            // Handle both direct API response and proxy response formats
+            let content: string;
+            if (responseData.choices?.[0]?.message?.content) {
+                // Direct SSGoo API response format
+                content = responseData.choices[0].message.content;
+            } else if (responseData.success && responseData.data) {
+                // Proxy response format
+                content = responseData.data;
+            } else {
+                throw new Error('Invalid response structure from SSGoo API');
             }
 
-            // The proxy returns the content directly in data field
-            const content = proxyResponse.data;
             if (!content) {
                 throw new Error('Received an empty response from the AI model.');
             }
@@ -590,7 +620,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
         9.  **近期研报**: 从筛选列表中选择最新的3份��报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
-        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空��组。所有内容必须是简体中文。
+        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null���空��组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}
     `;
