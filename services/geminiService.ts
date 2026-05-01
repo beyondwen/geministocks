@@ -4,15 +4,27 @@ import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
-// Initialize OpenRouter API Key - prefer server-side API routes for security
-// This client-side key is only used as a fallback when streaming API is unavailable
+// SSGoo Claude API Configuration
+const SSGOO_API_BASE_URL = 'https://ai.ssgoo.net';
+const SSGOO_API_KEY = import.meta.env.VITE_SSGOO_API_KEY || 'sk-8777097c73ebb54f18086ca0378cc930b3a03da32d983869146425bea6e9219c';
+
+// Legacy OpenRouter API Key (kept for fallback)
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
+// API Provider Selection: 'ssgoo' (Claude) or 'openrouter'
+const API_PROVIDER: 'ssgoo' | 'openrouter' = 'ssgoo';
+
 const getModelName = (): string => {
+    if (API_PROVIDER === 'ssgoo') {
+        return 'claude-sonnet-4-6';
+    }
     return 'xiaomi/mimo-v2.5';
 };
 
 const getModelDisplayName = (): string => {
+    if (API_PROVIDER === 'ssgoo') {
+        return 'Claude Sonnet 4-6';
+    }
     return 'Xiaomi MiMo V2.5';
 };
 
@@ -86,46 +98,70 @@ function extractJson(text: string): string {
 }
 
 /**
- * A generic helper function to call the OpenRouter AI.
+ * A generic helper function to call the AI API (SSGoo Claude or OpenRouter).
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
- * @param enableWebSearch Whether to enable real-time web search for latest data.
+ * @param enableWebSearch Whether to enable real-time web search for latest data (OpenRouter only).
  * @returns The JSON-parsed response from the model.
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
     // Add breadcrumb for debugging
-    addBreadcrumb('ai', 'Calling OpenRouter API', { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
+    addBreadcrumb('ai', `Calling ${API_PROVIDER} API`, { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
     
     try {
-        // Build request body with optional web search plugin
-        const requestBody: any = {
-            model: modelName,
-            messages: [
-                { role: 'system', content: systemInstruction },
-                { role: 'user', content: prompt }
-            ],
-            response_format: { type: 'json_object' }
-        };
+        let apiUrl: string;
+        let headers: Record<string, string>;
+        let requestBody: any;
 
-        // Enable web search plugin for real-time market data and news
-        if (enableWebSearch) {
-            requestBody.plugins = [
-                {
-                    id: 'web',
-                    max_results: 5 // Fetch up to 5 search results for context
-                }
-            ];
-        }
-
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
+        if (API_PROVIDER === 'ssgoo') {
+            // SSGoo Claude API Configuration
+            apiUrl = `${SSGOO_API_BASE_URL}/v1/chat/completions`;
+            headers = {
+                'Authorization': `Bearer ${SSGOO_API_KEY}`,
+                'Content-Type': 'application/json',
+            };
+            requestBody = {
+                model: modelName,
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: prompt }
+                ],
+                max_tokens: 8192,
+            };
+            // Note: Claude via SSGoo may not support response_format, so we enforce JSON in the system prompt
+        } else {
+            // OpenRouter API Configuration (fallback)
+            apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+            headers = {
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'Super Digger'
-            },
+            };
+            requestBody = {
+                model: modelName,
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: prompt }
+                ],
+                response_format: { type: 'json_object' }
+            };
+
+            // Enable web search plugin for real-time market data and news (OpenRouter only)
+            if (enableWebSearch) {
+                requestBody.plugins = [
+                    {
+                        id: 'web',
+                        max_results: 5
+                    }
+                ];
+            }
+        }
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers,
             body: JSON.stringify(requestBody)
         });
 
@@ -450,7 +486,7 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
         你的任务是完成以下所有模块的分析：
         1.  **基本信息**: 公司简介、投资评分、市场情绪。
         2.  **财务与估值**: 过去3年的财务趋势、明确的估值判断（低估/合理/高估）及目标价、与2-3个核心竞品的量化对比。
-        3.  **战略分析**: SWOT、��资论点（看涨/看跌）、风险分析。
+        3.  **战略分析**: SWOT、���资论点（看涨/看跌）、风险分析。
         4.  **管理层与内部人动态**: 核心高管简介、过去6个月的内部人交易总结。
         5.  **技术分析快照**: 总结技术面貌，提供14日RSI值及解读、当前股价与50日和200日均线的关系。
         6.  **深度财务健康度**: 获取公司的偿债能力（资产负债率）、运营效率（ROE）和流动性（流动比率），并必须找到对应的行业平均值进行对比。
