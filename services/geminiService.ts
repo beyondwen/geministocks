@@ -4,14 +4,23 @@ import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
-// OpenRouter API Configuration
+// API Provider Configuration: 'ssgoo' or 'openrouter'
+const API_PROVIDER: 'ssgoo' | 'openrouter' = 'ssgoo';
+
+// OpenRouter API Configuration (fallback)
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
+    if (API_PROVIDER === 'ssgoo') {
+        return 'claude-sonnet-4-6';
+    }
     return 'x-ai/grok-4.1-fast';
 };
 
 const getModelDisplayName = (): string => {
+    if (API_PROVIDER === 'ssgoo') {
+        return 'Claude Sonnet 4-6 (SSGoo)';
+    }
     return 'Grok 4.1 Fast';
 };
 
@@ -85,19 +94,63 @@ function extractJson(text: string): string {
 }
 
 /**
- * A generic helper function to call the OpenRouter AI.
+ * A generic helper function to call the AI API (SSGoo proxy or OpenRouter).
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
- * @param enableWebSearch Whether to enable real-time web search for latest data.
+ * @param enableWebSearch Whether to enable real-time web search for latest data (OpenRouter only).
  * @returns The JSON-parsed response from the model.
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
     // Add breadcrumb for debugging
-    addBreadcrumb('ai', 'Calling OpenRouter API', { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
+    addBreadcrumb('ai', `Calling ${API_PROVIDER} API`, { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
     
     try {
-        // Build request body with optional web search plugin
+        let response: Response;
+
+        if (API_PROVIDER === 'ssgoo') {
+            // Use SSGoo proxy (server-side) to avoid CORS issues
+            response = await fetch('/api/ssgoo-proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt,
+                    systemInstruction,
+                    modelName,
+                    maxTokens: 8192
+                })
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`SSGoo API request failed with status ${response.status}: ${errorBody}`);
+            }
+
+            const proxyResponse = await response.json();
+            if (!proxyResponse.success) {
+                throw new Error(proxyResponse.error || 'SSGoo API request failed');
+            }
+
+            // The proxy returns the content directly in data field
+            const content = proxyResponse.data;
+            if (!content) {
+                throw new Error('Received an empty response from the AI model.');
+            }
+
+            // Parse the JSON response
+            const rawJsonString = extractJson(content);
+            try {
+                const repairedJsonString = jsonrepair(rawJsonString);
+                return JSON.parse(repairedJsonString);
+            } catch {
+                console.warn('JSON repair failed, attempting direct parse');
+                return JSON.parse(rawJsonString);
+            }
+        }
+
+        // OpenRouter API (fallback)
         const requestBody: any = {
             model: modelName,
             messages: [
@@ -117,7 +170,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             ];
         }
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
