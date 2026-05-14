@@ -2,14 +2,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-// FIX: Import `getHotStocksFromAI` to resolve reference error.
-import { getAnalysis, getStockAnalysis, findIndustryLeader, getPositionalWarfareFollowerAnalysis, getPolymarketAnalysis, getHotStocksFromAI } from './services/geminiService';
+// Use streaming service with fallback to legacy
+import { 
+  getAnalysisWithStreaming, 
+  getStockAnalysisWithStreaming,
+  getStockAnalysis,
+  findIndustryLeader, 
+  getPositionalWarfareFollowerAnalysis, 
+  getPolymarketAnalysis, 
+  getHotStocksFromAI 
+} from './services/streamingService';
+import { getAnalysis } from './services/geminiService';
 import type { AnalysisReport, TopicHistoryEntry, StockAnalysisReport, StockHistoryEntry, PositionalWarfareReport, PositionalWarfareHistoryEntry, LeaderStockProfile } from './types';
 import AnalysisInput from './components/AnalysisInput';
 import AnalysisResult from './components/AnalysisResult';
 import StockAnalysisInput from './components/StockAnalysisInput';
 import StockAnalysisResult from './components/StockAnalysisResult';
 import Loader from './components/Loader';
+import StreamingLoader from './components/StreamingLoader';
 // import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
 import HotStocks from './components/HotStocks';
@@ -18,6 +28,7 @@ import AboutPage from './components/AboutPage';
 import PositionalWarfareInput from './components/PositionalWarfareInput';
 import PositionalWarfareResult from './components/PositionalWarfareResult';
 import UserGuideModal from './components/UserGuideModal';
+import { CacheStats } from './components/CacheStats';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
 import PaymentModal from './components/PaymentModal';
@@ -33,6 +44,8 @@ const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const USER_ID_KEY = 'gemini-user-id';
 const CREDITS_KEY = 'gemini-claude-credits';
 const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
+const FIRST_VISIT_KEY = 'gemini-first-visit-rewarded';
+const FIRST_VISIT_BONUS_CREDITS = 3;
 
 
 const MAX_ANALYSES_PER_HOUR = 12;
@@ -565,6 +578,12 @@ const MainPage: React.FC = () => {
   const [inlineStockProgress, setInlineStockProgress] = useState<number>(0);
   const [inlineStockError, setInlineStockError] = useState<string | null>(null);
 
+  // Streaming Progress State
+  const [streamingTopicProgress, setStreamingTopicProgress] = useState<number>(0);
+  const [streamingStockProgress, setStreamingStockProgress] = useState<number>(0);
+  const [partialTopicData, setPartialTopicData] = useState<Partial<AnalysisReport> | null>(null);
+  const [partialStockData, setPartialStockData] = useState<Partial<StockAnalysisReport> | null>(null);
+
   // Common State
   const [activeTab, setActiveTab] = useState<'topic' | 'stock' | 'positional'>('topic');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -579,6 +598,8 @@ const MainPage: React.FC = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [redemptionCode, setRedemptionCode] = useState('');
+  
+
   
   // Effect to hide toast after a delay
   useEffect(() => {
@@ -627,11 +648,29 @@ const MainPage: React.FC = () => {
   };
   
   useEffect(() => {
-    // Initialize user ID
+    // Initialize user ID (for anonymous users)
     getUserId();
     
-    // Set credits state from the now-updated localStorage
-    setCredits(getCredits());
+    // Check if this is a first-time visitor and award bonus credits
+    try {
+      const hasReceivedFirstVisitBonus = localStorage.getItem(FIRST_VISIT_KEY);
+      if (!hasReceivedFirstVisitBonus) {
+        // First-time visitor: award bonus credits
+        const newCredits = addCredits(FIRST_VISIT_BONUS_CREDITS);
+        setCredits(newCredits);
+        localStorage.setItem(FIRST_VISIT_KEY, 'true');
+        // Show welcome toast after a brief delay
+        setTimeout(() => {
+          setToast({ message: t('welcome.firstVisitBonus', { count: FIRST_VISIT_BONUS_CREDITS }), type: 'success' });
+        }, 500);
+      } else {
+        // Returning visitor: just load existing credits
+        setCredits(getCredits());
+      }
+    } catch (e) {
+      // Fallback if localStorage fails
+      setCredits(getCredits());
+    }
 
     // Load history and settings from localStorage
     try {
@@ -656,6 +695,8 @@ const MainPage: React.FC = () => {
       console.error("Failed to load from localStorage", err);
     }
   }, []);
+  
+
 
   // Fetch dynamic hot stocks when language changes
   useEffect(() => {
@@ -739,14 +780,29 @@ const MainPage: React.FC = () => {
     setIsLoading(true);
     handleClearAllResults();
     setTopicProgress(0);
+    setStreamingTopicProgress(0);
+    setPartialTopicData(null);
 
     try {
         setCredits(useCredits(cost));
 
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
-        const report = isPolymarketUrl 
-            ? await getPolymarketAnalysis(topic, locale)
-            : await getAnalysis(topic, setTopicProgress, locale);
+        
+        let report: AnalysisReport;
+        if (isPolymarketUrl) {
+            report = await getPolymarketAnalysis(topic, locale);
+        } else {
+            // Use streaming analysis with progress callback
+            report = await getAnalysisWithStreaming(
+                topic, 
+                setTopicProgress, 
+                locale,
+                (progress, data) => {
+                    setStreamingTopicProgress(progress);
+                    setPartialTopicData(data);
+                }
+            );
+        }
         
         setAnalysisReport(report);
         recordAnalysisTimestamp();
@@ -763,6 +819,8 @@ const MainPage: React.FC = () => {
     } finally {
         setIsLoading(false);
         setTopicProgress(0);
+        setStreamingTopicProgress(0);
+        setPartialTopicData(null);
     }
   }, [topicHistory, locale, t, cost, isPaywalled, credits]);
 
@@ -779,11 +837,22 @@ const MainPage: React.FC = () => {
     setIsStockLoading(true);
     handleClearAllResults();
     setStockProgress(0);
+    setStreamingStockProgress(0);
+    setPartialStockData(null);
 
     try {
         setCredits(useCredits(cost));
 
-        const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setStockProgress, locale);
+        // Use streaming analysis with progress callback
+        const combinedReport = await getStockAnalysisWithStreaming(
+            stockQueryToAnalyze, 
+            setStockProgress, 
+            locale,
+            (progress, data) => {
+                setStreamingStockProgress(progress);
+                setPartialStockData(data);
+            }
+        );
 
         setStockAnalysisReport(combinedReport);
         recordAnalysisTimestamp();
@@ -800,6 +869,8 @@ const MainPage: React.FC = () => {
     } finally {
         setIsStockLoading(false);
         setStockProgress(0);
+        setStreamingStockProgress(0);
+        setPartialStockData(null);
     }
   }, [stockHistory, locale, t, cost, isPaywalled, credits]);
 
@@ -1059,6 +1130,7 @@ const MainPage: React.FC = () => {
 
   return (
     <>
+      <CacheStats />
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
@@ -1113,6 +1185,7 @@ const MainPage: React.FC = () => {
                             <AcademicCapIcon className="w-5 h-5" />
                             <span>{t('header.userGuide')}</span>
                         </button>
+                        {/* Credits display */}
                         <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
                             <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
                             <span className="sm:hidden">💎 {credits}</span>
@@ -1189,10 +1262,21 @@ const MainPage: React.FC = () => {
                 
                 {/* --- RESULTS / DASHBOARD --- */}
                 {isLoadingAny ? (
-                  <Loader 
-                    taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isFindingLeader ? undefined : 'positional'}
-                    currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
-                  />
+                  <>
+                    {/* Show streaming loader with progress when streaming data is available */}
+                    {(streamingTopicProgress > 0 || streamingStockProgress > 0) ? (
+                      <StreamingLoader
+                        progress={isLoading ? streamingTopicProgress : streamingStockProgress}
+                        isStreaming={isLoading || isStockLoading}
+                        type={isLoading ? 'topic' : isStockLoading ? 'stock' : 'positional'}
+                      />
+                    ) : (
+                      <Loader 
+                        taskType={isLoading ? 'topic' : isStockLoading ? 'stock' : isFindingLeader ? undefined : 'positional'}
+                        currentStep={isLoading ? topicProgress : isStockLoading ? stockProgress : positionalWarfareProgress}
+                      />
+                    )}
+                  </>
                 ) : error ? (
                     <div role="alert" className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 text-center rounded-lg">
                         <p className="font-semibold">{t('errors.title')}</p>

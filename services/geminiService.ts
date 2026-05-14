@@ -2,16 +2,28 @@
 import type { AnalysisReport, StockAnalysisReport, PositionalWarfareReport, LeaderStockProfile, ResearchReportConsensus } from '../types';
 import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
+import { captureError, addBreadcrumb } from './sentry';
 
-// Initialize OpenRouter API Key
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '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';
+// API Provider Configuration: 'ssgoo' or 'openrouter'
+// SSGoo is currently experiencing 504 timeouts, using OpenRouter as fallback
+const API_PROVIDER: 'ssgoo' | 'openrouter' = 'openrouter';
+
+// OpenRouter API Configuration (fallback)
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
-    return 'x-ai/grok-4.1-fast';
+    if (API_PROVIDER === 'ssgoo') {
+        return 'claude-sonnet-4-6';
+    }
+    // Free model on OpenRouter that supports JSON mode
+    return 'deepseek/deepseek-chat-v3.1:free';
 };
 
 const getModelDisplayName = (): string => {
-    return 'Grok 4.1 Fast';
+    if (API_PROVIDER === 'ssgoo') {
+        return 'Claude Sonnet 4-6 (SSGoo)';
+    }
+    return 'DeepSeek Chat V3.1 (Free)';
 };
 
 /**
@@ -84,15 +96,113 @@ function extractJson(text: string): string {
 }
 
 /**
- * A generic helper function to call the OpenRouter AI.
+ * A generic helper function to call the AI API (SSGoo proxy or OpenRouter).
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
+ * @param enableWebSearch Whether to enable real-time web search for latest data (OpenRouter only).
  * @returns The JSON-parsed response from the model.
  */
-async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string): Promise<any> {
+async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
+    // Add breadcrumb for debugging
+    addBreadcrumb('ai', `Calling ${API_PROVIDER} API`, { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
+    
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        let response: Response;
+
+        if (API_PROVIDER === 'ssgoo') {
+            // Call SSGoo API via Vite proxy (dev) or Vercel serverless (prod)
+            // In dev mode, Vite proxies /api/ssgoo-direct to SSGoo
+            // In prod mode, the Vercel serverless function handles it
+            const isDevMode = import.meta.env.DEV;
+            
+            if (isDevMode) {
+                // Development: Use Vite proxy to call SSGoo directly
+                response = await fetch('/api/ssgoo-direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: modelName,
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: prompt }
+                        ],
+                        max_tokens: 8192
+                    })
+                });
+            } else {
+                // Production: Use Vercel serverless function
+                response = await fetch('/api/ssgoo-proxy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt,
+                        systemInstruction,
+                        modelName,
+                        maxTokens: 8192
+                    })
+                });
+            }
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`SSGoo API request failed with status ${response.status}: ${errorBody}`);
+            }
+
+            const responseData = await response.json();
+            
+            // Handle both direct API response and proxy response formats
+            let content: string;
+            if (responseData.choices?.[0]?.message?.content) {
+                // Direct SSGoo API response format
+                content = responseData.choices[0].message.content;
+            } else if (responseData.success && responseData.data) {
+                // Proxy response format
+                content = responseData.data;
+            } else {
+                throw new Error('Invalid response structure from SSGoo API');
+            }
+
+            if (!content) {
+                throw new Error('Received an empty response from the AI model.');
+            }
+
+            // Parse the JSON response
+            const rawJsonString = extractJson(content);
+            try {
+                const repairedJsonString = jsonrepair(rawJsonString);
+                return JSON.parse(repairedJsonString);
+            } catch {
+                console.warn('JSON repair failed, attempting direct parse');
+                return JSON.parse(rawJsonString);
+            }
+        }
+
+        // OpenRouter API (fallback)
+        const requestBody: any = {
+            model: modelName,
+            messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: prompt }
+            ],
+            response_format: { type: 'json_object' }
+        };
+
+        // Enable web search plugin for real-time market data and news
+        if (enableWebSearch) {
+            requestBody.plugins = [
+                {
+                    id: 'web',
+                    max_results: 5
+                }
+            ];
+        }
+
+        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
@@ -100,14 +210,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'Super Digger'
             },
-            body: JSON.stringify({
-                model: modelName,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
-                ],
-                response_format: { type: 'json_object' }
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -138,13 +241,33 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 
     } catch (error) {
         console.error('Error calling AI Service:', error);
+        
+        // Capture error in Sentry with context
+        if (error instanceof Error) {
+            captureError(error, {
+                model: modelName,
+                promptLength: prompt.length,
+                systemInstructionLength: systemInstruction.length,
+            });
+        }
+        
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during the API call.';
         throw new Error(`AI analysis failed. Reason: ${errorMessage}`);
     }
 }
 
 const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string) => {
-    const commonInstructions = `You are a top-tier financial analyst. Your task is to analyze the provided text using a deeply quantitative and qualitative method, incorporating the latest web information. You MUST respond strictly in JSON format. Do not add any extra text.`;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const commonInstructions = `You are a top-tier financial analyst with real-time market access. Today's date is ${today}. 
+
+CRITICAL DATA REQUIREMENTS:
+1. You MUST search for and incorporate the LATEST market data, news, and prices from today or the most recent trading day.
+2. When mentioning stock prices, always include the date (e.g., "As of ${today}, AAPL trades at $XXX").
+3. For news and catalysts, prioritize events from the last 7 days. Always include specific dates.
+4. If real-time data is unavailable, clearly state "Data as of [date]" to indicate data freshness.
+5. Never use outdated information without disclosure.
+
+You MUST respond strictly in JSON format. Do not add any extra text.`;
     const languageInstruction = locale === 'zh' ? 'All content must be in Simplified Chinese.' : 'All content must be in English.';
 
     // Simplified Part 1: Remove macroPolicy, companyFundamentals. Keep industryChain and simplified sentiment.
@@ -199,6 +322,52 @@ const getAnalysisSystemInstructions = (locale: Locale, modelDisplayName: string)
     };
 };
 
+/**
+ * Detects if a query requires real-time web search based on content analysis.
+ * Market-sensitive queries (stocks, crypto, current events) need real-time data.
+ * Historical or conceptual queries can use cached/model knowledge.
+ */
+const detectNeedsWebSearch = (topic: string): boolean => {
+    const lowerTopic = topic.toLowerCase();
+    
+    // Patterns that indicate need for real-time data
+    const realTimePatterns = [
+        // Stock tickers and market terms
+        /\b[A-Z]{1,5}\b/,  // Stock tickers like AAPL, NVDA
+        /股票|stock|shares|equity/i,
+        /市场|market|trading|交易/i,
+        /价格|price|估值|valuation/i,
+        /财报|earnings|quarterly|季报|年报/i,
+        /ipo|上市|listing/i,
+        // Crypto
+        /比特币|bitcoin|btc|eth|crypto|加密货币/i,
+        // Current events
+        /最新|latest|recent|今天|today|本周|this week/i,
+        /新闻|news|announcement|公告/i,
+        // Companies and industries
+        /公司|company|企业|corporation/i,
+        /行业|industry|sector|板块/i,
+    ];
+    
+    // Patterns that indicate historical/conceptual (no real-time needed)
+    const historicalPatterns = [
+        /历史|history|historical/i,
+        /理论|theory|concept|概念/i,
+        /经典|classic|传统/i,
+        /\b(19|18)\d{2}\b/,  // Years like 1990, 1850
+    ];
+    
+    // Check if any historical pattern matches
+    const isHistorical = historicalPatterns.some(pattern => pattern.test(lowerTopic));
+    if (isHistorical) return false;
+    
+    // Check if any real-time pattern matches
+    const needsRealTime = realTimePatterns.some(pattern => pattern.test(topic));
+    
+    // Default to enabling web search for most financial queries
+    return needsRealTime || lowerTopic.length > 10;
+};
+
 export const getAnalysis = async (topic: string, onProgress: (stepIndex: number) => void, locale: Locale): Promise<AnalysisReport> => {
     const modelName = getModelName();
     const modelDisplayName = getModelDisplayName();
@@ -206,23 +375,33 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
 
     const prompt = `Please analyze the following text: --- ${topic} ---`;
 
+    // Smart web search: only enable for market-sensitive queries
+    const enableWebSearch = detectNeedsWebSearch(topic);
+
     onProgress(0); // "Running core analysis..."
-    const part1Result = await callOpenRouterAI(prompt, part1System, modelName);
     
-    onProgress(1); // "Performing deep dives..."
-    const part2Result = await callOpenRouterAI(prompt, part2System, modelName);
-
-    onProgress(2); // "Formulating strategy & suggestions..."
-    const part3Result = await callOpenRouterAI(prompt, part3System, modelName);
+    // OPTIMIZATION: Run all 3 AI calls in parallel instead of sequentially
+    // This reduces total time from (T1 + T2 + T3) to max(T1, T2, T3)
+    const [part1Result, part2Result, part3Result] = await Promise.all([
+        callOpenRouterAI(prompt, part1System, modelName, enableWebSearch),
+        callOpenRouterAI(prompt, part2System, modelName, enableWebSearch),
+        callOpenRouterAI(prompt, part3System, modelName, enableWebSearch),
+    ]);
     
-    onProgress(3); // "Finalizing report..."
+    onProgress(3); // "Finalizing report..." (skip intermediate steps since parallel)
 
-    // Combine results from all parts
+    // Combine results from all parts with data freshness metadata
+    const now = new Date();
     const finalReport: AnalysisReport = {
         ...part1Result,
         ...part2Result,
         ...part3Result,
         modelUsed: modelDisplayName,
+        dataFreshness: {
+            generatedAt: now.toISOString(),
+            dataAsOf: now.toISOString().split('T')[0],
+            isRealTimeEnabled: enableWebSearch,
+        },
     };
     
     return finalReport;
@@ -284,8 +463,8 @@ const getPolymarketAnalysisSystemInstruction = (locale: Locale): string => {
 };
 
 
-export const getPolymarketAnalysis = async (url: string, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<AnalysisReport> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+export const getPolymarketAnalysis = async (url: string, locale: Locale): Promise<AnalysisReport> => {
+    const modelName = getModelName();
     const systemInstruction = getPolymarketAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -296,7 +475,8 @@ export const getPolymarketAnalysis = async (url: string, locale: Locale, isRealt
         ---
     `;
 
-    return callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
+    // Enable web search to get latest prediction market data
+    return callOpenRouterAI(prompt, systemInstruction, modelName, true);
 };
 
 const getStockAnalysisSystemInstruction = (locale: Locale): string => {
@@ -354,7 +534,7 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
         你的任务是完成以下所有模块的分析：
         1.  **基本信息**: 公司简介、投资评分、市场情绪。
         2.  **财务与估值**: 过去3年的财务趋势、明确的估值判断（低估/合理/高估）及目标价、与2-3个核心竞品的量化对比。
-        3.  **战略分析**: SWOT、投资论点（看涨/看跌）、风险分析。
+        3.  **战略分析**: SWOT、���资论点（看涨/看跌）、风险分析。
         4.  **管理层与内部人动态**: 核心高管简介、过去6个月的内部人交易总结。
         5.  **技术分析快照**: 总结技术面貌，提供14日RSI值及解读、当前股价与50日和200日均线的关系。
         6.  **深度财务健康度**: 获取公司的偿债能力（资产负债率）、运营效率（ROE）和流动性（流动比率），并必须找到对应的行业平均值进行对比。
@@ -386,13 +566,12 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
 
 
 export const getStockAnalysis = async (
-    stockQuery: string, 
-    onProgress: (stepIndex: number) => void,
-    locale: Locale, 
-    isRealtimeSearchEnabled: boolean
-): Promise<StockAnalysisReport> => {
+  stockQuery: string,
+  onProgress: (stepIndex: number) => void,
+  locale: Locale
+  ): Promise<StockAnalysisReport> => {
     onProgress(0); // "Analyzing core fundamentals..."
-    const modelName = getModelName(isRealtimeSearchEnabled);
+    const modelName = getModelName();
     const systemInstruction = getStockAnalysisSystemInstruction(locale);
     
     const prompt = `
@@ -402,11 +581,12 @@ export const getStockAnalysis = async (
         ---
     `;
 
-    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
+    // Enable web search to get latest stock prices, news, and market data
+    const reportPart: Omit<StockAnalysisReport, 'researchReportConsensus'> = await callOpenRouterAI(prompt, systemInstruction, modelName, true);
     
     onProgress(1); // "Aggregating institutional research..."
     
-    const researchData = await getResearchReportAnalysis(stockQuery, locale, isRealtimeSearchEnabled);
+    const researchData = await getResearchReportAnalysis(stockQuery, locale);
     
     onProgress(2); // "Synthesizing professional-grade report..."
 
@@ -441,8 +621,8 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
-        9.  **近期研报**: 从筛选列表中选择最新的3份研报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
-        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null或空数组。所有内容必须是简体中文。
+        9.  **近期研报**: 从筛选列表中选择最新的3份��报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
+        10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null���空��组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}
     `;
@@ -464,8 +644,8 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
     `;
 };
 
-export const getResearchReportAnalysis = async (stockQuery: string, locale: Locale, isRealtimeSearchEnabled: boolean): Promise<ResearchReportConsensus> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+export const getResearchReportAnalysis = async (stockQuery: string, locale: Locale): Promise<ResearchReportConsensus> => {
+    const modelName = getModelName();
     const systemInstruction = getResearchReportAnalysisSystemInstruction(locale);
 
     const prompt = `
@@ -476,7 +656,8 @@ export const getResearchReportAnalysis = async (stockQuery: string, locale: Loca
     `;
 
     try {
-        const result = await callGeminiAI(prompt, systemInstruction, modelName, isRealtimeSearchEnabled);
+        // Enable web search to get latest research reports and analyst ratings
+        const result = await callOpenRouterAI(prompt, systemInstruction, modelName, true);
         // Basic validation to ensure the AI returns a somewhat correct structure
         if (result && Array.isArray(result.epsForecasts) && result.targetPriceSummary && Array.isArray(result.recentReports)) {
             return result;
@@ -515,7 +696,8 @@ export const getHotStocksFromAI = async (locale: Locale): Promise<{name: string;
     const systemInstruction = getHotStocksSystemInstruction(locale);
     const prompt = "Please provide the list of the 10 hottest stocks in the last 24 hours.";
 
-    const response = await callOpenRouterAI(prompt, systemInstruction, modelName);
+    // Enable web search to get real-time trending stocks
+    const response = await callOpenRouterAI(prompt, systemInstruction, modelName, true);
     if (response && Array.isArray(response.stocks)) {
       return response.stocks;
     }
@@ -547,38 +729,40 @@ const getFollowerAnalysisInstructions = (locale: Locale) => {
 }
 
 export const findIndustryLeader = async (
-    query: string,
-    locale: Locale,
-    isRealtimeSearchEnabled: boolean
-): Promise<LeaderStockProfile> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+  query: string,
+  locale: Locale
+  ): Promise<LeaderStockProfile> => {
+    const modelName = getModelName();
     const systemInstruction = getFindLeaderInstruction(locale);
-    return await callGeminiAI(query, systemInstruction, modelName, isRealtimeSearchEnabled);
+    // Enable web search to find current industry leaders with real-time data
+    return await callOpenRouterAI(query, systemInstruction, modelName, true);
 };
 
 export const getPositionalWarfareFollowerAnalysis = async (
-    leaderProfile: LeaderStockProfile,
-    onProgress: (stepIndex: number) => void,
-    locale: Locale,
-    isRealtimeSearchEnabled: boolean
-): Promise<PositionalWarfareReport> => {
-    const modelName = getModelName(isRealtimeSearchEnabled);
+  leaderProfile: LeaderStockProfile,
+  onProgress: (stepIndex: number) => void,
+  locale: Locale
+  ): Promise<PositionalWarfareReport> => {
+    const modelName = getModelName();
     const { step2System, step3System, step4System } = getFollowerAnalysisInstructions(locale);
+
+    // Enable web search for all steps to get real-time market data
+    const enableWebSearch = true;
 
     onProgress(1); // Screening for followers
     const step2Prompt = locale === 'zh' ? `龙头股票资料: ${JSON.stringify(leaderProfile)}` : `Leader Stock Profile: ${JSON.stringify(leaderProfile)}`;
-    const screeningResult = await callGeminiAI(step2Prompt, step2System, modelName, isRealtimeSearchEnabled);
+    const screeningResult = await callOpenRouterAI(step2Prompt, step2System, modelName, enableWebSearch);
     const candidates = screeningResult.candidates || [];
     if (candidates.length === 0) throw new Error(locale === 'zh' ? "未能找到合适的潜力补涨股。" : "Could not find suitable follower candidates.");
 
     onProgress(2); // Analyzing candidate financials
     const step3Prompt = locale === 'zh' ? `公司列表: ${JSON.stringify(candidates)}` : `Companies List: ${JSON.stringify(candidates)}`;
-    const metricsResult = await callGeminiAI(step3Prompt, step3System, modelName, isRealtimeSearchEnabled);
+    const metricsResult = await callOpenRouterAI(step3Prompt, step3System, modelName, enableWebSearch);
     const detailedCandidates = metricsResult.detailedCandidates || [];
 
     onProgress(3); // Synthesizing final strategy
     const step4Prompt = locale === 'zh' ? `龙头股票: ${JSON.stringify(leaderProfile)}\n\n潜力补涨股及指标: ${JSON.stringify(detailedCandidates)}` : `Leader Stock: ${JSON.stringify(leaderProfile)}\n\nFollower Candidates with Metrics: ${JSON.stringify(detailedCandidates)}`;
-    const finalAnalysis = await callGeminiAI(step4Prompt, step4System, modelName, isRealtimeSearchEnabled);
+    const finalAnalysis = await callOpenRouterAI(step4Prompt, step4System, modelName, enableWebSearch);
     
     // Merge the final analysis with the detailed candidate data
     const finalFollowers = detailedCandidates.map((candidate: any) => {

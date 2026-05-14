@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { XIcon } from './icons/Icons';
+import { useI18n } from '../hooks/useI18n';
 
 interface SupportModalProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface SupportModalProps {
 }
 
 const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useI18n();
+
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -44,28 +47,28 @@ const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) => {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full text-slate-500 hover:bg-slate-100/80 hover:text-slate-800 transition-colors"
-          aria-label="关闭"
+          aria-label={t('controls.close')}
         >
           <XIcon className="w-6 h-6" />
         </button>
 
         <h2 id="support-modal-title" className="text-2xl font-bold text-slate-800 mb-2">
-          支持作者
+          {t('support.supportAuthor')}
         </h2>
         <p className="text-slate-600 mb-6">
-          如果觉得「超级挖掘机」对您有帮助，可以请我喝杯咖啡 ☕️
+          {t('support.description')}
         </p>
 
         <div className="p-2 border-4 border-slate-100/80 rounded-lg inline-block">
           <img
             src="https://youke1.picui.cn/s1/2025/09/28/68d93e5e927e6.jpg"
-            alt="赞赏码"
+            alt={t('support.supportAuthor')}
             className="w-64 h-64 object-contain rounded-md"
           />
         </div>
 
         <p className="text-xs text-slate-400 mt-4">
-          您的支持是项目持续发展的动力！
+          {t('support.description2')}
         </p>
       </div>
     </div>

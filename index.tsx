@@ -2,6 +2,10 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { I18nProvider } from './hooks/useI18n';
+import { initSentry } from './services/sentry';
+
+// Initialize Sentry before rendering (gracefully handles if not installed)
+initSentry();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

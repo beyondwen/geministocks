@@ -13,6 +13,24 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+// Store for non-React context access (for class components like ErrorBoundary)
+let i18nStore: I18nContextType | null = null;
+
+const setI18nStore = (store: I18nContextType) => {
+  i18nStore = store;
+};
+
+// Get i18n outside of React context (for class components)
+export const getI18n = (): { t: (key: string, options?: Record<string, string | number>) => any } => {
+  if (i18nStore) {
+    return { t: i18nStore.t };
+  }
+  // Fallback: return key as-is if store not initialized
+  return {
+    t: (key: string) => key
+  };
+};
+
 // Helper to get nested value from an object using a dot-notation string
 const getNestedTranslation = (obj: any, key: string): any => {
   return key.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
@@ -95,6 +113,11 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [locale, translations]);
   
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
+
+  // Update the store whenever value changes (for class components)
+  useEffect(() => {
+    setI18nStore(value);
+  }, [value]);
 
   // Do not render the app until translations are loaded to prevent rendering with keys.
   if (!translations) {

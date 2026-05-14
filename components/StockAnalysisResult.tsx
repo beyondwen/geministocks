@@ -1,11 +1,11 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { toPng } from 'html-to-image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area } from 'recharts';
 import type { StockAnalysisReport, InvestmentScore, SWOT, ValuationAnalysis, PeerCompetitor, ManagementAnalysis, TechnicalAnalysis, FinancialHealthAnalysis, EarningsCallAnalysis } from '../types';
 import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, TagIcon, XCircleIcon, SpeakerWaveIcon, LightBulbIcon, ChartTrendingUpIcon, ShieldCheckIcon, UsersIcon, PresentationChartLineIcon, BanknotesIcon, MicrophoneIcon, PlusIcon } from './icons/Icons';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
 import ResearchConsensus from './ResearchConsensus';
+import { exportElementAsImage, generateExportFilename } from '../utils/exportUtils';
 
 const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
   <div className={`bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm ${className}`}>
@@ -344,7 +344,7 @@ interface StockAnalysisResultProps {
 }
 
 const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNewAnalysis }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -355,34 +355,32 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNew
     return [report.companyProfile.name, report.companyProfile.ticker].filter(Boolean);
   }, [report]);
 
-  const handleExportImage = useCallback(() => {
+  const handleExportImage = useCallback(async () => {
     if (exportRef.current === null) {
       return;
     }
     setIsExporting(true);
     setExportError(null);
 
-    toPng(exportRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-    })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        const topic = report.companyProfile.name.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-        link.download = `Stock_Analysis_Report_${topic}.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch((err) => {
-        console.error('Failed to export image:', err);
-        setExportError(t('analysisResult.exportError'));
-      })
-      .finally(() => {
-        setIsExporting(false);
+    try {
+      // Generate dynamic filename based on stock name and ticker
+      const stockTitle = `${report.companyProfile.name}_${report.companyProfile.ticker}`;
+      const filename = generateExportFilename('stock', stockTitle, locale);
+
+      await exportElementAsImage({
+        element: exportRef.current,
+        filename,
+        pixelRatio: 2,
+        format: 'png',
+        backgroundColor: '#ffffff',
       });
-  }, [report, t]);
+    } catch (err) {
+      console.error('Failed to export image:', err);
+      setExportError(t('analysisResult.exportError'));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [report, locale, t]);
   
   const handlePrint = useCallback(() => {
     setIsPreparingPdf(true);
