@@ -15,14 +15,15 @@ const getModelName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'claude-sonnet-4-6';
     }
-    return 'x-ai/grok-4.1-fast';
+    // Free model on OpenRouter that supports JSON mode
+    return 'deepseek/deepseek-chat-v3.1:free';
 };
 
 const getModelDisplayName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'Claude Sonnet 4-6 (SSGoo)';
     }
-    return 'Grok 4.1 Fast';
+    return 'DeepSeek Chat V3.1 (Free)';
 };
 
 /**
