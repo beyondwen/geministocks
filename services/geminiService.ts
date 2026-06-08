@@ -15,15 +15,15 @@ const getModelName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'claude-sonnet-4-6';
     }
-    // Free model on OpenRouter: Nvidia Nemotron 3 Ultra (550B)
-    return 'nvidia/nemotron-3-ultra-550b-a55b:free';
+    // Free model on OpenRouter: Moonshot Kimi K2.6
+    return 'moonshotai/kimi-k2.6:free';
 };
 
 const getModelDisplayName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'Claude Sonnet 4-6 (SSGoo)';
     }
-    return 'Nvidia Nemotron 3 Ultra (Free)';
+    return 'Kimi K2.6 (Free)';
 };
 
 /**
@@ -617,7 +617,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         2.  访问 URL \`https://data.eastmoney.com/report/{code}.html\` 来获取数据。
         3.  在页面HTML中，找到一个名为 \`var initdata = {...};\` 的JavaScript变量并解析这个JSON对象。
         4.  该对象中的 \`data\` 键包含一个研报列表。筛选这个列表，只保留最近3个月内发布的研报。如果最近3个月内少于2份，则使用最新的2份。
-        5.  **EPS 预测**: 从筛选后���研报中，收集 \`predictThisYearEps\`、\`predictNextYearEps\` 和 \`predictNextTwoYearEps\` 的所有非空值。将它们分别映射到 "2025E"、"2026E" 和 "2027E" 这三年。计算这三个字段各自的平均值。
+        5.  **EPS ���测**: 从筛选后���研报中，收集 \`predictThisYearEps\`、\`predictNextYearEps\` 和 \`predictNextTwoYearEps\` 的所有非空值。将它们分别映射到 "2025E"、"2026E" 和 "2027E" 这三年。计算这三个字段各自的平均值。
         6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
