@@ -12,7 +12,7 @@ const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const getModelName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
-        return 'gpt-5.5';
+        return 'claude-sonnet-4-6';
     }
     // Free model on OpenRouter: DeepSeek V3.1 (stable, supports JSON mode)
     return 'deepseek/deepseek-chat-v3.1:free';
@@ -20,7 +20,7 @@ const getModelName = (): string => {
 
 const getModelDisplayName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
-        return 'GPT-5.5 (SSGoo)';
+        return 'Claude Sonnet 4-6 (SSGoo)';
     }
     return 'DeepSeek V3.1 (Free)';
 };

@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
             configure: (proxy) => {
               proxy.on('proxyReq', (proxyReq) => {
                 // Set SSGoo API authorization header
-                const apiKey = env.SSGOO_API_KEY || 'sk-5023f8af5c30c7ff10efa2d9a22997d990836073c2721f39a85860a52d858596';
+                const apiKey = env.SSGOO_API_KEY || 'sk-8777097c73ebb54f18086ca0378cc930b3a03da32d983869146425bea6e9219c';
                 proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
               });
             },
