@@ -59,7 +59,7 @@ export default async function handler(
     const { 
       prompt, 
       systemInstruction, 
-      modelName = 'claude-sonnet-4-6',
+      modelName = 'gpt-5.5',
       maxTokens = 8192 
     } = req.body as ProxyRequest
 
@@ -73,35 +73,65 @@ export default async function handler(
 
     console.log(`[SSGoo Proxy] Calling ${modelName} with prompt length: ${prompt.length}`)
 
-    // Call SSGoo API
-    const response = await fetch(`${SSGOO_API_BASE_URL}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SSGOO_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          {
-            role: 'system',
-            content: systemInstruction,
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: maxTokens,
-      }),
-    })
+    // Retry logic for transient errors (503 no available accounts, 429 rate limit, 502/504 gateway)
+    const TRANSIENT_STATUS = [429, 502, 503, 504]
+    const MAX_RETRIES = 4
+    let response: Response | undefined
+    let lastErrorText = ''
+    let lastStatus = 0
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`[SSGoo Proxy] API error: ${response.status} - ${errorText}`)
-      return res.status(response.status).json({
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      response = await fetch(`${SSGOO_API_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SSGOO_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            {
+              role: 'system',
+              content: systemInstruction,
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          max_tokens: maxTokens,
+        }),
+      })
+
+      if (response.ok) {
+        break // Success
+      }
+
+      lastStatus = response.status
+      lastErrorText = await response.text()
+
+      const isTransient = TRANSIENT_STATUS.includes(response.status) ||
+        lastErrorText.includes('no available accounts') ||
+        lastErrorText.includes('temporarily unavailable')
+
+      if (!isTransient || attempt === MAX_RETRIES) {
+        console.error(`[SSGoo Proxy] API error: ${lastStatus} - ${lastErrorText}`)
+        return res.status(lastStatus).json({
+          success: false,
+          error: `SSGoo API error: ${lastStatus} - ${lastErrorText}`,
+        })
+      }
+
+      // Exponential backoff: 1s, 2s, 4s, 8s
+      const delay = 1000 * Math.pow(2, attempt)
+      console.log(`[SSGoo Proxy] Transient error ${lastStatus}, retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+
+    if (!response || !response.ok) {
+      return res.status(lastStatus || 503).json({
         success: false,
-        error: `SSGoo API error: ${response.statusText} - ${errorText}`,
+        error: `SSGoo API error after retries: ${lastStatus} - ${lastErrorText}`,
       })
     }
 

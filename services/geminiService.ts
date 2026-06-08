@@ -114,45 +114,73 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             // In dev mode, Vite proxies /api/ssgoo-direct to SSGoo
             // In prod mode, the Vercel serverless function handles it
             const isDevMode = import.meta.env.DEV;
-            
-            if (isDevMode) {
-                // Development: Use Vite proxy to call SSGoo directly
-                response = await fetch('/api/ssgoo-direct', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: modelName,
-                        messages: [
-                            { role: 'system', content: systemInstruction },
-                            { role: 'user', content: prompt }
-                        ],
-                        max_tokens: 8192
-                    })
-                });
-            } else {
-                // Production: Use Vercel serverless function
-                response = await fetch('/api/ssgoo-proxy', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt,
-                        systemInstruction,
-                        modelName,
-                        maxTokens: 8192
-                    })
-                });
+
+            // Retry logic for transient errors (503 no available accounts, 429 rate limit, 504 timeout)
+            const TRANSIENT_STATUS = [429, 502, 503, 504];
+            const MAX_RETRIES = 4;
+            let lastErrorBody = '';
+            let lastStatus = 0;
+
+            for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+                if (isDevMode) {
+                    // Development: Use Vite proxy to call SSGoo directly
+                    response = await fetch('/api/ssgoo-direct', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: modelName,
+                            messages: [
+                                { role: 'system', content: systemInstruction },
+                                { role: 'user', content: prompt }
+                            ],
+                            max_tokens: 8192
+                        })
+                    });
+                } else {
+                    // Production: Use Vercel serverless function
+                    response = await fetch('/api/ssgoo-proxy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt,
+                            systemInstruction,
+                            modelName,
+                            maxTokens: 8192
+                        })
+                    });
+                }
+
+                if (response.ok) {
+                    break; // Success, exit retry loop
+                }
+
+                lastStatus = response.status;
+                lastErrorBody = await response.text();
+
+                // Only retry on transient errors; fail fast on other errors (e.g. 400, 401)
+                const isTransient = TRANSIENT_STATUS.includes(response.status) ||
+                    lastErrorBody.includes('no available accounts') ||
+                    lastErrorBody.includes('temporarily unavailable');
+
+                if (!isTransient || attempt === MAX_RETRIES) {
+                    throw new Error(`SSGoo API request failed with status ${lastStatus}: ${lastErrorBody}`);
+                }
+
+                // Exponential backoff: 1s, 2s, 4s, 8s
+                const delay = 1000 * Math.pow(2, attempt);
+                addBreadcrumb('ai', `SSGoo transient error ${lastStatus}, retrying in ${delay}ms`, { attempt: attempt + 1 });
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
 
-            if (!response.ok) {
-                const errorBody = await response.text();
-                throw new Error(`SSGoo API request failed with status ${response.status}: ${errorBody}`);
+            if (!response!.ok) {
+                throw new Error(`SSGoo API request failed with status ${lastStatus}: ${lastErrorBody}`);
             }
 
-            const responseData = await response.json();
+            const responseData = await response!.json();
             
             // Handle both direct API response and proxy response formats
             let content: string;
