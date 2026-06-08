@@ -15,15 +15,15 @@ const getModelName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'claude-sonnet-4-6';
     }
-    // Free model on OpenRouter with fast inference and JSON mode support
-    return 'deepseek/deepseek-v4-flash:free';
+    // Free model on OpenRouter: Nvidia Nemotron 3 Ultra (550B)
+    return 'nvidia/nemotron-3-ultra-550b-a55b:free';
 };
 
 const getModelDisplayName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'Claude Sonnet 4-6 (SSGoo)';
     }
-    return 'DeepSeek V4 Flash (Free)';
+    return 'Nvidia Nemotron 3 Ultra (Free)';
 };
 
 /**
@@ -613,7 +613,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
     if (locale === 'zh') {
         return `
         你是一位专业的金融数据分析AI。你的任务是为给定的A股股票抓取并处理机构研究报告数据。你必须严格遵循以下步骤：
-        1.  从用户查询中识别出6位数的股票代码。如果是公司名称，请找出其代码。
+        1.  从用户查询中识别出6位数的股票代��。如果是公司名称，请找出其代码。
         2.  访问 URL \`https://data.eastmoney.com/report/{code}.html\` 来获取数据。
         3.  在页面HTML中，找到一个名为 \`var initdata = {...};\` 的JavaScript变量并解析这个JSON对象。
         4.  该对象中的 \`data\` 键包含一个研报列表。筛选这个列表，只保留最近3个月内发布的研报。如果最近3个月内少于2份，则使用最新的2份。
