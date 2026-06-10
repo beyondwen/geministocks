@@ -5,7 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
 // API Provider Configuration: 'ssgoo' or 'openrouter'
-const API_PROVIDER: 'ssgoo' | 'openrouter' = 'ssgoo';
+const API_PROVIDER: 'ssgoo' | 'openrouter' = 'openrouter';
 
 // OpenRouter API Configuration (fallback)
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
@@ -14,15 +14,15 @@ const getModelName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'claude-sonnet-4-6';
     }
-    // Free model on OpenRouter: DeepSeek V3.1 (stable, supports JSON mode)
-    return 'deepseek/deepseek-chat-v3.1:free';
+    // OpenRouter: DeepSeek V4 Flash (fast inference, supports JSON mode)
+    return 'deepseek/deepseek-v4-flash';
 };
 
 const getModelDisplayName = (): string => {
     if (API_PROVIDER === 'ssgoo') {
         return 'Claude Sonnet 4-6 (SSGoo)';
     }
-    return 'DeepSeek V3.1 (Free)';
+    return 'DeepSeek V4 Flash';
 };
 
 /**
