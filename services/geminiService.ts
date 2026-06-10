@@ -4,7 +4,7 @@ import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
-import { getApiConfig, getChatCompletionsUrl } from './apiConfigService';
+import { getApiConfig, getChatCompletionsUrl, buildAuthHeaders } from './apiConfigService';
 
 // Error thrown when the user has not configured their API settings yet
 export const API_NOT_CONFIGURED_ERROR = 'API_NOT_CONFIGURED';
@@ -131,8 +131,9 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
             return body;
         };
 
+        // API Key is optional for local CLI servers (Ollama, Claude Code proxy, etc.)
         const headers: Record<string, string> = {
-            'Authorization': `Bearer ${config.apiKey}`,
+            ...buildAuthHeaders(config.apiKey),
             'Content-Type': 'application/json',
         };
         if (isOpenRouter) {
@@ -491,7 +492,7 @@ const getStockAnalysisSystemInstruction = (locale: Locale): string => {
         4.  **管理层与内部人动态**: 核心高管简介、过去6个月的内部人交易总结。
         5.  **技术分析快照**: 总结技术面貌，提供14日RSI值及解读、当前股价与50日和200日均线的关系。
         6.  **深度财务健康度**: 获取公司的偿债能力（资产负债率）、运营效率（ROE）和流动性（流动比率），并必须找到对应的行业平均值进行对比。
-        7.  **财报电话会情报**: 搜索并分析最近一次财报电话会议的文字记录，总结管理层基调、关键问答环节的要点，以及未来的业绩指引。
+        7.  **财报电话会情报**: 搜索并分析最近一次财报电话会议的文字记录，总结管理层基调、关键问答��节的要点，以及未来的业绩指引。
 
         你必须严格按照以下 JSON 格式回应。不要添加任何额外的文本。所有内容必须是简体中文。
         JSON 结构如下:
@@ -574,7 +575,7 @@ const getResearchReportAnalysisSystemInstruction = (locale: Locale): string => {
         6.  **EPS 增长率**: 计算明年的增长率公式为 \`(avg_next_year_eps - avg_this_year_eps) / Math.abs(avg_this_year_eps)\`。计算后年的增长率公式为 \`(avg_next_two_year_eps - avg_next_year_eps) / Math.abs(avg_next_year_eps)\`。结果表示为百分比（例如，15.5代表15.5%）。如果分母为零或不可用，增长率应为null。
         7.  **目标价**: 从筛选后的研报中，收集所有非空的 \`targetPrice\` 值。计算最高、最低和平均值。
         8.  **当前股价**: 从 \`https://qt.gtimg.cn/q={marketPrefix}{code}\` (例如 'sh600519') 获取当前股价。价格是返回的以波浪线分隔的字符串中的第4个字段（索引3）。如果无法获取，则使用最新研报中的 \`closePrice\`。
-        9.  **近期研报**: 从筛选列表中选择最新的3份��报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（如 '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
+        9.  **近期研报**: 从筛选列表中选择最新的3份��报。为每份报告提取 \`title\`, \`orgSName\` (作为 institution), \`publishDate\`。尝试从 \`ratingName\` 字段或标题中找到评级（�� '买入', '增持'）。使用 \`infoCode\` 生成PDF URL，格式为: \`https://pdf.dfcfw.com/pdf/H3_{infoCode}_1.pdf\`。
         10. 你必须严格以JSON格式回应。不要添加任何额外文本。所有数字都应该是number类型。如果数据缺失，请使用null���空��组。所有内容必须是简体中文。
         
         JSON 结构: ${commonSchema}

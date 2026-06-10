@@ -7,20 +7,34 @@
 const API_CONFIG_KEY = 'user-api-config';
 
 export interface UserApiConfig {
-  baseUrl: string;   // e.g. https://openrouter.ai/api/v1 or https://api.openai.com/v1
-  apiKey: string;    // user's own API key
+  baseUrl: string;   // e.g. https://openrouter.ai/api/v1 or http://localhost:11434/v1
+  apiKey: string;    // user's own API key; may be empty for local CLI servers (Ollama, Claude Code proxy, etc.)
   model: string;     // e.g. gpt-4o, deepseek/deepseek-chat-v3.1:free
 }
 
 /**
+ * 构建请求头：本机 CLI 服务（Ollama、Claude Code 代理等）通常无需 API Key
+ */
+export function buildAuthHeaders(apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const key = apiKey?.trim();
+  if (key) {
+    headers['Authorization'] = `Bearer ${key}`;
+  }
+  return headers;
+}
+
+/**
  * 读取用户 API 配置
+ * 注意：apiKey 可为空（本机 CLI 模式无需密钥）
  */
 export function getApiConfig(): UserApiConfig | null {
   try {
     const raw = localStorage.getItem(API_CONFIG_KEY);
     if (!raw) return null;
     const config = JSON.parse(raw) as UserApiConfig;
-    if (!config.baseUrl || !config.apiKey || !config.model) return null;
+    if (!config.baseUrl || !config.model) return null;
+    if (typeof config.apiKey !== 'string') config.apiKey = '';
     return config;
   } catch {
     return null;
@@ -79,9 +93,7 @@ export async function fetchAvailableModels(
     const normalizedBase = baseUrl.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
     const response = await fetch(`${normalizedBase}/models`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey.trim()}`,
-      },
+      headers: buildAuthHeaders(apiKey),
     });
 
     if (!response.ok) {
@@ -116,7 +128,7 @@ export async function testApiConnection(config: UserApiConfig): Promise<{ ok: bo
     const response = await fetch(getChatCompletionsUrl({ ...config, baseUrl: config.baseUrl.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '') }), {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.apiKey.trim()}`,
+        ...buildAuthHeaders(config.apiKey),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

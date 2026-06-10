@@ -22,6 +22,45 @@ const PRESETS: { label: string; baseUrl: string; modelPlaceholder: string }[] = 
   { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', modelPlaceholder: 'deepseek-chat' },
 ];
 
+interface LocalPreset {
+  label: string;
+  baseUrl: string;
+  modelPlaceholder: string;
+  hintZh: string;
+  hintEn: string;
+}
+
+const LOCAL_PRESETS: LocalPreset[] = [
+  {
+    label: 'Claude Code',
+    baseUrl: 'http://localhost:3456/v1',
+    modelPlaceholder: 'claude-sonnet-4-5',
+    hintZh: '通过 claude-code-router 暴露本机 Claude Code 订阅：npm i -g @musistudio/claude-code-router 后运行 ccr start',
+    hintEn: 'Expose your local Claude Code subscription via claude-code-router: npm i -g @musistudio/claude-code-router, then run ccr start',
+  },
+  {
+    label: 'Codex',
+    baseUrl: 'http://localhost:1455/v1',
+    modelPlaceholder: 'gpt-5-codex',
+    hintZh: '通过 codex-proxy 等工具将本机 Codex CLI 暴露为 OpenAI 兼容接口，端口以实际工具为准',
+    hintEn: 'Expose your local Codex CLI as an OpenAI-compatible endpoint via tools like codex-proxy; port depends on your tool',
+  },
+  {
+    label: 'Ollama',
+    baseUrl: 'http://localhost:11434/v1',
+    modelPlaceholder: 'qwen3:14b',
+    hintZh: '安装 Ollama 并拉取模型（如 ollama pull qwen3:14b）。浏览器跨域访问需设置 OLLAMA_ORIGINS="*" 后重启服务',
+    hintEn: 'Install Ollama and pull a model (e.g. ollama pull qwen3:14b). For browser access set OLLAMA_ORIGINS="*" and restart the server',
+  },
+  {
+    label: 'LM Studio',
+    baseUrl: 'http://localhost:1234/v1',
+    modelPlaceholder: 'qwen/qwen3-14b',
+    hintZh: '在 LM Studio 中加载模型并启动本地服务器（Developer 标签页），需在设置中开启 CORS',
+    hintEn: 'Load a model in LM Studio and start the local server (Developer tab); enable CORS in server settings',
+  },
+];
+
 const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, onSaved }) => {
   const { locale } = useI18n();
   const zh = locale === 'zh';
@@ -29,6 +68,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
+  const [mode, setMode] = useState<'cloud' | 'local'>('cloud');
   const [isCustomProvider, setIsCustomProvider] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -49,9 +89,17 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         setBaseUrl(config.baseUrl);
         setApiKey(config.apiKey);
         setModel(config.model);
+        // Detect mode: localhost URLs belong to local CLI mode
+        const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)[:/]/.test(config.baseUrl);
+        setMode(isLocal ? 'local' : 'cloud');
         // Detect custom provider: saved URL doesn't match any preset
-        setIsCustomProvider(!PRESETS.some((p) => p.baseUrl === config.baseUrl));
+        setIsCustomProvider(
+          isLocal
+            ? !LOCAL_PRESETS.some((p) => p.baseUrl === config.baseUrl)
+            : !PRESETS.some((p) => p.baseUrl === config.baseUrl)
+        );
       } else {
+        setMode('cloud');
         setIsCustomProvider(false);
       }
       setTestResult(null);
@@ -65,9 +113,10 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
 
   if (!isOpen) return null;
 
-  const isValid = baseUrl.trim() && apiKey.trim() && model.trim();
+  // API Key is optional in local CLI mode (Ollama, Claude Code proxy, etc. usually need no key)
+  const isValid = baseUrl.trim() && model.trim() && (mode === 'local' || apiKey.trim());
 
-  const canFetchModels = baseUrl.trim() && apiKey.trim();
+  const canFetchModels = baseUrl.trim() && (mode === 'local' || apiKey.trim());
 
   const handleFetchModels = async () => {
     if (!canFetchModels || fetchingModels) return;
@@ -150,13 +199,44 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         <div className="px-6 py-5 space-y-5">
           <p className="text-sm text-gray-500 leading-relaxed">
             {zh
-              ? '填写任意 OpenAI 兼容服务的调用地址和 API Key（如 OpenRouter、OpenAI、DeepSeek 等）。配置仅保存在您的浏览器本地，不会上传到服务器。'
-              : 'Enter the endpoint and API key of any OpenAI-compatible service (OpenRouter, OpenAI, DeepSeek, etc.). Your config is stored locally in your browser only.'}
+              ? '支持云端 API（OpenRouter、OpenAI 等）或运行在本机的 CLI 服务（Claude Code、Codex、Ollama 等）。配置仅保存在您的浏览器本地，不会上传到服务器。'
+              : 'Use a cloud API (OpenRouter, OpenAI, etc.) or a CLI service running on your machine (Claude Code, Codex, Ollama, etc.). Your config is stored locally in your browser only.'}
           </p>
+
+          {/* Mode switch: Cloud API vs Local CLI */}
+          <div className="flex rounded-lg border border-gray-200 p-1 bg-gray-50" role="tablist" aria-label={zh ? '连接模式' : 'Connection mode'}>
+            {([
+              { value: 'cloud' as const, labelZh: '云端 API', labelEn: 'Cloud API' },
+              { value: 'local' as const, labelZh: '本机 CLI', labelEn: 'Local CLI' },
+            ]).map((m) => (
+              <button
+                key={m.value}
+                role="tab"
+                aria-selected={mode === m.value}
+                onClick={() => {
+                  if (mode === m.value) return;
+                  setMode(m.value);
+                  setIsCustomProvider(false);
+                  setBaseUrl(m.value === 'local' ? LOCAL_PRESETS[0].baseUrl : '');
+                  setTestResult(null);
+                  setModelList([]);
+                  setShowModelPicker(false);
+                  setModelListError(null);
+                }}
+                className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  mode === m.value
+                    ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                {zh ? m.labelZh : m.labelEn}
+              </button>
+            ))}
+          </div>
 
           {/* Presets */}
           <div className="flex flex-wrap gap-2" role="group" aria-label={zh ? '选择提供方' : 'Select provider'}>
-            {PRESETS.map((p) => (
+            {(mode === 'local' ? LOCAL_PRESETS : PRESETS).map((p) => (
               <button
                 key={p.label}
                 onClick={() => {
@@ -195,8 +275,27 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
             </button>
           </div>
 
-          {/* Custom provider hint */}
-          {isCustomProvider && (
+          {/* Local preset setup hint */}
+          {mode === 'local' && !isCustomProvider && (() => {
+            const activePreset = LOCAL_PRESETS.find((p) => p.baseUrl === baseUrl);
+            return activePreset ? (
+              <div className="px-3 py-2.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800 leading-relaxed -mt-2">
+                {zh ? activePreset.hintZh : activePreset.hintEn}
+              </div>
+            ) : null;
+          })()}
+
+          {/* Local custom provider hint */}
+          {mode === 'local' && isCustomProvider && (
+            <p className="text-xs text-gray-400 -mt-2">
+              {zh
+                ? '填写本机任意 OpenAI 兼容服务的地址，如 http://localhost:8000/v1。注意本地服务需允许浏览器跨域访问（CORS）。'
+                : 'Enter any OpenAI-compatible endpoint on your machine, e.g. http://localhost:8000/v1. The local server must allow browser CORS access.'}
+            </p>
+          )}
+
+          {/* Cloud custom provider hint */}
+          {mode === 'cloud' && isCustomProvider && (
             <p className="text-xs text-gray-400 -mt-2">
               {zh
                 ? '填写自建或第三方中转服务的 OpenAI 兼容地址，通常以 /v1 结尾（如 https://your-proxy.com/v1）。'
@@ -218,17 +317,22 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
                 setBaseUrl(value);
                 setTestResult(null);
                 // Keep preset highlight in sync when typing manually
-                setIsCustomProvider(!PRESETS.some((p) => p.baseUrl === value));
+                const presets = mode === 'local' ? LOCAL_PRESETS : PRESETS;
+                setIsCustomProvider(!presets.some((p) => p.baseUrl === value));
               }}
-              placeholder={isCustomProvider ? 'https://your-proxy.com/v1' : 'https://openrouter.ai/api/v1'}
+              placeholder={
+                mode === 'local'
+                  ? 'http://localhost:11434/v1'
+                  : isCustomProvider ? 'https://your-proxy.com/v1' : 'https://openrouter.ai/api/v1'
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
           </div>
 
-          {/* API Key */}
+          {/* API Key (optional in local mode) */}
           <div className="space-y-1.5">
             <label htmlFor="api-key" className="block text-sm font-medium text-gray-700">
-              API Key
+              API Key {mode === 'local' && <span className="text-xs text-gray-400 font-normal">({zh ? '本机服务通常无需密钥' : 'usually not needed for local CLI'})</span>}
             </label>
             <div className="relative">
               <input
@@ -236,7 +340,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
-                placeholder="sk-..."
+                placeholder={mode === 'local' ? (zh ? '（可选）' : '(optional)') : 'sk-...'}
                 className="w-full px-3 py-2 pr-16 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
               />
               <button
@@ -271,7 +375,10 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               type="text"
               value={model}
               onChange={(e) => { setModel(e.target.value); setTestResult(null); }}
-              placeholder={PRESETS.find((p) => p.baseUrl === baseUrl)?.modelPlaceholder || 'gpt-4o'}
+              placeholder={
+                (mode === 'local' ? LOCAL_PRESETS : PRESETS).find((p) => p.baseUrl === baseUrl)?.modelPlaceholder
+                  || (mode === 'local' ? 'qwen3:14b' : 'gpt-4o')
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
 
