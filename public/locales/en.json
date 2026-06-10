@@ -1,4 +1,3 @@
-
 {
   "meta": {
     "title": "Super Digger | AI-Powered Investment Research & Stock Analysis Tool",
@@ -22,13 +21,6 @@
     "getPerplexity": "Get Perplexity Pro for Free"
   },
   "controls": {
-    "getCredits": "Get Credits",
-    "useCreditAndAnalyzeMulti": "Use {{count}} Credits & Analyze",
-    "credits": "Credits: {{count}} 💎",
-    "addCredits": "Add",
-    "costPerUse": "{{count}} credits/use",
-    "realtimeSearch": "Real-time Search",
-    "realtimeSearchTooltip": "Make any real payment to unlock the real-time web search feature",
     "close": "Close"
   },
   "tabs": {
@@ -70,26 +62,6 @@
     "positionalDescription": "An advanced strategy analysis. Input a recognized industry leader, and the AI will search within the same sector for companies with similar business models but lower market caps or positions, identifying potential 'catch-up' opportunities.",
     "positionalExample": "e.g., \"NVIDIA\", \"CATL\", \"Kweichow Moutai\"",
     "closeButton": "Got It"
-  },
-  "paymentModal": {
-    "title": "Get Credits",
-    "description": "Purchase credits to continue your analysis.",
-    "packagesTitle": "Choose a Credit Pack:",
-    "credits_plural": "{{count}} Credits",
-    "bestValue": "Best Value",
-    "payButton": "Pay",
-    "processing": "Processing...",
-    "loading": "Initializing payment gateway...",
-    "close": "Close",
-    "successMulti": "{{count}} credits added! Starting analysis...",
-    "successTopUp": "{{count}} credits added successfully!",
-    "supportedMethods": "We currently support credit cards (Visa, Mastercard, etc.).",
-    "package_18_desc": "20% Bonus",
-    "package_30_desc": "50% Bonus",
-    "error": {
-      "default": "An error occurred with your payment method.",
-      "unexpected": "An unexpected payment error occurred. Please try again."
-    }
   },
   "languageSwitcher": {
     "label": "Select language"
@@ -350,7 +322,7 @@
     "title": "Confirm Leader Stock",
     "identified": "AI has identified the leader as:",
     "question": "Proceed with analysis based on this leader?",
-    "confirmButton": "Confirm & Analyze ({{count}} Cr.)",
+    "confirmButton": "Confirm & Analyze",
     "cancelButton": "Cancel",
     "close": "Close confirmation"
   },
@@ -397,14 +369,6 @@
     "High": "High",
     "Medium": "Medium",
     "Low": "Low"
-  },
-  "redeem": {
-    "placeholder": "Redemption Code...",
-    "button": "Redeem",
-    "invalidCode": "Invalid redemption code.",
-    "alreadyRedeemed": "This code has already been redeemed.",
-    "successLive": "Success! Real-time search has been unlocked.",
-    "successMe": "Success! You have received {{count}} credits."
   },
   "toasts": {
     "dailyCreditsAwarded": "You've received your {{count}} free daily credit! ✨"
@@ -487,9 +451,6 @@
     "line3": "Before making any investment decisions, please conduct independent due diligence and consult with a professional financial advisor. We are not liable for any direct or indirect losses resulting from the use of this application's content.",
     "line4": "By continuing to use this service, you acknowledge that you have read, understood, and agreed to this disclaimer.",
     "acceptButton": "I have read and agree"
-  },
-  "welcome": {
-    "firstVisitBonus": "Welcome! You've received {{count}} free credits to get started."
   },
   "subscription": {
     "plans": "Subscription Plans",

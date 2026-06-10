@@ -4,25 +4,26 @@ import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
-// API Provider Configuration: 'ssgoo' or 'openrouter'
-const API_PROVIDER: 'ssgoo' | 'openrouter' = 'openrouter';
+import { getApiConfig, getChatCompletionsUrl } from './apiConfigService';
 
-// OpenRouter API Configuration (fallback)
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
+// Error thrown when the user has not configured their API settings yet
+export const API_NOT_CONFIGURED_ERROR = 'API_NOT_CONFIGURED';
+
+const requireApiConfig = () => {
+    const config = getApiConfig();
+    if (!config) {
+        throw new Error(API_NOT_CONFIGURED_ERROR);
+    }
+    return config;
+};
 
 const getModelName = (): string => {
-    if (API_PROVIDER === 'ssgoo') {
-        return 'claude-sonnet-4-6';
-    }
-    // OpenRouter: DeepSeek V4 Flash (fast inference, supports JSON mode)
-    return 'deepseek/deepseek-v4-flash';
+    return requireApiConfig().model;
 };
 
 const getModelDisplayName = (): string => {
-    if (API_PROVIDER === 'ssgoo') {
-        return 'Claude Sonnet 4-6 (SSGoo)';
-    }
-    return 'DeepSeek V4 Flash';
+    const config = getApiConfig();
+    return config ? config.model : 'Not Configured';
 };
 
 /**
@@ -95,154 +96,76 @@ function extractJson(text: string): string {
 }
 
 /**
- * A generic helper function to call the AI API (SSGoo proxy or OpenRouter).
+ * A generic helper function to call the user-configured OpenAI-compatible API.
+ * The user provides their own base URL, API key and model via the settings modal.
  * @param prompt The user's prompt/request.
  * @param systemInstruction The system-level instruction for the AI model.
  * @param modelName The name of the model to use.
- * @param enableWebSearch Whether to enable real-time web search for latest data (OpenRouter only).
+ * @param enableWebSearch Whether to enable real-time web search (OpenRouter only).
  * @returns The JSON-parsed response from the model.
  */
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
+    const config = requireApiConfig();
+    const apiUrl = getChatCompletionsUrl(config);
+    const isOpenRouter = config.baseUrl.includes('openrouter.ai');
+
     // Add breadcrumb for debugging
-    addBreadcrumb('ai', `Calling ${API_PROVIDER} API`, { model: modelName, promptLength: prompt.length, webSearch: enableWebSearch });
-    
+    addBreadcrumb('ai', 'Calling user-configured API', { model: modelName, baseUrl: config.baseUrl, promptLength: prompt.length, webSearch: enableWebSearch });
+
     try {
-        let response: Response;
-
-        if (API_PROVIDER === 'ssgoo') {
-            // Call SSGoo API via Vite proxy (dev) or Vercel serverless (prod)
-            // In dev mode, Vite proxies /api/ssgoo-direct to SSGoo
-            // In prod mode, the Vercel serverless function handles it
-            const isDevMode = import.meta.env.DEV;
-
-            // Retry logic for transient errors (503 no available accounts, 429 rate limit, 504 timeout)
-            const TRANSIENT_STATUS = [429, 502, 503, 504];
-            const MAX_RETRIES = 4;
-            let lastErrorBody = '';
-            let lastStatus = 0;
-
-            for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-                if (isDevMode) {
-                    // Development: Use Vite proxy to call SSGoo directly
-                    response = await fetch('/api/ssgoo-direct', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            model: modelName,
-                            messages: [
-                                { role: 'system', content: systemInstruction },
-                                { role: 'user', content: prompt }
-                            ],
-                            max_tokens: 8192
-                        })
-                    });
-                } else {
-                    // Production: Use Vercel serverless function
-                    response = await fetch('/api/ssgoo-proxy', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            prompt,
-                            systemInstruction,
-                            modelName,
-                            maxTokens: 8192
-                        })
-                    });
-                }
-
-                if (response.ok) {
-                    break; // Success, exit retry loop
-                }
-
-                lastStatus = response.status;
-                lastErrorBody = await response.text();
-
-                // Only retry on transient errors; fail fast on other errors (e.g. 400, 401)
-                const isTransient = TRANSIENT_STATUS.includes(response.status) ||
-                    lastErrorBody.includes('no available accounts') ||
-                    lastErrorBody.includes('temporarily unavailable');
-
-                if (!isTransient || attempt === MAX_RETRIES) {
-                    throw new Error(`SSGoo API request failed with status ${lastStatus}: ${lastErrorBody}`);
-                }
-
-                // Exponential backoff: 1s, 2s, 4s, 8s
-                const delay = 1000 * Math.pow(2, attempt);
-                addBreadcrumb('ai', `SSGoo transient error ${lastStatus}, retrying in ${delay}ms`, { attempt: attempt + 1 });
-                await new Promise(resolve => setTimeout(resolve, delay));
+        const buildRequestBody = (useJsonMode: boolean): any => {
+            const body: any = {
+                model: modelName,
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: prompt }
+                ],
+            };
+            if (useJsonMode) {
+                body.response_format = { type: 'json_object' };
             }
-
-            if (!response!.ok) {
-                throw new Error(`SSGoo API request failed with status ${lastStatus}: ${lastErrorBody}`);
+            // Web search plugin is an OpenRouter-specific feature
+            if (enableWebSearch && isOpenRouter) {
+                body.plugins = [{ id: 'web', max_results: 5 }];
             }
-
-            const responseData = await response!.json();
-            
-            // Handle both direct API response and proxy response formats
-            let content: string;
-            if (responseData.choices?.[0]?.message?.content) {
-                // Direct SSGoo API response format
-                content = responseData.choices[0].message.content;
-            } else if (responseData.success && responseData.data) {
-                // Proxy response format
-                content = responseData.data;
-            } else {
-                throw new Error('Invalid response structure from SSGoo API');
-            }
-
-            if (!content) {
-                throw new Error('Received an empty response from the AI model.');
-            }
-
-            // Parse the JSON response
-            const rawJsonString = extractJson(content);
-            try {
-                const repairedJsonString = jsonrepair(rawJsonString);
-                return JSON.parse(repairedJsonString);
-            } catch {
-                console.warn('JSON repair failed, attempting direct parse');
-                return JSON.parse(rawJsonString);
-            }
-        }
-
-        // OpenRouter API (fallback)
-        const requestBody: any = {
-            model: modelName,
-            messages: [
-                { role: 'system', content: systemInstruction },
-                { role: 'user', content: prompt }
-            ],
-            response_format: { type: 'json_object' }
+            return body;
         };
 
-        // Enable web search plugin for real-time market data and news
-        if (enableWebSearch) {
-            requestBody.plugins = [
-                {
-                    id: 'web',
-                    max_results: 5
-                }
-            ];
+        const headers: Record<string, string> = {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json',
+        };
+        if (isOpenRouter) {
+            headers['HTTP-Referer'] = window.location.origin;
+            headers['X-Title'] = 'Super Digger';
         }
 
-        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        // First attempt with JSON mode; if the provider rejects it, retry without it.
+        let response = await fetch(apiUrl, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'Super Digger'
-            },
-            body: JSON.stringify(requestBody)
+            headers,
+            body: JSON.stringify(buildRequestBody(true))
         });
 
         if (!response.ok) {
             const errorBody = await response.text();
-            throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+            const jsonModeUnsupported = response.status === 400 &&
+                /json[\s_-]?mode|response_format/i.test(errorBody);
+
+            if (jsonModeUnsupported) {
+                addBreadcrumb('ai', 'JSON mode unsupported by provider, retrying without it');
+                response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(buildRequestBody(false))
+                });
+                if (!response.ok) {
+                    const retryErrorBody = await response.text();
+                    throw new Error(`API request failed with status ${response.status}: ${retryErrorBody}`);
+                }
+            } else {
+                throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+            }
         }
 
         const data = await response.json();
@@ -279,6 +202,9 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         }
         
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during the API call.';
+        if (errorMessage.includes(API_NOT_CONFIGURED_ERROR)) {
+            throw new Error(API_NOT_CONFIGURED_ERROR);
+        }
         throw new Error(`AI analysis failed. Reason: ${errorMessage}`);
     }
 }
@@ -808,4 +734,12 @@ export const getPositionalWarfareFollowerAnalysis = async (
     };
 
     return finalReport;
+};
+
+/**
+ * Generic entry point for professional skill analyses (finance-skills integration).
+ * Always enables web search to ensure real-time financial data.
+ */
+export const runSkillPrompt = async (prompt: string, systemInstruction: string): Promise<any> => {
+    return callOpenRouterAI(prompt, systemInstruction, getModelName(), true);
 };

@@ -21,13 +21,6 @@
     "getPerplexity": "免费领取 Perplexity 会员"
   },
   "controls": {
-    "getCredits": "获取信用点",
-    "useCreditAndAnalyzeMulti": "使用 {{count}} 点信用分析",
-    "credits": "信用点: {{count}} 💎",
-    "addCredits": "充值",
-    "costPerUse": "{{count}}点/次",
-    "realtimeSearch": "实时搜索",
-    "realtimeSearchTooltip": "进行任意一次真实付费即可解锁实时联网搜索功能",
     "close": "关闭"
   },
   "tabs": {
@@ -69,26 +62,6 @@
     "positionalDescription": "一种高级策略分析。输入一个公认的行业龙头股，AI 会在同一板块中寻找业务相似、但市值或地位较低，有潜力\"补涨\"的\"龙二\"或\"龙三\"。",
     "positionalExample": "例如：「英伟达」、「宁德时代」、「贵州茅台」",
     "closeButton": "我明白了"
-  },
-  "paymentModal": {
-    "title": "获取信用点",
-    "description": "购买信用点以继续您的分析。",
-    "packagesTitle": "选择一个信用包：",
-    "credits_plural": "{{count}}个信用点",
-    "bestValue": "最划算",
-    "payButton": "支付",
-    "processing": "处理中...",
-    "loading": "正在初始化支付网关...",
-    "close": "关闭",
-    "successMulti": "成功添加 {{count}} 点信用！正在开始分析...",
-    "successTopUp": "成功充值 {{count}} 点信用！",
-    "supportedMethods": "目前我们支持信用卡（Visa, Mastercard 等）支付。",
-    "package_18_desc": "赠送 20%",
-    "package_30_desc": "赠送 50%",
-    "error": {
-      "default": "您的支付方式出现问题。",
-      "unexpected": "发生意外的支付错误，请重试。"
-    }
   },
   "languageSwitcher": {
     "label": "选择语言"
@@ -349,7 +322,7 @@
     "title": "确认龙头股",
     "identified": "AI 已识别出的龙头为:",
     "question": "是否基于此龙头继续分析？",
-    "confirmButton": "确认并分析 ({{count}}点)",
+    "confirmButton": "确认并分析",
     "cancelButton": "取消",
     "close": "关闭确认"
   },
@@ -396,14 +369,6 @@
     "High": "高",
     "Medium": "中",
     "Low": "低"
-  },
-  "redeem": {
-    "placeholder": "输入兑换码...",
-    "button": "兑换",
-    "invalidCode": "无效的兑换码。",
-    "alreadyRedeemed": "此兑换码已被使用。",
-    "successLive": "兑换成功！实时搜索功能已解锁。",
-    "successMe": "兑换成功！您已获得 {{count}} 个信用点。"
   },
   "toasts": {
     "dailyCreditsAwarded": "每日 {{count}} 点免费信用点已到账！✨"
@@ -486,9 +451,6 @@
     "line3": "在做出任何投资决策之前，请务必进行独立的尽职调查，并咨询专业的财务顾问。我们对因使用本应用内容而导致的任何直接或间接损失概不负责。",
     "line4": "继续使用即表示您已阅读、理解并同意本免责声明。",
     "acceptButton": "我已阅读并同意"
-  },
-  "welcome": {
-    "firstVisitBonus": "欢迎使用！您已获得 {{count}} 点免费信用点。"
   },
   "subscription": {
     "plans": "订阅计划",
