@@ -31,7 +31,8 @@ import UserGuideModal from './components/UserGuideModal';
 import { CacheStats } from './components/CacheStats';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useI18n } from './hooks/useI18n';
-import PaymentModal from './components/PaymentModal';
+import ApiSettingsModal from './components/ApiSettingsModal';
+import { isApiConfigured } from './services/apiConfigService';
 import DuanYongpingHoldings from './components/DuanYongpingHoldings';
 
 
@@ -42,20 +43,13 @@ const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-histor
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
 const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const USER_ID_KEY = 'gemini-user-id';
-const CREDITS_KEY = 'gemini-claude-credits';
-const USER_HAS_PAID_KEY = 'gemini-user-has-paid';
-const FIRST_VISIT_KEY = 'gemini-first-visit-rewarded';
-const FIRST_VISIT_BONUS_CREDITS = 3;
 
 
 const MAX_ANALYSES_PER_HOUR = 12;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 
-// --- Model Usage Rules ---
-const ANALYSIS_CREDIT_COST = 1;
-
-// --- User/Credit/Usage Helper Functions ---
+// --- User Helper Functions ---
 const getUserId = (): string => {
   try {
     let userId = localStorage.getItem(USER_ID_KEY);
@@ -68,33 +62,6 @@ const getUserId = (): string => {
     console.error("localStorage not available, using temporary ID.", e);
     return uuidv4();
   }
-};
-
-const getCredits = (): number => {
-  try {
-    const credits = localStorage.getItem(CREDITS_KEY);
-    return credits ? parseInt(credits, 10) : 0;
-  } catch (e) { return 0; }
-};
-
-const addCredits = (amount: number): number => {
-  try {
-    const newCredits = getCredits() + amount;
-    localStorage.setItem(CREDITS_KEY, String(newCredits));
-    return newCredits;
-  } catch (e) { return amount; }
-};
-
-const useCredits = (amount: number): number => {
-  try {
-    const currentCredits = getCredits();
-    if (currentCredits >= amount) {
-      const newCredits = currentCredits - amount;
-      localStorage.setItem(CREDITS_KEY, String(newCredits));
-      return newCredits;
-    }
-    return currentCredits;
-  } catch (e) { return 0; }
 };
 
 // --- Data & Types ---
@@ -483,10 +450,9 @@ interface LeaderConfirmationModalProps {
     leader: LeaderStockProfile | null;
     onConfirm: () => void;
     onClose: () => void;
-    cost: number;
 }
 
-const LeaderConfirmationModal: React.FC<LeaderConfirmationModalProps> = ({ isOpen, leader, onConfirm, onClose, cost }) => {
+const LeaderConfirmationModal: React.FC<LeaderConfirmationModalProps> = ({ isOpen, leader, onConfirm, onClose }) => {
     const { t } = useI18n();
 
     if (!isOpen || !leader) return null;
@@ -524,7 +490,7 @@ const LeaderConfirmationModal: React.FC<LeaderConfirmationModalProps> = ({ isOpe
                         onClick={onConfirm}
                         className="relative w-full sm:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 btn-premium text-white text-base font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 active:scale-95"
                     >
-                        <span className="relative z-10">{t('leaderConfirmation.confirmButton', { count: cost })}</span>
+                        <span className="relative z-10">{t('leaderConfirmation.confirmButton')}</span>
                     </button>
                     <button
                         onClick={onClose}
@@ -538,8 +504,6 @@ const LeaderConfirmationModal: React.FC<LeaderConfirmationModalProps> = ({ isOpe
     );
 };
 
-
-type PendingAnalysis = { type: 'topic' | 'stock' | 'positional'; query: string };
 
 const MainPage: React.FC = () => {
   const { t, locale } = useI18n();
@@ -590,14 +554,10 @@ const MainPage: React.FC = () => {
   const [userAnalysisCount, setUserAnalysisCount] = useState<number>(0);
   const [isUserGuideModalOpen, setIsUserGuideModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [hasPaid, setHasPaid] = useState<boolean>(false);
 
-
-  // Credit and Usage State
-  const [credits, setCredits] = useState<number>(0);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
-  const [redemptionCode, setRedemptionCode] = useState('');
+  // User API Settings State
+  const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
+  const [apiConfigured, setApiConfigured] = useState<boolean>(false);
   
 
   
@@ -650,33 +610,12 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     // Initialize user ID (for anonymous users)
     getUserId();
-    
-    // Check if this is a first-time visitor and award bonus credits
-    try {
-      const hasReceivedFirstVisitBonus = localStorage.getItem(FIRST_VISIT_KEY);
-      if (!hasReceivedFirstVisitBonus) {
-        // First-time visitor: award bonus credits
-        const newCredits = addCredits(FIRST_VISIT_BONUS_CREDITS);
-        setCredits(newCredits);
-        localStorage.setItem(FIRST_VISIT_KEY, 'true');
-        // Show welcome toast after a brief delay
-        setTimeout(() => {
-          setToast({ message: t('welcome.firstVisitBonus', { count: FIRST_VISIT_BONUS_CREDITS }), type: 'success' });
-        }, 500);
-      } else {
-        // Returning visitor: just load existing credits
-        setCredits(getCredits());
-      }
-    } catch (e) {
-      // Fallback if localStorage fails
-      setCredits(getCredits());
-    }
+
+    // Check whether the user has configured their API settings
+    setApiConfigured(isApiConfigured());
 
     // Load history and settings from localStorage
     try {
-      const userHasPaid = localStorage.getItem(USER_HAS_PAID_KEY) === 'true';
-      setHasPaid(userHasPaid);
-        
       const storedTopicHistory = localStorage.getItem(TOPIC_HISTORY_STORAGE_KEY);
       if (storedTopicHistory) setTopicHistory(JSON.parse(storedTopicHistory));
 
@@ -728,11 +667,13 @@ const MainPage: React.FC = () => {
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', ogDescription);
   }, [locale, t]);
 
-  const { cost, isPaywalled } = useMemo(() => {
-    const hasEnoughCredits = credits >= ANALYSIS_CREDIT_COST;
-    return { cost: ANALYSIS_CREDIT_COST, isPaywalled: !hasEnoughCredits };
-  }, [credits]);
-  
+  // Require user API configuration before any analysis; open settings modal if missing
+  const ensureApiConfigured = (): boolean => {
+    if (isApiConfigured()) return true;
+    setIsApiSettingsOpen(true);
+    setToast({ message: locale === 'zh' ? '请先配置模型 API 地址和密钥' : 'Please configure your model API settings first', type: 'info' });
+    return false;
+  };
 
 
   const updateTopicHistory = (newHistory: TopicHistoryEntry[]) => {
@@ -767,15 +708,11 @@ const MainPage: React.FC = () => {
       setPositionalWarfareError(null);
   }
 
-  const handleAnalyze = useCallback(async (topic: string, bypassCreditCheck = false) => {
+  const handleAnalyze = useCallback(async (topic: string) => {
     if (!topic.trim()) { setError(t('errors.emptyTopic')); return; }
     if (checkRateLimit()) { setError(t('errors.rateLimit')); return; }
-    if (isPaywalled && !bypassCreditCheck) {
-        setPendingAnalysis({ type: 'topic', query: topic });
-        setIsPaymentModalOpen(true);
-        return;
-    }
-    
+    if (!ensureApiConfigured()) return;
+
     setActiveTab('topic');
     setIsLoading(true);
     handleClearAllResults();
@@ -784,8 +721,6 @@ const MainPage: React.FC = () => {
     setPartialTopicData(null);
 
     try {
-        setCredits(useCredits(cost));
-
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim());
         
         let report: AnalysisReport;
@@ -813,7 +748,6 @@ const MainPage: React.FC = () => {
         updateTopicHistory(newHistory);
     } catch (err) {
         console.error(err);
-        setCredits(addCredits(cost)); // Refund on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setError(errorMessage);
     } finally {
@@ -822,16 +756,12 @@ const MainPage: React.FC = () => {
         setStreamingTopicProgress(0);
         setPartialTopicData(null);
     }
-  }, [topicHistory, locale, t, cost, isPaywalled, credits]);
+  }, [topicHistory, locale, t]);
 
-  const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
+  const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
     if (checkRateLimit()) { setStockError(t('errors.rateLimit')); return; }
-    if (isPaywalled && !bypassCreditCheck) {
-        setPendingAnalysis({ type: 'stock', query: stockQueryToAnalyze });
-        setIsPaymentModalOpen(true);
-        return;
-    }
+    if (!ensureApiConfigured()) return;
 
     setActiveTab('stock');
     setIsStockLoading(true);
@@ -841,8 +771,6 @@ const MainPage: React.FC = () => {
     setPartialStockData(null);
 
     try {
-        setCredits(useCredits(cost));
-
         // Use streaming analysis with progress callback
         const combinedReport = await getStockAnalysisWithStreaming(
             stockQueryToAnalyze, 
@@ -863,7 +791,6 @@ const MainPage: React.FC = () => {
         updateStockHistory(newHistory);
     } catch (err) {
         console.error(err);
-        setCredits(addCredits(cost)); // Refund credit on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setStockError(errorMessage);
     } finally {
@@ -872,12 +799,12 @@ const MainPage: React.FC = () => {
         setStreamingStockProgress(0);
         setPartialStockData(null);
     }
-  }, [stockHistory, locale, t, cost, isPaywalled, credits]);
+  }, [stockHistory, locale, t]);
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
     if (checkRateLimit()) { setPositionalWarfareError(t('errors.rateLimit')); return; }
-    // Credit check happens after leader confirmation
+    if (!ensureApiConfigured()) return;
 
     setActiveTab('positional');
     setIsFindingLeader(true);
@@ -896,22 +823,15 @@ const MainPage: React.FC = () => {
     }
   }, [locale, t]);
   
-  const handleConfirmLeaderAndAnalyze = useCallback(async (bypassCreditCheck = false) => {
+  const handleConfirmLeaderAndAnalyze = useCallback(async () => {
     if (!potentialLeader) return;
-    if (isPaywalled && !bypassCreditCheck) {
-        setPendingAnalysis({ type: 'positional', query: leaderStockQuery });
-        setIsPaymentModalOpen(true);
-        return;
-    }
-    
+
     setIsConfirmingLeader(false);
     setIsPositionalWarfareLoading(true);
     setPositionalWarfareError(null);
     setPositionalWarfareProgress(0);
     
     try {
-        setCredits(useCredits(cost));
-        
         const report = await getPositionalWarfareFollowerAnalysis(potentialLeader, setPositionalWarfareProgress, locale);
 
         setPositionalWarfareReport(report);
@@ -924,7 +844,6 @@ const MainPage: React.FC = () => {
 
     } catch (err) {
         console.error(err);
-        setCredits(addCredits(cost));
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setPositionalWarfareError(errorMessage);
     } finally {
@@ -932,79 +851,34 @@ const MainPage: React.FC = () => {
         setPositionalWarfareProgress(0);
         setPotentialLeader(null);
     }
-  }, [potentialLeader, leaderStockQuery, positionalWarfareHistory, locale, t, cost, isPaywalled]);
+  }, [potentialLeader, leaderStockQuery, positionalWarfareHistory, locale, t]);
 
 
-  const handleInlineStockAnalyze = useCallback(async (stockQueryToAnalyze: string, bypassCreditCheck = false) => {
-    if (isPaywalled && !bypassCreditCheck) {
-        setPendingAnalysis({ type: 'stock', query: stockQueryToAnalyze });
-        setIsPaymentModalOpen(true);
-        return;
-    }
-    
+  const handleInlineStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
+    if (!ensureApiConfigured()) return;
+
     setIsInlineStockLoading(true);
     setInlineStockError(null);
     setInlineStockAnalysisReport(null);
     setInlineStockProgress(0);
 
     try {
-        setCredits(useCredits(cost));
         const combinedReport = await getStockAnalysis(stockQueryToAnalyze, setInlineStockProgress, locale);
         setInlineStockAnalysisReport(combinedReport);
         // Do not add to history for inline analysis to keep the main history clean
     } catch (err) {
         console.error(err);
-        setCredits(addCredits(cost)); // Refund credit on failure
         const errorMessage = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
         setInlineStockError(errorMessage);
     } finally {
         setIsInlineStockLoading(false);
     }
-  }, [locale, t, cost, isPaywalled, credits]);
+  }, [locale, t]);
 
   const clearInlineStockAnalysis = () => {
     setInlineStockAnalysisReport(null);
     setInlineStockError(null);
     setInlineStockProgress(0);
-  };
-
-  const handlePaymentSuccess = (creditsPurchased: number) => {
-    const newTotal = addCredits(creditsPurchased);
-    setCredits(newTotal);
-    setIsPaymentModalOpen(false);
-    
-    try {
-        localStorage.setItem(USER_HAS_PAID_KEY, 'true');
-        setHasPaid(true);
-    } catch (e) { console.error("Failed to write to localStorage", e); }
-
-    if (pendingAnalysis) {
-        setToast({ message: t('paymentModal.successMulti', { count: creditsPurchased }), type: 'success' });
-        const { type, query } = pendingAnalysis;
-        setTimeout(() => {
-            if (type === 'topic') handleAnalyze(query, true);
-            else if (type === 'stock') {
-                // If an inline analysis was pending, trigger it. Otherwise, trigger the main one.
-                if (analysisReport) {
-                    handleInlineStockAnalyze(query, true);
-                } else {
-                    handleStockAnalyze(query, true);
-                }
-            }
-            else if (type === 'positional') {
-                 // If we were in the middle of confirming a leader, re-open the modal.
-                 // Otherwise, it means the user clicked the main button while having 0 credits. Re-trigger the whole flow.
-                if (isConfirmingLeader) {
-                    handleConfirmLeaderAndAnalyze(true);
-                } else {
-                    handlePositionalWarfareAnalyze(query);
-                }
-            }
-        }, 300);
-        setPendingAnalysis(null);
-    } else {
-        setToast({ message: t('paymentModal.successTopUp', { count: creditsPurchased }), type: 'success' });
-    }
   };
 
   const handleNewsSelect = (newsTopic: string) => {
@@ -1018,44 +892,6 @@ const MainPage: React.FC = () => {
     handleStockAnalyze(query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const handleRedeemCode = useCallback(() => {
-    const code = redemptionCode.toLowerCase().trim();
-
-    if (code === 'live') {
-        const REDEMPTION_KEY = 'gemini-redemption-live-unlocked';
-
-        try {
-            const alreadyRedeemed = localStorage.getItem(REDEMPTION_KEY);
-            if (alreadyRedeemed === 'true') {
-                setToast({ message: t('redeem.alreadyRedeemed'), type: 'info' });
-                return;
-            }
-
-            // Unlock real-time search
-            localStorage.setItem(USER_HAS_PAID_KEY, 'true');
-            setHasPaid(true);
-            localStorage.setItem(REDEMPTION_KEY, 'true');
-
-            setToast({ message: t('redeem.successLive'), type: 'success' });
-            setRedemptionCode(''); // Clear input after successful redemption
-
-        } catch (e) {
-            console.error("Failed to process 'live' redemption code:", e);
-        }
-    } else if (code === 'me') {
-        try {
-            const newCredits = addCredits(5);
-            setCredits(newCredits);
-            setToast({ message: t('redeem.successMe', { count: 5 }), type: 'success' });
-            setRedemptionCode(''); // Clear input after successful redemption
-        } catch(e) {
-            console.error("Failed to process 'me' redemption code:", e);
-        }
-    } else {
-        setToast({ message: t('redeem.invalidCode'), type: 'info' });
-    }
-  }, [redemptionCode, t]);
 
   const handleNewAnalysis = () => {
     handleClearAllResults();
@@ -1132,20 +968,16 @@ const MainPage: React.FC = () => {
     <>
       <CacheStats />
       <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
-      <PaymentModal 
-        isOpen={isPaymentModalOpen}
-        onClose={() => {
-            setIsPaymentModalOpen(false);
-            setPendingAnalysis(null);
-        }}
-        onPaymentSuccess={handlePaymentSuccess}
+      <ApiSettingsModal
+        isOpen={isApiSettingsOpen}
+        onClose={() => setIsApiSettingsOpen(false)}
+        onSaved={() => setApiConfigured(true)}
       />
       <LeaderConfirmationModal
           isOpen={isConfirmingLeader}
           leader={potentialLeader}
           onConfirm={handleConfirmLeaderAndAnalyze}
           onClose={() => setIsConfirmingLeader(false)}
-          cost={cost}
       />
       {toast && <Toast message={toast.message} type={toast.type} />}
       {isImageModalOpen && (
@@ -1185,14 +1017,22 @@ const MainPage: React.FC = () => {
                             <AcademicCapIcon className="w-5 h-5" />
                             <span>{t('header.userGuide')}</span>
                         </button>
-                        {/* Credits display */}
-                        <div className="text-sm font-medium text-gray-700 flex items-center gap-x-2">
-                            <span className="hidden sm:inline">{t('controls.credits', { count: credits })}</span>
-                            <span className="sm:hidden">💎 {credits}</span>
-                            <button onClick={() => setIsPaymentModalOpen(true)} className="font-semibold text-gray-800 hover:text-black text-xs animated-underline">
-                                ({t('controls.addCredits')})
-                            </button>
-                        </div>
+                        {/* API Settings button */}
+                        <button
+                            onClick={() => setIsApiSettingsOpen(true)}
+                            className={`flex items-center gap-x-1.5 text-xs sm:text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${
+                                apiConfigured
+                                    ? 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
+                                    : 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
+                            }`}
+                            aria-label={locale === 'zh' ? '模型 API 设置' : 'Model API Settings'}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{locale === 'zh' ? (apiConfigured ? '模型设置' : '配置模型') : (apiConfigured ? 'API Settings' : 'Setup API')}</span>
+                        </button>
                         <div className="hidden sm:block">
                             <LanguageSwitcher />
                         </div>
@@ -1229,8 +1069,6 @@ const MainPage: React.FC = () => {
                           setUserInput={setUserInput}
                           onAnalyze={() => handleAnalyze(userInput)}
                           isLoading={isLoading}
-                          isPaywalled={isPaywalled}
-                          cost={cost}
                         />
                     </div>
                 )}
@@ -1242,8 +1080,6 @@ const MainPage: React.FC = () => {
                           onAnalyze={handleStockAnalyze}
                           isLoading={isStockLoading}
                           suggestions={hotStocks}
-                          isPaywalled={isPaywalled}
-                          cost={cost}
                         />
                     </div>
                 )}
@@ -1254,8 +1090,6 @@ const MainPage: React.FC = () => {
                           setLeaderStockQuery={setLeaderStockQuery}
                           onAnalyze={() => handlePositionalWarfareAnalyze(leaderStockQuery)}
                           isLoading={isPositionalWarfareLoading || isFindingLeader}
-                          isPaywalled={isPaywalled}
-                          cost={cost}
                         />
                     </div>
                 )}
@@ -1352,23 +1186,6 @@ const MainPage: React.FC = () => {
           
           <footer className="text-center mt-16 py-8 border-t border-gray-200">
              <div className="flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
-                <div className="flex items-center gap-x-2">
-                  <input
-                      type="text"
-                      placeholder={t('redeem.placeholder')}
-                      value={redemptionCode}
-                      onChange={(e) => setRedemptionCode(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCode(); }}
-                      className="bg-white border border-gray-300 rounded-full pl-4 pr-2 py-1.5 text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors w-36"
-                      aria-label={t('redeem.placeholder')}
-                  />
-                  <button
-                      onClick={handleRedeemCode}
-                      className="px-3 py-1.5 bg-white text-black border border-gray-300 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-px active:scale-95"
-                  >
-                      {t('redeem.button')}
-                  </button>
-                </div>
                 <p className="text-sm text-gray-500">
                   {t('footer.contact')}
                   <a

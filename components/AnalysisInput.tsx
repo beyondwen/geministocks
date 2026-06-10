@@ -7,21 +7,12 @@ interface AnalysisInputProps {
   setUserInput: (input: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
-  isPaywalled: boolean;
-  cost: number;
 }
 
-const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading, isPaywalled, cost }) => {
+const AnalysisInput: React.FC<AnalysisInputProps> = ({ userInput, setUserInput, onAnalyze, isLoading }) => {
   const { t } = useI18n();
-  
-  const getButtonText = () => {
-    if (isPaywalled) {
-      return t('controls.getCredits');
-    }
-    return t('controls.useCreditAndAnalyzeMulti', { count: cost });
-  };
 
-  const buttonText = getButtonText();
+  const buttonText = t('analysisInput.button');
 
   return (
     <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm animate-reveal-up">
