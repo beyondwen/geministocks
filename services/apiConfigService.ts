@@ -68,6 +68,46 @@ export function getChatCompletionsUrl(config: UserApiConfig): string {
 }
 
 /**
+ * 从用户配置的服务获取可用模型列表（OpenAI 兼容 GET /models 接口）
+ * 只需 baseUrl 和 apiKey，无需 model
+ */
+export async function fetchAvailableModels(
+  baseUrl: string,
+  apiKey: string
+): Promise<{ ok: boolean; models: string[]; message: string }> {
+  try {
+    const normalizedBase = baseUrl.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+    const response = await fetch(`${normalizedBase}/models`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { ok: false, models: [], message: `HTTP ${response.status}: ${errorText.slice(0, 200)}` };
+    }
+
+    const data = await response.json();
+    // OpenAI-compatible: { data: [{ id: "gpt-4o", ... }, ...] }
+    const list: any[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    const models = list
+      .map((m) => (typeof m === 'string' ? m : m?.id))
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .sort((a, b) => a.localeCompare(b));
+
+    if (models.length === 0) {
+      return { ok: false, models: [], message: 'Empty model list' };
+    }
+    return { ok: true, models, message: '' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, models: [], message: msg };
+  }
+}
+
+/**
  * 测试 API 连接是否可用
  * 返回 { ok, message }
  */
