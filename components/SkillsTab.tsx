@@ -21,11 +21,8 @@ import {
 } from './icons/Icons';
 
 interface SkillsTabProps {
-    cost: number;
-    isPaywalled: boolean;
-    onRequestPayment: () => void;
-    consumeCredits: () => void;
-    refundCredits: () => void;
+    /** Returns true when the user's API settings are configured; otherwise opens the settings modal. */
+    ensureApiConfigured: () => boolean;
 }
 
 interface SkillDef {
@@ -43,7 +40,7 @@ const SKILLS: SkillDef[] = [
     { type: 'estimate-analysis', icon: <UsersIcon className="w-7 h-7" />, inputKind: 'ticker' },
 ];
 
-const SkillsTab: React.FC<SkillsTabProps> = ({ cost, isPaywalled, onRequestPayment, consumeCredits, refundCredits }) => {
+const SkillsTab: React.FC<SkillsTabProps> = ({ ensureApiConfigured }) => {
     const { t, locale } = useI18n();
     const [selectedSkill, setSelectedSkill] = useState<SkillDef | null>(null);
     const [query, setQuery] = useState('');
@@ -68,17 +65,13 @@ const SkillsTab: React.FC<SkillsTabProps> = ({ cost, isPaywalled, onRequestPayme
 
     const handleAnalyze = useCallback(async () => {
         if (!selectedSkill || !query.trim() || isLoading) return;
-        if (isPaywalled) {
-            onRequestPayment();
-            return;
-        }
+        if (!ensureApiConfigured()) return;
 
         setIsLoading(true);
         setError(null);
         setReport(null);
 
         try {
-            consumeCredits();
             let result: SkillReport;
             switch (selectedSkill.type) {
                 case 'dcf-valuation':
@@ -103,13 +96,12 @@ const SkillsTab: React.FC<SkillsTabProps> = ({ cost, isPaywalled, onRequestPayme
             setReport(result);
         } catch (err) {
             console.error(err);
-            refundCredits();
             const message = err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError');
             setError(message);
         } finally {
             setIsLoading(false);
         }
-    }, [selectedSkill, query, quarter, isLoading, isPaywalled, locale, t, onRequestPayment, consumeCredits, refundCredits]);
+    }, [selectedSkill, query, quarter, isLoading, locale, t, ensureApiConfigured]);
 
     // --- Skill selector grid ---
     if (!selectedSkill) {
@@ -205,7 +197,7 @@ const SkillsTab: React.FC<SkillsTabProps> = ({ cost, isPaywalled, onRequestPayme
                             className="inline-flex items-center justify-center gap-x-2 px-6 py-2.5 btn-premium text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-px active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
                             <SparklesIcon className="w-4 h-4" />
-                            {isLoading ? t('skillsTab.analyzing') : t('skillsTab.analyze', { count: cost })}
+                            {isLoading ? t('skillsTab.analyzing') : t('skillsTab.analyze')}
                         </button>
                     </div>
                 </div>

@@ -13,24 +13,15 @@ interface StockAnalysisInputProps {
   onAnalyze: (stockQuery: string) => void;
   isLoading: boolean;
   suggestions: Stock[];
-  isPaywalled: boolean;
-  cost: number;
 }
 
-const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions, isPaywalled, cost }) => {
+const StockAnalysisInput: React.FC<StockAnalysisInputProps> = ({ stockQuery, setStockQuery, onAnalyze, isLoading, suggestions: initialSuggestions }) => {
   const { t } = useI18n();
   const [filteredSuggestions, setFilteredSuggestions] = useState<Stock[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
-  
-  const getButtonText = () => {
-    if (isPaywalled) {
-      return t('controls.getCredits');
-    }
-    return t('controls.useCreditAndAnalyzeMulti', { count: cost });
-  };
 
-  const buttonText = getButtonText();
+  const buttonText = t('analysisInput.button');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
