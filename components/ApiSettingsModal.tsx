@@ -6,6 +6,7 @@ import {
   saveApiConfig,
   clearApiConfig,
   testApiConnection,
+  fetchAvailableModels,
   UserApiConfig,
 } from '../services/apiConfigService';
 
@@ -33,6 +34,13 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [saved, setSaved] = useState(false);
 
+  // Model list fetching state
+  const [modelList, setModelList] = useState<string[]>([]);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [modelListError, setModelListError] = useState<string | null>(null);
+  const [modelFilter, setModelFilter] = useState('');
+  const [showModelPicker, setShowModelPicker] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       const config = getApiConfig();
@@ -43,12 +51,45 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
       }
       setTestResult(null);
       setSaved(false);
+      setModelList([]);
+      setModelListError(null);
+      setModelFilter('');
+      setShowModelPicker(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const isValid = baseUrl.trim() && apiKey.trim() && model.trim();
+
+  const canFetchModels = baseUrl.trim() && apiKey.trim();
+
+  const handleFetchModels = async () => {
+    if (!canFetchModels || fetchingModels) return;
+    setFetchingModels(true);
+    setModelListError(null);
+    const result = await fetchAvailableModels(baseUrl, apiKey);
+    if (result.ok) {
+      setModelList(result.models);
+      setShowModelPicker(true);
+      setModelFilter('');
+    } else {
+      setModelList([]);
+      setShowModelPicker(false);
+      setModelListError(result.message);
+    }
+    setFetchingModels(false);
+  };
+
+  const filteredModels = modelFilter.trim()
+    ? modelList.filter((m) => m.toLowerCase().includes(modelFilter.trim().toLowerCase()))
+    : modelList;
+
+  const handleSelectModel = (m: string) => {
+    setModel(m);
+    setShowModelPicker(false);
+    setTestResult(null);
+  };
 
   const handleTest = async () => {
     if (!isValid) return;
@@ -170,9 +211,21 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
 
           {/* Model */}
           <div className="space-y-1.5">
-            <label htmlFor="api-model" className="block text-sm font-medium text-gray-700">
-              {zh ? '模型名称' : 'Model Name'}
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="api-model" className="block text-sm font-medium text-gray-700">
+                {zh ? '模型名称' : 'Model Name'}
+              </label>
+              <button
+                type="button"
+                onClick={handleFetchModels}
+                disabled={!canFetchModels || fetchingModels}
+                className="text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-500 rounded-full px-3 py-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {fetchingModels
+                  ? (zh ? '获取中…' : 'Fetching…')
+                  : (zh ? '获取模型列表' : 'Fetch Models')}
+              </button>
+            </div>
             <input
               id="api-model"
               type="text"
@@ -181,6 +234,77 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               placeholder={PRESETS.find((p) => p.baseUrl === baseUrl)?.modelPlaceholder || 'gpt-4o'}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
+
+            {/* Model list fetch error */}
+            {modelListError && (
+              <p role="alert" className="text-xs text-red-600">
+                {zh ? `获取模型列表失败：${modelListError}` : `Failed to fetch models: ${modelListError}`}
+              </p>
+            )}
+
+            {/* Model picker */}
+            {showModelPicker && modelList.length > 0 && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b border-gray-200">
+                  <input
+                    type="text"
+                    value={modelFilter}
+                    onChange={(e) => setModelFilter(e.target.value)}
+                    placeholder={zh ? '搜索模型…' : 'Filter models…'}
+                    className="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    aria-label={zh ? '搜索模型' : 'Filter models'}
+                  />
+                  <span className="text-xs text-gray-400 whitespace-nowrap">
+                    {zh ? `共 ${filteredModels.length} 个` : `${filteredModels.length} models`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowModelPicker(false)}
+                    className="text-xs text-gray-400 hover:text-gray-700"
+                    aria-label={zh ? '收起列表' : 'Collapse list'}
+                  >
+                    {zh ? '收起' : 'Hide'}
+                  </button>
+                </div>
+                <ul className="max-h-48 overflow-y-auto divide-y divide-gray-100" role="listbox" aria-label={zh ? '可用模型' : 'Available models'}>
+                  {filteredModels.length === 0 ? (
+                    <li className="px-3 py-2 text-xs text-gray-400">
+                      {zh ? '没有匹配的模型' : 'No matching models'}
+                    </li>
+                  ) : (
+                    filteredModels.map((m) => (
+                      <li key={m}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={m === model}
+                          onClick={() => handleSelectModel(m)}
+                          className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors ${
+                            m === model
+                              ? 'bg-gray-900 text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            )}
+
+            {/* Re-open picker shortcut when collapsed but list already fetched */}
+            {!showModelPicker && modelList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowModelPicker(true)}
+                className="text-xs text-gray-500 hover:text-gray-800 animated-underline"
+              >
+                {zh ? `从已获取的 ${modelList.length} 个模型中选择` : `Choose from ${modelList.length} fetched models`}
+              </button>
+            )}
+
             <p className="text-xs text-gray-400">
               {zh
                 ? '建议选择支持 JSON 输出的模型，以获得最佳分析效果。'
