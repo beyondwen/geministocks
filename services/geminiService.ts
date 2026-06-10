@@ -809,3 +809,11 @@ export const getPositionalWarfareFollowerAnalysis = async (
 
     return finalReport;
 };
+
+/**
+ * Generic entry point for professional skill analyses (finance-skills integration).
+ * Always enables web search to ensure real-time financial data.
+ */
+export const runSkillPrompt = async (prompt: string, systemInstruction: string): Promise<any> => {
+    return callOpenRouterAI(prompt, systemInstruction, getModelName(), true);
+};
