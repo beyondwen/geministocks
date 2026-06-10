@@ -29,6 +29,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
+  const [isCustomProvider, setIsCustomProvider] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -48,6 +49,10 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         setBaseUrl(config.baseUrl);
         setApiKey(config.apiKey);
         setModel(config.model);
+        // Detect custom provider: saved URL doesn't match any preset
+        setIsCustomProvider(!PRESETS.some((p) => p.baseUrl === config.baseUrl));
+      } else {
+        setIsCustomProvider(false);
       }
       setTestResult(null);
       setSaved(false);
@@ -150,17 +155,20 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
           </p>
 
           {/* Presets */}
-          <div className="flex flex-wrap gap-2" role="group" aria-label={zh ? '快速选择' : 'Quick presets'}>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={zh ? '选择提供方' : 'Select provider'}>
             {PRESETS.map((p) => (
               <button
                 key={p.label}
                 onClick={() => {
+                  setIsCustomProvider(false);
                   setBaseUrl(p.baseUrl);
-                  if (!model) setModel('');
                   setTestResult(null);
+                  setModelList([]);
+                  setShowModelPicker(false);
+                  setModelListError(null);
                 }}
                 className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
-                  baseUrl === p.baseUrl
+                  !isCustomProvider && baseUrl === p.baseUrl
                     ? 'bg-gray-900 text-white border-gray-900'
                     : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
                 }`}
@@ -168,7 +176,33 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
                 {p.label}
               </button>
             ))}
+            <button
+              onClick={() => {
+                setIsCustomProvider(true);
+                setBaseUrl('');
+                setTestResult(null);
+                setModelList([]);
+                setShowModelPicker(false);
+                setModelListError(null);
+              }}
+              className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                isCustomProvider
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+              }`}
+            >
+              {zh ? '自定义' : 'Custom'}
+            </button>
           </div>
+
+          {/* Custom provider hint */}
+          {isCustomProvider && (
+            <p className="text-xs text-gray-400 -mt-2">
+              {zh
+                ? '填写自建或第三方中转服务的 OpenAI 兼容地址，通常以 /v1 结尾（如 https://your-proxy.com/v1）。'
+                : 'Enter the OpenAI-compatible endpoint of your self-hosted or proxy service, usually ending in /v1 (e.g. https://your-proxy.com/v1).'}
+            </p>
+          )}
 
           {/* Base URL */}
           <div className="space-y-1.5">
@@ -179,8 +213,14 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               id="api-base-url"
               type="url"
               value={baseUrl}
-              onChange={(e) => { setBaseUrl(e.target.value); setTestResult(null); }}
-              placeholder="https://openrouter.ai/api/v1"
+              onChange={(e) => {
+                const value = e.target.value;
+                setBaseUrl(value);
+                setTestResult(null);
+                // Keep preset highlight in sync when typing manually
+                setIsCustomProvider(!PRESETS.some((p) => p.baseUrl === value));
+              }}
+              placeholder={isCustomProvider ? 'https://your-proxy.com/v1' : 'https://openrouter.ai/api/v1'}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
           </div>
