@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
 import {
@@ -76,6 +76,11 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [scanResults, setScanResults] = useState<Map<string, LocalScanResult>>(new Map());
   const [hasScanned, setHasScanned] = useState(false);
 
+  // Config import/export + CORS helper state
+  const [importError, setImportError] = useState<string | null>(null);
+  const [originCopied, setOriginCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const runLocalScan = async (autoSelect: boolean) => {
     setScanning(true);
     const results = await scanLocalServices(LOCAL_PRESETS.map((p) => p.baseUrl));
@@ -144,6 +149,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
       setShowModelPicker(false);
       setScanResults(new Map());
       setHasScanned(false);
+      setImportError(null);
+      setOriginCopied(false);
     }
   }, [isOpen]);
 
@@ -204,6 +211,59 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
     setApiKey('');
     setModel('');
     setTestResult(null);
+  };
+
+  // Export current config as a downloadable JSON file
+  const handleExport = () => {
+    if (!isValid) return;
+    const data = JSON.stringify({ baseUrl, apiKey, model }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'model-api-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import config from a JSON file
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset so the same file can be re-selected
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (typeof parsed.baseUrl !== 'string' || typeof parsed.model !== 'string') {
+          throw new Error('invalid');
+        }
+        const importedBase: string = parsed.baseUrl;
+        const importedIsLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)[:/]/.test(importedBase);
+        setMode(importedIsLocal ? 'local' : 'cloud');
+        setBaseUrl(importedBase);
+        setApiKey(typeof parsed.apiKey === 'string' ? parsed.apiKey : '');
+        setModel(parsed.model);
+        const presets = importedIsLocal ? LOCAL_PRESETS : PRESETS;
+        setIsCustomProvider(!presets.some((p) => p.baseUrl === importedBase));
+        setTestResult(null);
+        setImportError(null);
+      } catch {
+        setImportError(zh ? '配置文件格式无效' : 'Invalid configuration file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Copy the current page origin (for adding to a local CLI's CORS allowlist)
+  const handleCopyOrigin = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setOriginCopied(true);
+      setTimeout(() => setOriginCopied(false), 2000);
+    } catch {
+      // Clipboard may be unavailable; silently ignore
+    }
   };
 
   return (
@@ -379,17 +439,31 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               return (
                 <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 leading-relaxed -mt-2">
                   {zh
-                    ? `${activePreset.label} 正在运行且可访问，模型列表已自动获取。`
+                    ? `${activePreset.label} 正在运行且可访问，模型列表已自动获��。`
                     : `${activePreset.label} is running and accessible. Models were fetched automatically.`}
                 </div>
               );
             }
             if (status === 'cors-blocked') {
               return (
-                <div className="px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed -mt-2">
-                  {zh
-                    ? `${activePreset.label} 正在运行，但浏览器跨域访问被拦截。${activePreset.hintZh}`
-                    : `${activePreset.label} is running but browser CORS access is blocked. ${activePreset.hintEn}`}
+                <div className="px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed -mt-2 space-y-2">
+                  <p>
+                    {zh
+                      ? `${activePreset.label} 正在运行，但浏览器跨域访问被拦截。请将本页面来源加入该服务的 CORS 白名单，或在启动时允许跨域。${activePreset.hintZh}`
+                      : `${activePreset.label} is running but browser CORS access is blocked. Add this page's origin to the service's CORS allowlist, or allow cross-origin on startup. ${activePreset.hintEn}`}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="px-2 py-1 rounded bg-amber-100 text-amber-900 font-mono text-[11px] break-all">
+                      {typeof window !== 'undefined' ? window.location.origin : ''}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={handleCopyOrigin}
+                      className="shrink-0 px-2.5 py-1 rounded-full border border-amber-300 bg-white text-amber-700 font-medium hover:bg-amber-100 transition-colors"
+                    >
+                      {originCopied ? (zh ? '已复制' : 'Copied') : (zh ? '复制来源' : 'Copy origin')}
+                    </button>
+                  </div>
                 </div>
               );
             }
@@ -598,6 +672,42 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               {zh ? '配置已保存' : 'Settings saved'}
             </div>
           )}
+
+          {importError && (
+            <div role="alert" className="px-4 py-3 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200">
+              {importError}
+            </div>
+          )}
+
+          {/* Import / Export config */}
+          <div className="flex items-center gap-4 pt-1 border-t border-gray-100">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              {zh ? '导入配置' : 'Import config'}
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={!isValid}
+              className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {zh ? '导出配置' : 'Export config'}
+            </button>
+            <span className="text-xs text-gray-300">
+              {zh ? '便于在多设备间迁移' : 'Move settings across devices'}
+            </span>
+          </div>
 
           {/* Actions */}
           <div className="flex items-center justify-between gap-3 pt-2">
