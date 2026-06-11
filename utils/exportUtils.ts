@@ -102,33 +102,87 @@ const prepareForExport = async (element: HTMLElement): Promise<void> => {
 };
 
 /**
- * Exports an HTML element as an image with production-safe settings
- * Handles CORS issues, font loading, and dynamic filenames
+ * Browser canvas safety limits.
+ * Chrome/Firefox cap each axis around 32,767px and total area around 268MP,
+ * Safari is stricter. Staying below these prevents silent down-scaling
+ * (which causes blurry exports) or outright failures on long reports.
  */
-export const exportElementAsImage = async (options: ExportOptions): Promise<void> => {
+const MAX_CANVAS_DIMENSION = 16000;
+const MAX_CANVAS_AREA = 150_000_000; // ~150 megapixels, safe across browsers
+
+/**
+ * Computes the largest pixel ratio that keeps the output canvas
+ * within browser limits, preserving the element's exact aspect ratio.
+ */
+const getSafePixelRatio = (width: number, height: number, requested: number): number => {
+  if (width <= 0 || height <= 0) return 1;
+  const byDimension = Math.min(MAX_CANVAS_DIMENSION / width, MAX_CANVAS_DIMENSION / height);
+  const byArea = Math.sqrt(MAX_CANVAS_AREA / (width * height));
+  return Math.max(1, Math.min(requested, byDimension, byArea));
+};
+
+/**
+ * Exports an HTML element as an image with production-safe settings
+ * Handles CORS issues, font loading, canvas size limits, and dynamic filenames.
+ * Resolves with the final downloaded filename.
+ */
+export const exportElementAsImage = async (options: ExportOptions): Promise<string> => {
   const {
     element,
     filename,
-    pixelRatio = 2,
+    pixelRatio,
     format = 'png',
     quality = 0.95,
     backgroundColor = '#ffffff',
   } = options;
 
-  // Prepare element for export
+  // Prepare element for export (fonts + pending renders)
   await prepareForExport(element);
+
+  // Measure the element precisely. Using getBoundingClientRect (and rounding UP)
+  // avoids the 1px right/bottom cropping caused by fractional layout sizes.
+  const rect = element.getBoundingClientRect();
+  const width = Math.ceil(rect.width);
+  const height = Math.ceil(rect.height);
+
+  // Prefer the device's native pixel ratio (min 2 for crisp text, capped at 3),
+  // then clamp to what the browser canvas can actually hold.
+  const requestedRatio = pixelRatio ?? Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+  const safeRatio = getSafePixelRatio(width, height, requestedRatio);
+
+  // Integer canvas dimensions derived from ONE ratio keep the aspect
+  // ratio identical to the on-screen element (no stretching).
+  const canvasWidth = Math.round(width * safeRatio);
+  const canvasHeight = Math.round(height * safeRatio);
 
   // Configure export options with production-safe settings
   const exportConfig = {
     cacheBust: true,
-    pixelRatio,
     backgroundColor,
+    // Explicit dimensions: capture exactly the element's box
+    width,
+    height,
+    canvasWidth,
+    canvasHeight,
+    // Neutralize styles on the cloned root that distort the capture:
+    // - margins would offset the content inside the capture box
+    // - in-flight animations/transitions can be captured mid-frame (wrong opacity/position)
+    // - box-shadow bleeds outside the box and gets clipped into gray smudges at the edges
+    style: {
+      margin: '0',
+      animation: 'none',
+      transition: 'none',
+      transform: 'none',
+      boxShadow: 'none',
+      width: `${width}px`,
+      height: `${height}px`,
+    } as Partial<CSSStyleDeclaration>,
     // Skip problematic nodes to avoid CORS errors
     filter: filterNode,
-    // Include fonts as data URLs to avoid CORS issues
+    // App uses system fonts only; skip webfont embedding (faster, no CORS noise).
+    // Computed styles are inlined per-node, so text rendering matches the page.
     fontEmbedCSS: '',
-    // Skip external stylesheets that might cause CORS issues
-    skipAutoScale: false,
+    skipAutoScale: true,
     // Use CORS-safe fetch mode
     fetchRequestInit: {
       mode: 'cors' as RequestMode,
@@ -140,18 +194,29 @@ export const exportElementAsImage = async (options: ExportOptions): Promise<void
     quality: format === 'jpeg' ? quality : undefined,
   };
 
+  const exportFn = format === 'jpeg' ? toJpeg : toPng;
+  const finalFilename = `${filename}.${format}`;
+
   try {
-    // Use the appropriate export function based on format
-    const exportFn = format === 'jpeg' ? toJpeg : toPng;
-    const dataUrl = await exportFn(element, exportConfig);
+    let dataUrl: string;
+    try {
+      dataUrl = await exportFn(element, exportConfig);
+    } catch {
+      // One retry: Safari/WebKit occasionally fails the first capture
+      // while resources are still being inlined.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      dataUrl = await exportFn(element, exportConfig);
+    }
 
     // Create and trigger download
     const link = document.createElement('a');
-    link.download = `${filename}.${format}`;
+    link.download = finalFilename;
     link.href = dataUrl;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    return finalFilename;
   } catch (error) {
     // Re-throw with more descriptive error
     console.error('Export failed:', error);

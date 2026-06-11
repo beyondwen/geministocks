@@ -121,6 +121,7 @@
     "exportImage": "Export Image",
     "exporting": "Exporting...",
     "exportError": "Failed to export image. Please try again later.",
+    "exportSuccess": "Image exported: {{filename}}",
     "preparingPDF": "Preparing to export...",
     "pdfSubtext": "The print preview window is about to open",
     "reportTitle": "Multi-dimensional Investment Analysis Report",
