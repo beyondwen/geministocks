@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { XIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
 import {
@@ -21,8 +21,8 @@ interface ApiSettingsModalProps {
 
 const PRESETS: { label: string; baseUrl: string; modelPlaceholder: string }[] = [
   { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', modelPlaceholder: 'deepseek/deepseek-chat-v3.1:free' },
-  { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', modelPlaceholder: 'gpt-4o' },
   { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', modelPlaceholder: 'deepseek-chat' },
+  { label: 'MiniMax', baseUrl: 'https://api.minimaxi.com/v1', modelPlaceholder: 'MiniMax-Text-01' },
 ];
 
 interface LocalPreset {
@@ -47,20 +47,6 @@ const LOCAL_PRESETS: LocalPreset[] = [
     modelPlaceholder: 'gpt-5-codex',
     hintZh: '通过 codex-proxy 等工具将本机 Codex CLI 暴露为 OpenAI 兼容接口，端口以实际工具为准',
     hintEn: 'Expose your local Codex CLI as an OpenAI-compatible endpoint via tools like codex-proxy; port depends on your tool',
-  },
-  {
-    label: 'Ollama',
-    baseUrl: 'http://localhost:11434/v1',
-    modelPlaceholder: 'qwen3:14b',
-    hintZh: '安装 Ollama 并拉取模型（如 ollama pull qwen3:14b）。浏览器跨域访问需设置 OLLAMA_ORIGINS="*" 后重启服务',
-    hintEn: 'Install Ollama and pull a model (e.g. ollama pull qwen3:14b). For browser access set OLLAMA_ORIGINS="*" and restart the server',
-  },
-  {
-    label: 'LM Studio',
-    baseUrl: 'http://localhost:1234/v1',
-    modelPlaceholder: 'qwen/qwen3-14b',
-    hintZh: '在 LM Studio 中加载模型并启动本地服务器（Developer 标签页），需在设置中开启 CORS',
-    hintEn: 'Load a model in LM Studio and start the local server (Developer tab); enable CORS in server settings',
   },
 ];
 
@@ -89,6 +75,11 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [scanning, setScanning] = useState(false);
   const [scanResults, setScanResults] = useState<Map<string, LocalScanResult>>(new Map());
   const [hasScanned, setHasScanned] = useState(false);
+
+  // Config import/export + CORS helper state
+  const [importError, setImportError] = useState<string | null>(null);
+  const [originCopied, setOriginCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const runLocalScan = async (autoSelect: boolean) => {
     setScanning(true);
@@ -158,6 +149,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
       setShowModelPicker(false);
       setScanResults(new Map());
       setHasScanned(false);
+      setImportError(null);
+      setOriginCopied(false);
     }
   }, [isOpen]);
 
@@ -220,6 +213,59 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
     setTestResult(null);
   };
 
+  // Export current config as a downloadable JSON file
+  const handleExport = () => {
+    if (!isValid) return;
+    const data = JSON.stringify({ baseUrl, apiKey, model }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'model-api-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import config from a JSON file
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset so the same file can be re-selected
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (typeof parsed.baseUrl !== 'string' || typeof parsed.model !== 'string') {
+          throw new Error('invalid');
+        }
+        const importedBase: string = parsed.baseUrl;
+        const importedIsLocal = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)[:/]/.test(importedBase);
+        setMode(importedIsLocal ? 'local' : 'cloud');
+        setBaseUrl(importedBase);
+        setApiKey(typeof parsed.apiKey === 'string' ? parsed.apiKey : '');
+        setModel(parsed.model);
+        const presets = importedIsLocal ? LOCAL_PRESETS : PRESETS;
+        setIsCustomProvider(!presets.some((p) => p.baseUrl === importedBase));
+        setTestResult(null);
+        setImportError(null);
+      } catch {
+        setImportError(zh ? '配置文件格式无效' : 'Invalid configuration file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Copy the current page origin (for adding to a local CLI's CORS allowlist)
+  const handleCopyOrigin = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setOriginCopied(true);
+      setTimeout(() => setOriginCopied(false), 2000);
+    } catch {
+      // Clipboard may be unavailable; silently ignore
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
@@ -249,8 +295,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         <div className="px-6 py-5 space-y-5">
           <p className="text-sm text-gray-500 leading-relaxed">
             {zh
-              ? '支持云端 API（OpenRouter、OpenAI 等）或运行在本机的 CLI 服务（Claude Code、Codex、Ollama 等）。配置仅保存在您的浏览器本地，不会上传到服务器。'
-              : 'Use a cloud API (OpenRouter, OpenAI, etc.) or a CLI service running on your machine (Claude Code, Codex, Ollama, etc.). Your config is stored locally in your browser only.'}
+              ? '支持云端 API（OpenRouter、DeepSeek、MiniMax）或运行在本机的 CLI 服务（Claude Code、Codex）。配置仅保存在您的浏览器本地，不会上传到服务器。'
+              : 'Use a cloud API (OpenRouter, DeepSeek, MiniMax) or a CLI service running on your machine (Claude Code, Codex). Your config is stored locally in your browser only.'}
           </p>
 
           {/* Mode switch: Cloud API vs Local CLI */}
@@ -393,17 +439,31 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               return (
                 <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 leading-relaxed -mt-2">
                   {zh
-                    ? `${activePreset.label} 正在运行且可访问，模型列表已自动获取。`
+                    ? `${activePreset.label} 正在运行且可访问，模型列表已自动获��。`
                     : `${activePreset.label} is running and accessible. Models were fetched automatically.`}
                 </div>
               );
             }
             if (status === 'cors-blocked') {
               return (
-                <div className="px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed -mt-2">
-                  {zh
-                    ? `${activePreset.label} 正在运行，但浏览器跨域访问被拦截。${activePreset.hintZh}`
-                    : `${activePreset.label} is running but browser CORS access is blocked. ${activePreset.hintEn}`}
+                <div className="px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed -mt-2 space-y-2">
+                  <p>
+                    {zh
+                      ? `${activePreset.label} 正在运行，但浏览器跨域访问被拦截。请将本页面来源加入该服务的 CORS 白名单，或在启动时允许跨域。${activePreset.hintZh}`
+                      : `${activePreset.label} is running but browser CORS access is blocked. Add this page's origin to the service's CORS allowlist, or allow cross-origin on startup. ${activePreset.hintEn}`}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="px-2 py-1 rounded bg-amber-100 text-amber-900 font-mono text-[11px] break-all">
+                      {typeof window !== 'undefined' ? window.location.origin : ''}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={handleCopyOrigin}
+                      className="shrink-0 px-2.5 py-1 rounded-full border border-amber-300 bg-white text-amber-700 font-medium hover:bg-amber-100 transition-colors"
+                    >
+                      {originCopied ? (zh ? '已复制' : 'Copied') : (zh ? '复制来源' : 'Copy origin')}
+                    </button>
+                  </div>
                 </div>
               );
             }
@@ -454,7 +514,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               }}
               placeholder={
                 mode === 'local'
-                  ? 'http://localhost:11434/v1'
+                  ? 'http://localhost:3456/v1'
                   : isCustomProvider ? 'https://your-proxy.com/v1' : 'https://openrouter.ai/api/v1'
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -509,7 +569,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               onChange={(e) => { setModel(e.target.value); setTestResult(null); }}
               placeholder={
                 (mode === 'local' ? LOCAL_PRESETS : PRESETS).find((p) => p.baseUrl === baseUrl)?.modelPlaceholder
-                  || (mode === 'local' ? 'qwen3:14b' : 'gpt-4o')
+                  || (mode === 'local' ? 'claude-sonnet-4-5' : 'deepseek/deepseek-chat-v3.1:free')
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
@@ -612,6 +672,42 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               {zh ? '配置已保存' : 'Settings saved'}
             </div>
           )}
+
+          {importError && (
+            <div role="alert" className="px-4 py-3 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200">
+              {importError}
+            </div>
+          )}
+
+          {/* Import / Export config */}
+          <div className="flex items-center gap-4 pt-1 border-t border-gray-100">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              {zh ? '导入配置' : 'Import config'}
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={!isValid}
+              className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {zh ? '导出配置' : 'Export config'}
+            </button>
+            <span className="text-xs text-gray-300">
+              {zh ? '便于在多设备间迁移' : 'Move settings across devices'}
+            </span>
+          </div>
 
           {/* Actions */}
           <div className="flex items-center justify-between gap-3 pt-2">

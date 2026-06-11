@@ -41,12 +41,7 @@ const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
-const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const USER_ID_KEY = 'gemini-user-id';
-
-
-const MAX_ANALYSES_PER_HOUR = 12;
-const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 
 // --- User Helper Functions ---
@@ -571,42 +566,6 @@ const MainPage: React.FC = () => {
     }
   }, [toast]);
 
-  // --- Rate Limiting Functions ---
-  const checkRateLimit = (): boolean => {
-    try {
-        const storedTimestamps = localStorage.getItem(ANALYSIS_TIMESTAMPS_KEY);
-        if (!storedTimestamps) return false;
-
-        const timestamps: number[] = JSON.parse(storedTimestamps);
-        const now = Date.now();
-        
-        const recentTimestamps = timestamps.filter(ts => now - ts < ONE_HOUR_IN_MS);
-        
-        localStorage.setItem(ANALYSIS_TIMESTAMPS_KEY, JSON.stringify(recentTimestamps));
-        
-        return recentTimestamps.length >= MAX_ANALYSES_PER_HOUR;
-    } catch (err) {
-        console.error("Failed to check rate limit from localStorage", err);
-        return false; // Fail open
-    }
-  };
-
-  const recordAnalysisTimestamp = () => {
-    try {
-        const storedTimestamps = localStorage.getItem(ANALYSIS_TIMESTAMPS_KEY);
-        const timestamps: number[] = storedTimestamps ? JSON.parse(storedTimestamps) : [];
-        const now = Date.now();
-        
-        timestamps.push(now);
-        
-        const recentTimestamps = timestamps.filter(ts => now - ts < ONE_HOUR_IN_MS);
-        
-        localStorage.setItem(ANALYSIS_TIMESTAMPS_KEY, JSON.stringify(recentTimestamps));
-    } catch (err) {
-        console.error("Failed to record analysis timestamp to localStorage", err);
-    }
-  };
-  
   useEffect(() => {
     // Initialize user ID (for anonymous users)
     getUserId();
@@ -710,7 +669,6 @@ const MainPage: React.FC = () => {
 
   const handleAnalyze = useCallback(async (topic: string) => {
     if (!topic.trim()) { setError(t('errors.emptyTopic')); return; }
-    if (checkRateLimit()) { setError(t('errors.rateLimit')); return; }
     if (!ensureApiConfigured()) return;
 
     setActiveTab('topic');
@@ -740,7 +698,6 @@ const MainPage: React.FC = () => {
         }
         
         setAnalysisReport(report);
-        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: TopicHistoryEntry = { id: Date.now(), topic, report };
@@ -760,7 +717,6 @@ const MainPage: React.FC = () => {
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
-    if (checkRateLimit()) { setStockError(t('errors.rateLimit')); return; }
     if (!ensureApiConfigured()) return;
 
     setActiveTab('stock');
@@ -783,7 +739,6 @@ const MainPage: React.FC = () => {
         );
 
         setStockAnalysisReport(combinedReport);
-        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: StockHistoryEntry = { id: Date.now(), query: stockQueryToAnalyze, report: combinedReport };
@@ -803,7 +758,6 @@ const MainPage: React.FC = () => {
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
-    if (checkRateLimit()) { setPositionalWarfareError(t('errors.rateLimit')); return; }
     if (!ensureApiConfigured()) return;
 
     setActiveTab('positional');
@@ -835,7 +789,6 @@ const MainPage: React.FC = () => {
         const report = await getPositionalWarfareFollowerAnalysis(potentialLeader, setPositionalWarfareProgress, locale);
 
         setPositionalWarfareReport(report);
-        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: PositionalWarfareHistoryEntry = { id: Date.now(), leaderStockQuery, report };
@@ -971,7 +924,13 @@ const MainPage: React.FC = () => {
       <ApiSettingsModal
         isOpen={isApiSettingsOpen}
         onClose={() => setIsApiSettingsOpen(false)}
-        onSaved={() => setApiConfigured(true)}
+        onSaved={() => {
+          setApiConfigured(true);
+          setToast({
+            message: locale === 'zh' ? '模型已配置成功，现在可以开始分析了' : 'Model configured successfully. You can start analyzing now.',
+            type: 'success',
+          });
+        }}
       />
       <LeaderConfirmationModal
           isOpen={isConfirmingLeader}
@@ -1043,6 +1002,35 @@ const MainPage: React.FC = () => {
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
+            {!apiConfigured && (
+              <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6 animate-fade-in" role="region" aria-label={locale === 'zh' ? '配置引导' : 'Setup guide'}>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.077-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-center sm:text-left">
+                    <h2 className="text-base font-semibold text-amber-900 text-balance">
+                      {locale === 'zh' ? '开始前，请先配置一个分析模型' : 'Configure an analysis model to get started'}
+                    </h2>
+                    <p className="mt-1 text-sm text-amber-800 leading-relaxed text-pretty">
+                      {locale === 'zh'
+                        ? '本应用使用你自己的模型 API。支持云端服务（OpenRouter、DeepSeek、MiniMax）或运行在本机的 CLI（Claude Code、Codex）。配置仅保存在本地浏览器。'
+                        : 'This app uses your own model API. Choose a cloud service (OpenRouter, DeepSeek, MiniMax) or a CLI running on your machine (Claude Code, Codex). Your config stays in your browser.'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsApiSettingsOpen(true)}
+                    className="shrink-0 inline-flex items-center justify-center gap-x-1.5 rounded-full bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-amber-50"
+                  >
+                    {locale === 'zh' ? '立即配置' : 'Configure now'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4">
                 <div className="grid grid-cols-3 sm:grid-cols-3 gap-2" role="tablist" aria-label="分析模式">
                     <TabButton isActive={activeTab === 'topic'} onClick={() => setActiveTab('topic')}>
