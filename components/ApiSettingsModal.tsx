@@ -21,8 +21,8 @@ interface ApiSettingsModalProps {
 
 const PRESETS: { label: string; baseUrl: string; modelPlaceholder: string }[] = [
   { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', modelPlaceholder: 'deepseek/deepseek-chat-v3.1:free' },
-  { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', modelPlaceholder: 'gpt-4o' },
   { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', modelPlaceholder: 'deepseek-chat' },
+  { label: 'MiniMax', baseUrl: 'https://api.minimaxi.com/v1', modelPlaceholder: 'MiniMax-Text-01' },
 ];
 
 interface LocalPreset {
@@ -47,20 +47,6 @@ const LOCAL_PRESETS: LocalPreset[] = [
     modelPlaceholder: 'gpt-5-codex',
     hintZh: '通过 codex-proxy 等工具将本机 Codex CLI 暴露为 OpenAI 兼容接口，端口以实际工具为准',
     hintEn: 'Expose your local Codex CLI as an OpenAI-compatible endpoint via tools like codex-proxy; port depends on your tool',
-  },
-  {
-    label: 'Ollama',
-    baseUrl: 'http://localhost:11434/v1',
-    modelPlaceholder: 'qwen3:14b',
-    hintZh: '安装 Ollama 并拉取模型（如 ollama pull qwen3:14b）。浏览器跨域访问需设置 OLLAMA_ORIGINS="*" 后重启服务',
-    hintEn: 'Install Ollama and pull a model (e.g. ollama pull qwen3:14b). For browser access set OLLAMA_ORIGINS="*" and restart the server',
-  },
-  {
-    label: 'LM Studio',
-    baseUrl: 'http://localhost:1234/v1',
-    modelPlaceholder: 'qwen/qwen3-14b',
-    hintZh: '在 LM Studio 中加载模型并启动本地服务器（Developer 标签页），需在设置中开启 CORS',
-    hintEn: 'Load a model in LM Studio and start the local server (Developer tab); enable CORS in server settings',
   },
 ];
 
@@ -249,8 +235,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         <div className="px-6 py-5 space-y-5">
           <p className="text-sm text-gray-500 leading-relaxed">
             {zh
-              ? '支持云端 API（OpenRouter、OpenAI 等）或运行在本机的 CLI 服务（Claude Code、Codex、Ollama 等）。配置仅保存在您的浏览器本地，不会上传到服务器。'
-              : 'Use a cloud API (OpenRouter, OpenAI, etc.) or a CLI service running on your machine (Claude Code, Codex, Ollama, etc.). Your config is stored locally in your browser only.'}
+              ? '支持云端 API（OpenRouter、DeepSeek、MiniMax）或运行在本机的 CLI 服务（Claude Code、Codex）。配置仅保存在您的浏览器本地，不会上传到服务器。'
+              : 'Use a cloud API (OpenRouter, DeepSeek, MiniMax) or a CLI service running on your machine (Claude Code, Codex). Your config is stored locally in your browser only.'}
           </p>
 
           {/* Mode switch: Cloud API vs Local CLI */}
@@ -454,7 +440,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               }}
               placeholder={
                 mode === 'local'
-                  ? 'http://localhost:11434/v1'
+                  ? 'http://localhost:3456/v1'
                   : isCustomProvider ? 'https://your-proxy.com/v1' : 'https://openrouter.ai/api/v1'
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -509,7 +495,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
               onChange={(e) => { setModel(e.target.value); setTestResult(null); }}
               placeholder={
                 (mode === 'local' ? LOCAL_PRESETS : PRESETS).find((p) => p.baseUrl === baseUrl)?.modelPlaceholder
-                  || (mode === 'local' ? 'qwen3:14b' : 'gpt-4o')
+                  || (mode === 'local' ? 'claude-sonnet-4-5' : 'deepseek/deepseek-chat-v3.1:free')
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
