@@ -7,6 +7,9 @@ import {
   clearApiConfig,
   testApiConnection,
   fetchAvailableModels,
+  scanLocalServices,
+  LocalScanResult,
+  LocalServiceStatus,
   UserApiConfig,
 } from '../services/apiConfigService';
 
@@ -82,6 +85,51 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [modelFilter, setModelFilter] = useState('');
   const [showModelPicker, setShowModelPicker] = useState(false);
 
+  // Local CLI auto-scan state
+  const [scanning, setScanning] = useState(false);
+  const [scanResults, setScanResults] = useState<Map<string, LocalScanResult>>(new Map());
+  const [hasScanned, setHasScanned] = useState(false);
+
+  const runLocalScan = async (autoSelect: boolean) => {
+    setScanning(true);
+    const results = await scanLocalServices(LOCAL_PRESETS.map((p) => p.baseUrl));
+    const map = new Map(results.map((r) => [r.baseUrl, r]));
+    setScanResults(map);
+    setHasScanned(true);
+    setScanning(false);
+
+    if (autoSelect) {
+      // Prefer the first fully accessible service; fall back to one that's running but CORS-blocked
+      const online = LOCAL_PRESETS.find((p) => map.get(p.baseUrl)?.status === 'online');
+      const reachable = online || LOCAL_PRESETS.find((p) => map.get(p.baseUrl)?.status === 'cors-blocked');
+      if (online) {
+        setBaseUrl(online.baseUrl);
+        setIsCustomProvider(false);
+        const found = map.get(online.baseUrl)!;
+        if (found.models.length > 0) {
+          setModelList(found.models);
+          setShowModelPicker(true);
+          // Auto-fill the first model if the field is empty
+          setModel((prev) => prev || found.models[0]);
+        }
+      } else if (reachable) {
+        setBaseUrl(reachable.baseUrl);
+        setIsCustomProvider(false);
+      }
+    }
+  };
+
+  // Auto-scan local services when switching to (or opening in) local mode
+  useEffect(() => {
+    if (isOpen && mode === 'local' && !hasScanned && !scanning) {
+      // Auto-select the detected service unless we're restoring a saved local config
+      const saved = getApiConfig();
+      const savedIsLocal = !!saved && /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)[:/]/.test(saved.baseUrl);
+      runLocalScan(!savedIsLocal);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode, hasScanned]);
+
   useEffect(() => {
     if (isOpen) {
       const config = getApiConfig();
@@ -108,6 +156,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
       setModelListError(null);
       setModelFilter('');
       setShowModelPicker(false);
+      setScanResults(new Map());
+      setHasScanned(false);
     }
   }, [isOpen]);
 
@@ -234,28 +284,87 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
             ))}
           </div>
 
+          {/* Local mode: scan status bar */}
+          {mode === 'local' && (
+            <div className="flex items-center justify-between -mb-2">
+              <span className="text-xs text-gray-500" role="status">
+                {scanning
+                  ? (zh ? '正在扫描本机 CLI 服务…' : 'Scanning local CLI services…')
+                  : hasScanned
+                    ? (() => {
+                        const onlineCount = LOCAL_PRESETS.filter((p) => scanResults.get(p.baseUrl)?.status === 'online').length;
+                        const corsCount = LOCAL_PRESETS.filter((p) => scanResults.get(p.baseUrl)?.status === 'cors-blocked').length;
+                        if (onlineCount > 0) return zh ? `检测到 ${onlineCount} 个可用服务` : `${onlineCount} service(s) available`;
+                        if (corsCount > 0) return zh ? '检测到运行中的服务，但跨域被拦截' : 'Service running but CORS-blocked';
+                        return zh ? '未检测到运行中的本机服务' : 'No running local services detected';
+                      })()
+                    : ''}
+              </span>
+              <button
+                type="button"
+                onClick={() => runLocalScan(false)}
+                disabled={scanning}
+                className="text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-500 rounded-full px-3 py-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {scanning ? (zh ? '扫描中…' : 'Scanning…') : (zh ? '重新扫描' : 'Rescan')}
+              </button>
+            </div>
+          )}
+
           {/* Presets */}
           <div className="flex flex-wrap gap-2" role="group" aria-label={zh ? '选择提供方' : 'Select provider'}>
-            {(mode === 'local' ? LOCAL_PRESETS : PRESETS).map((p) => (
-              <button
-                key={p.label}
-                onClick={() => {
-                  setIsCustomProvider(false);
-                  setBaseUrl(p.baseUrl);
-                  setTestResult(null);
-                  setModelList([]);
-                  setShowModelPicker(false);
-                  setModelListError(null);
-                }}
-                className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
-                  !isCustomProvider && baseUrl === p.baseUrl
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+            {(mode === 'local' ? LOCAL_PRESETS : PRESETS).map((p) => {
+              const scan = mode === 'local' ? scanResults.get(p.baseUrl) : undefined;
+              const status: LocalServiceStatus | undefined = scan?.status;
+              const dotColor =
+                status === 'online' ? 'bg-green-500'
+                : status === 'cors-blocked' ? 'bg-amber-500'
+                : status === 'offline' ? 'bg-gray-300'
+                : '';
+              const statusLabel =
+                status === 'online' ? (zh ? '运行中' : 'online')
+                : status === 'cors-blocked' ? (zh ? '跨域受限' : 'CORS blocked')
+                : status === 'offline' ? (zh ? '未运行' : 'offline')
+                : '';
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => {
+                    setIsCustomProvider(false);
+                    setBaseUrl(p.baseUrl);
+                    setTestResult(null);
+                    setModelListError(null);
+                    // If scan already fetched this service's models, populate immediately
+                    if (scan?.status === 'online' && scan.models.length > 0) {
+                      setModelList(scan.models);
+                      setShowModelPicker(true);
+                      setModelFilter('');
+                    } else {
+                      setModelList([]);
+                      setShowModelPicker(false);
+                    }
+                  }}
+                  title={statusLabel || undefined}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                    !isCustomProvider && baseUrl === p.baseUrl
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {mode === 'local' && (
+                    scanning && !status ? (
+                      <span className="w-2 h-2 rounded-full bg-gray-300 animate-pulse" aria-hidden="true" />
+                    ) : dotColor ? (
+                      <span className={`w-2 h-2 rounded-full ${dotColor}`} aria-hidden="true" />
+                    ) : null
+                  )}
+                  {p.label}
+                  {mode === 'local' && statusLabel && (
+                    <span className="sr-only">({statusLabel})</span>
+                  )}
+                </button>
+              );
+            })}
             <button
               onClick={() => {
                 setIsCustomProvider(true);
@@ -275,14 +384,37 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
             </button>
           </div>
 
-          {/* Local preset setup hint */}
+          {/* Local preset setup hint (status-aware) */}
           {mode === 'local' && !isCustomProvider && (() => {
             const activePreset = LOCAL_PRESETS.find((p) => p.baseUrl === baseUrl);
-            return activePreset ? (
+            if (!activePreset) return null;
+            const status = scanResults.get(activePreset.baseUrl)?.status;
+            if (status === 'online') {
+              return (
+                <div className="px-3 py-2.5 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 leading-relaxed -mt-2">
+                  {zh
+                    ? `${activePreset.label} 正在运行且可访问，模型列表已自动获取。`
+                    : `${activePreset.label} is running and accessible. Models were fetched automatically.`}
+                </div>
+              );
+            }
+            if (status === 'cors-blocked') {
+              return (
+                <div className="px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed -mt-2">
+                  {zh
+                    ? `${activePreset.label} 正在运行，但浏览器跨域访问被拦截。${activePreset.hintZh}`
+                    : `${activePreset.label} is running but browser CORS access is blocked. ${activePreset.hintEn}`}
+                </div>
+              );
+            }
+            return (
               <div className="px-3 py-2.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800 leading-relaxed -mt-2">
+                {status === 'offline' && (
+                  <span className="font-medium">{zh ? '未检测到该服务。' : 'Service not detected. '}</span>
+                )}
                 {zh ? activePreset.hintZh : activePreset.hintEn}
               </div>
-            ) : null;
+            );
           })()}
 
           {/* Local custom provider hint */}
