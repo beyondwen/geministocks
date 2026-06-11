@@ -228,6 +228,99 @@ export const exportElementAsImage = async (options: ExportOptions): Promise<stri
   }
 };
 
+/** Escapes HTML special characters for safe interpolation into markup */
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+export interface HtmlExportOptions {
+  element: HTMLElement;
+  filename: string;
+  /** Document title shown in the browser tab of the exported file */
+  title?: string;
+  locale?: string;
+}
+
+/**
+ * Exports an HTML element as a standalone .html document.
+ * Inlines all same-origin stylesheet rules so the exported report
+ * renders with the exact same fonts, colors, and layout as the page.
+ * Resolves with the final downloaded filename.
+ */
+export const exportElementAsHtml = async (options: HtmlExportOptions): Promise<string> => {
+  const { element, filename, title = filename, locale = 'zh' } = options;
+
+  // Clone the report subtree so we can safely strip non-content nodes
+  const clone = element.cloneNode(true) as HTMLElement;
+
+  // Remove UI-only nodes (same set the old print/PDF flow hid via @media print)
+  clone.querySelectorAll('.no-print').forEach((node) => node.remove());
+
+  // Canvas content does not survive serialization — snapshot to <img>
+  const sourceCanvases = element.querySelectorAll('canvas');
+  const cloneCanvases = clone.querySelectorAll('canvas');
+  cloneCanvases.forEach((cloneCanvas, i) => {
+    const source = sourceCanvases[i] as HTMLCanvasElement | undefined;
+    try {
+      if (!source) throw new Error('missing source canvas');
+      const img = document.createElement('img');
+      img.src = source.toDataURL('image/png');
+      img.style.width = `${source.getBoundingClientRect().width}px`;
+      img.style.height = 'auto';
+      img.alt = '';
+      cloneCanvas.replaceWith(img);
+    } catch {
+      cloneCanvas.remove();
+    }
+  });
+
+  // Collect every same-origin CSS rule (Tailwind utilities, theme tokens, etc.)
+  let css = '';
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      for (const rule of Array.from(sheet.cssRules)) {
+        css += rule.cssText + '\n';
+      }
+    } catch {
+      // Cross-origin stylesheet — skip silently
+    }
+  }
+
+  const html = [
+    '<!DOCTYPE html>',
+    `<html lang="${locale === 'zh' ? 'zh-CN' : 'en'}">`,
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${escapeHtml(title)}</title>`,
+    `<style>${css}</style>`,
+    '<style>',
+    'body{margin:0;padding:24px;background:#f5f5f4;display:flex;justify-content:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;}',
+    '.v0-report-root{max-width:1024px;width:100%;}',
+    '.v0-report-root button{pointer-events:none;}',
+    '</style>',
+    '</head>',
+    '<body>',
+    `<main class="v0-report-root">${clone.outerHTML}</main>`,
+    '</body>',
+    '</html>',
+  ].join('\n');
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const finalFilename = `${filename}.html`;
+
+  const link = document.createElement('a');
+  link.download = finalFilename;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  // Delay revocation so the download has time to start
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+
+  return finalFilename;
+};
+
 /**
  * Creates a fallback export using canvas API
  * Used when html-to-image fails

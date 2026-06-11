@@ -79,12 +79,16 @@ const NEWS_SOURCES: NewsSource[] = [
   { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
+  { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
+  { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '36氪': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
+  '彭博': 'bg-gray-100 text-gray-800',
+  'Buzzing': 'bg-gray-100 text-gray-800',
 };
 
 
