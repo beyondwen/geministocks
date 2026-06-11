@@ -120,6 +120,79 @@ export async function fetchAvailableModels(
 }
 
 /**
+ * 本地 CLI 服务状态
+ * - online: 服务运行中且可正常访问（已获取模型列表）
+ * - cors-blocked: 服务运行中但浏览器跨域被拦截（需用户开启 CORS）
+ * - offline: 端口未开放，服务未运行
+ */
+export type LocalServiceStatus = 'online' | 'cors-blocked' | 'offline';
+
+export interface LocalScanResult {
+  baseUrl: string;
+  status: LocalServiceStatus;
+  models: string[];
+}
+
+/**
+ * 探测单个本地服务状态（带超时）
+ */
+async function probeLocalService(baseUrl: string, timeoutMs = 2500): Promise<LocalScanResult> {
+  const normalizedBase = baseUrl.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+
+  // Step 1: try a normal CORS request to /models
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(`${normalizedBase}/models`, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    // Any HTTP response means the service is up and CORS-accessible
+    let models: string[] = [];
+    if (response.ok) {
+      try {
+        const data = await response.json();
+        const list: any[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        models = list
+          .map((m) => (typeof m === 'string' ? m : m?.id))
+          .filter((id): id is string => typeof id === 'string' && id.length > 0)
+          .sort((a, b) => a.localeCompare(b));
+      } catch {
+        // Response not JSON; still online
+      }
+    }
+    return { baseUrl, status: 'online', models };
+  } catch {
+    // CORS error and connection-refused both throw TypeError; disambiguate below
+  }
+
+  // Step 2: no-cors probe — resolves with an opaque response if the port is open,
+  // rejects if nothing is listening
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    await fetch(`${normalizedBase}/models`, {
+      method: 'GET',
+      mode: 'no-cors',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return { baseUrl, status: 'cors-blocked', models: [] };
+  } catch {
+    return { baseUrl, status: 'offline', models: [] };
+  }
+}
+
+/**
+ * 并行扫描多个本地 CLI 服务的运行状态
+ */
+export async function scanLocalServices(baseUrls: string[]): Promise<LocalScanResult[]> {
+  return Promise.all(baseUrls.map((url) => probeLocalService(url)));
+}
+
+/**
  * 测试 API 连接是否可用
  * 返回 { ok, message }
  */
