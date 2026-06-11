@@ -348,6 +348,7 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNew
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
   const keywords = useMemo(() => {
@@ -355,32 +356,40 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNew
     return [report.companyProfile.name, report.companyProfile.ticker].filter(Boolean);
   }, [report]);
 
+  // Auto-dismiss the export success message
+  useEffect(() => {
+    if (!exportSuccess) return;
+    const timer = setTimeout(() => setExportSuccess(null), 5000);
+    return () => clearTimeout(timer);
+  }, [exportSuccess]);
+
   const handleExportImage = useCallback(async () => {
-    if (exportRef.current === null) {
+    if (exportRef.current === null || isExporting) {
       return;
     }
     setIsExporting(true);
     setExportError(null);
+    setExportSuccess(null);
 
     try {
       // Generate dynamic filename based on stock name and ticker
       const stockTitle = `${report.companyProfile.name}_${report.companyProfile.ticker}`;
       const filename = generateExportFilename('stock', stockTitle, locale);
 
-      await exportElementAsImage({
+      const downloadedFile = await exportElementAsImage({
         element: exportRef.current,
         filename,
-        pixelRatio: 2,
         format: 'png',
         backgroundColor: '#ffffff',
       });
+      setExportSuccess(t('analysisResult.exportSuccess', { filename: downloadedFile }));
     } catch (err) {
       console.error('Failed to export image:', err);
       setExportError(t('analysisResult.exportError'));
     } finally {
       setIsExporting(false);
     }
-  }, [report, locale, t]);
+  }, [report, locale, t, isExporting]);
   
   const handlePrint = useCallback(() => {
     setIsPreparingPdf(true);
@@ -439,17 +448,26 @@ const StockAnalysisResult: React.FC<StockAnalysisResultProps> = ({ report, onNew
           <button
             onClick={handleExportImage}
             disabled={isExporting}
+            aria-busy={isExporting}
             className="relative inline-flex items-center gap-2 px-4 py-2 btn-premium text-white text-sm font-medium rounded-xl group overflow-hidden shadow-lg hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={t('analysisResult.exportImage')}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-            <DownloadIcon className="h-5 w-5" />
+            {isExporting ? (
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <DownloadIcon className="h-5 w-5" />
+            )}
             <span className="relative z-10">{isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}</span>
           </button>
         </div>
       </div>
 
-      {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center"><p>{exportError}</p></div>}
+      {exportError && <div role="alert" className="bg-gray-100 border-2 border-gray-200 text-black px-6 py-4 text-center rounded-xl"><p>{exportError}</p></div>}
+      {exportSuccess && <div role="status" className="no-print bg-green-50 border-2 border-green-200 text-green-800 px-6 py-3 text-center rounded-xl text-sm animate-fade-in"><p>{exportSuccess}</p></div>}
 
       <div ref={exportRef} className="printable-area p-4 sm:p-8 bg-white rounded-3xl shadow-lg border border-stone-200/90">
         <header className="text-center mb-8 pb-6 border-b border-gray-200">

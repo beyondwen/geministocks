@@ -303,6 +303,7 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
   const [comparisonTarget, setComparisonTarget] = useState<FollowerCandidate | null>(null);
 
@@ -313,32 +314,40 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
     return [...new Set([...leaderKeywords, ...followerKeywords])].filter(Boolean);
   }, [report]);
 
+  // Auto-dismiss the export success message
+  useEffect(() => {
+    if (!exportSuccess) return;
+    const timer = setTimeout(() => setExportSuccess(null), 5000);
+    return () => clearTimeout(timer);
+  }, [exportSuccess]);
+
   const handleExportImage = useCallback(async () => {
-    if (exportRef.current === null) {
+    if (exportRef.current === null || isExporting) {
       return;
     }
     setIsExporting(true);
     setExportError(null);
+    setExportSuccess(null);
 
     try {
       // Generate dynamic filename based on leader stock name
       const leaderName = report.leaderStock.name;
       const filename = generateExportFilename('positional', leaderName, locale);
 
-      await exportElementAsImage({
+      const downloadedFile = await exportElementAsImage({
         element: exportRef.current,
         filename,
-        pixelRatio: 2,
         format: 'png',
         backgroundColor: '#ffffff',
       });
+      setExportSuccess(t('analysisResult.exportSuccess', { filename: downloadedFile }));
     } catch (err) {
       console.error('Failed to export image:', err);
       setExportError(t('analysisResult.exportError'));
     } finally {
       setIsExporting(false);
     }
-  }, [report, locale, t]);
+  }, [report, locale, t, isExporting]);
 
   const handlePrint = useCallback(() => {
     setIsPreparingPdf(true);
@@ -396,15 +405,24 @@ const PositionalWarfareResult: React.FC<PositionalWarfareResultProps> = ({ repor
             <button
                 onClick={handleExportImage}
                 disabled={isExporting}
+                aria-busy={isExporting}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-black hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={t('analysisResult.exportImage')}
             >
-                <DownloadIcon className="-ml-1 mr-2 h-5 w-5" />
+                {isExporting ? (
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <DownloadIcon className="-ml-1 mr-2 h-5 w-5" />
+                )}
                 {isExporting ? t('analysisResult.exporting') : t('analysisResult.exportImage')}
             </button>
         </div>
 
         {exportError && <div role="alert" className="bg-gray-100 border-gray-400 text-black px-4 py-3 rounded text-center"><p>{exportError}</p></div>}
+        {exportSuccess && <div role="status" className="no-print bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-center text-sm animate-fade-in"><p>{exportSuccess}</p></div>}
 
         <div ref={exportRef} className="printable-area p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-stone-200/90">
             <div className="mb-8 pb-6 border-b border-gray-300">
