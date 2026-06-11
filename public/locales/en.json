@@ -117,13 +117,13 @@
   },
   "analysisResult": {
     "newAnalysis": "New Analysis",
-    "exportPDF": "Export PDF",
+    "exportReport": "Export Report",
     "exportImage": "Export Image",
     "exporting": "Exporting...",
     "exportError": "Failed to export image. Please try again later.",
     "exportSuccess": "Image exported: {{filename}}",
-    "preparingPDF": "Preparing to export...",
-    "pdfSubtext": "The print preview window is about to open",
+    "exportReportError": "Failed to export report. Please try again later.",
+    "exportReportSuccess": "Report exported: {{filename}}",
     "reportTitle": "Multi-dimensional Investment Analysis Report",
     "source": "Analysis Source",
     "summaryTitle": "Overall Summary",
@@ -337,7 +337,7 @@
     "feature2": "Structured Report Output: AI analysis results are presented in a structured format, making the content clear and easy to understand, moving away from lengthy and complex texts.",
     "feature3": "Data Visualization: Tools like industry chain diagrams and stock association graphs make data and relationships clear at a glance.",
     "feature4": "History & Playback: Automatically saves your analysis history for easy review and comparison at any time.",
-    "feature5": "One-Click Export: Easily export complete analysis reports as high-fidelity images or PDF documents for sharing and saving.",
+    "feature5": "One-Click Export: Easily export complete analysis reports as high-fidelity images or HTML web reports for sharing and saving.",
     "backButton": "Back to Home for Analysis"
   },
   "caseStudyCard": {

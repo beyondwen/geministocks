@@ -117,13 +117,13 @@
   },
   "analysisResult": {
     "newAnalysis": "新的分析",
-    "exportPDF": "导出 PDF",
+    "exportReport": "导出报告",
     "exportImage": "导出图片",
     "exporting": "正在导出...",
     "exportError": "导出图片失败。请稍后再试。",
     "exportSuccess": "图片已导出：{{filename}}",
-    "preparingPDF": "正在准备导出...",
-    "pdfSubtext": "即将打开打印预览窗口",
+    "exportReportError": "导出报告失败。请稍后再试。",
+    "exportReportSuccess": "报告已导出：{{filename}}",
     "reportTitle": "多维度投资分析报告",
     "source": "分析来源",
     "summaryTitle": "总体概述",
@@ -212,7 +212,7 @@
     "netIncome": "净利润",
     "noFinancialData": "暂无财务趋势数据。",
     "valuation": {
-      "title": "估值分析",
+      "title": "��值分析",
       "targetPrice": "目标价",
       "methodology": "估值方法"
     },
@@ -337,7 +337,7 @@
     "feature2": "结构化报告输出：将 AI 的分析结果以结构化的 JSON 格式呈现，内容清晰、易于理解，告别冗长繁杂的文本。",
     "feature3": "数据可视化：通过行业产业链图谱、股票关联度图表等可视化工具，让数据和关系一目了然。",
     "feature4": "历史记录与回溯：自动保存您的分析历史，方便随时回顾和对比。",
-    "feature5": "一键导出：轻松将完整的分析报告导出为高保真图片或 PDF 文档，便于分享和保存。",
+    "feature5": "一键导出：轻松将完整的分析报告导出为高保真图片或 HTML 网页报告，便于分享和保存。",
     "backButton": "返回主页开始分析"
   },
   "caseStudyCard": {
@@ -378,7 +378,7 @@
     "title": "机构研报洞察",
     "epsTitle": "机构一致性 EPS 预测",
     "noEps": "暂无机构一致性EPS预测数据。",
-    "targetPriceTitle": "机构一致性目标价",
+    "targetPriceTitle": "机构一致���目标价",
     "noTargetPrice": "暂无机构一致���目标价数据。",
     "low": "最低",
     "average": "平均",
