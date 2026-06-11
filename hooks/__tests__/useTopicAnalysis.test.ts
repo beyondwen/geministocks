@@ -5,18 +5,13 @@ import { useTopicAnalysis } from '../useTopicAnalysis'
 describe('useTopicAnalysis', () => {
   const mockOptions = {
     locale: 'zh' as const,
-    t: (key: string) => key,
-    isPaywalled: false,
-    cost: 1
+    t: (key: string) => key
   }
 
   const mockCallbacks = {
     recordAnalysisTimestamp: vi.fn(),
     incrementUserAnalysisCount: vi.fn(),
-    updateTopicHistory: vi.fn(),
-    checkRateLimit: vi.fn(() => false),
-    useCredits: vi.fn((amount: number) => 99),
-    addCredits: vi.fn((amount: number) => 100)
+    updateTopicHistory: vi.fn()
   }
 
   beforeEach(() => {

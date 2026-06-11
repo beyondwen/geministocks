@@ -41,12 +41,7 @@ const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
 const STOCK_HISTORY_STORAGE_KEY = 'gemini-stock-analysis-history';
 const POSITIONAL_WARFARE_HISTORY_STORAGE_KEY = 'gemini-positional-warfare-history';
 const USER_ANALYSIS_COUNT_KEY = 'gemini-user-analysis-count';
-const ANALYSIS_TIMESTAMPS_KEY = 'gemini-analysis-timestamps';
 const USER_ID_KEY = 'gemini-user-id';
-
-
-const MAX_ANALYSES_PER_HOUR = 12;
-const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 
 // --- User Helper Functions ---
@@ -571,42 +566,6 @@ const MainPage: React.FC = () => {
     }
   }, [toast]);
 
-  // --- Rate Limiting Functions ---
-  const checkRateLimit = (): boolean => {
-    try {
-        const storedTimestamps = localStorage.getItem(ANALYSIS_TIMESTAMPS_KEY);
-        if (!storedTimestamps) return false;
-
-        const timestamps: number[] = JSON.parse(storedTimestamps);
-        const now = Date.now();
-        
-        const recentTimestamps = timestamps.filter(ts => now - ts < ONE_HOUR_IN_MS);
-        
-        localStorage.setItem(ANALYSIS_TIMESTAMPS_KEY, JSON.stringify(recentTimestamps));
-        
-        return recentTimestamps.length >= MAX_ANALYSES_PER_HOUR;
-    } catch (err) {
-        console.error("Failed to check rate limit from localStorage", err);
-        return false; // Fail open
-    }
-  };
-
-  const recordAnalysisTimestamp = () => {
-    try {
-        const storedTimestamps = localStorage.getItem(ANALYSIS_TIMESTAMPS_KEY);
-        const timestamps: number[] = storedTimestamps ? JSON.parse(storedTimestamps) : [];
-        const now = Date.now();
-        
-        timestamps.push(now);
-        
-        const recentTimestamps = timestamps.filter(ts => now - ts < ONE_HOUR_IN_MS);
-        
-        localStorage.setItem(ANALYSIS_TIMESTAMPS_KEY, JSON.stringify(recentTimestamps));
-    } catch (err) {
-        console.error("Failed to record analysis timestamp to localStorage", err);
-    }
-  };
-  
   useEffect(() => {
     // Initialize user ID (for anonymous users)
     getUserId();
@@ -710,7 +669,6 @@ const MainPage: React.FC = () => {
 
   const handleAnalyze = useCallback(async (topic: string) => {
     if (!topic.trim()) { setError(t('errors.emptyTopic')); return; }
-    if (checkRateLimit()) { setError(t('errors.rateLimit')); return; }
     if (!ensureApiConfigured()) return;
 
     setActiveTab('topic');
@@ -740,7 +698,6 @@ const MainPage: React.FC = () => {
         }
         
         setAnalysisReport(report);
-        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: TopicHistoryEntry = { id: Date.now(), topic, report };
@@ -760,7 +717,6 @@ const MainPage: React.FC = () => {
 
   const handleStockAnalyze = useCallback(async (stockQueryToAnalyze: string) => {
     if (!stockQueryToAnalyze.trim()) { setStockError(t('errors.emptyStock')); return; }
-    if (checkRateLimit()) { setStockError(t('errors.rateLimit')); return; }
     if (!ensureApiConfigured()) return;
 
     setActiveTab('stock');
@@ -783,7 +739,6 @@ const MainPage: React.FC = () => {
         );
 
         setStockAnalysisReport(combinedReport);
-        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: StockHistoryEntry = { id: Date.now(), query: stockQueryToAnalyze, report: combinedReport };
@@ -803,7 +758,6 @@ const MainPage: React.FC = () => {
 
   const handlePositionalWarfareAnalyze = useCallback(async (query: string) => {
     if (!query.trim()) { setPositionalWarfareError(t('errors.emptyLeaderStock')); return; }
-    if (checkRateLimit()) { setPositionalWarfareError(t('errors.rateLimit')); return; }
     if (!ensureApiConfigured()) return;
 
     setActiveTab('positional');
@@ -835,7 +789,6 @@ const MainPage: React.FC = () => {
         const report = await getPositionalWarfareFollowerAnalysis(potentialLeader, setPositionalWarfareProgress, locale);
 
         setPositionalWarfareReport(report);
-        recordAnalysisTimestamp();
         incrementUserAnalysisCount();
 
         const newEntry: PositionalWarfareHistoryEntry = { id: Date.now(), leaderStockQuery, report };
@@ -971,7 +924,13 @@ const MainPage: React.FC = () => {
       <ApiSettingsModal
         isOpen={isApiSettingsOpen}
         onClose={() => setIsApiSettingsOpen(false)}
-        onSaved={() => setApiConfigured(true)}
+        onSaved={() => {
+          setApiConfigured(true);
+          setToast({
+            message: locale === 'zh' ? '模型已配置成功，现在可以开始分析了' : 'Model configured successfully. You can start analyzing now.',
+            type: 'success',
+          });
+        }}
       />
       <LeaderConfirmationModal
           isOpen={isConfirmingLeader}

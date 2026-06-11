@@ -15,6 +15,7 @@
     "@sentry/react": "^10.47.0",
     "@stripe/react-stripe-js": "^3.1.0",
     "@stripe/stripe-js": "^4.9.0",
+    "@testing-library/react": "^16.3.2",
     "@vercel/node": "^5.6.23",
     "ai": "^6.0.0",
     "crypto": "^1.0.1",
@@ -27,6 +28,7 @@
     "recharts": "^2.12.7",
     "stripe": "^19.1.0",
     "uuid": "9.0.1",
+    "vitest": "^4.1.8",
     "zod": "^3.23.8"
   },
   "devDependencies": {

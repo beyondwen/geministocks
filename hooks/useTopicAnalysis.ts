@@ -14,20 +14,13 @@ import { topicAnalysisCache } from '../services/cacheService'
 interface UseTopicAnalysisOptions {
   locale: Locale
   t: (key: string, params?: any) => string
-  isPaywalled: boolean
-  cost: number
-  onOpenPaymentModal?: () => void
   onShowToast?: (message: string, type: 'success' | 'info') => void
-  onCreditUpdate?: (newBalance: number) => void
 }
 
 interface UseTopicAnalysisCallbacks {
   recordAnalysisTimestamp?: () => void
   incrementUserAnalysisCount?: () => void
   updateTopicHistory?: (history: TopicHistoryEntry[]) => void
-  checkRateLimit?: () => boolean
-  useCredits?: (amount: number) => number
-  addCredits?: (amount: number) => number
 }
 
 /**
@@ -40,20 +33,13 @@ export function useTopicAnalysis(
   const {
     locale,
     t,
-    isPaywalled,
-    cost,
-    onOpenPaymentModal,
-    onShowToast,
-    onCreditUpdate
+    onShowToast
   } = options
 
   const {
     recordAnalysisTimestamp = () => {},
     incrementUserAnalysisCount = () => {},
-    updateTopicHistory = () => {},
-    checkRateLimit = () => false,
-    useCredits = (amount: number) => 0,
-    addCredits = (amount: number) => 0
+    updateTopicHistory = () => {}
   } = callbacks
 
   // State management
@@ -89,21 +75,10 @@ export function useTopicAnalysis(
    * Handle topic analysis
    */
   const handleAnalyze = useCallback(
-    async (topic: string, bypassCreditCheck = false) => {
+    async (topic: string) => {
       // Validation
       if (!topic.trim()) {
         setError(t('errors.emptyTopic'))
-        return
-      }
-
-      if (checkRateLimit()) {
-        setError(t('errors.rateLimit'))
-        return
-      }
-
-      // Check payment status
-      if (isPaywalled && !bypassCreditCheck) {
-        onOpenPaymentModal?.()
         return
       }
 
@@ -112,10 +87,6 @@ export function useTopicAnalysis(
       setIsLoading(true)
 
       try {
-        // Deduct credits
-        const updatedBalance = useCredits(cost)
-        onCreditUpdate?.(updatedBalance)
-
         // Check if Polymarket URL
         const isPolymarketUrl = /^https?:\/\/polymarket\.com\//.test(topic.trim())
 
@@ -151,10 +122,6 @@ export function useTopicAnalysis(
         // Show success toast
         onShowToast?.(t('success.analysisDone'), 'success')
       } catch (err) {
-        // Refund credits on failure
-        const refundedBalance = addCredits(cost)
-        onCreditUpdate?.(refundedBalance)
-
         // Set error message
         const errorMessage =
           err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError')
@@ -171,18 +138,11 @@ export function useTopicAnalysis(
     [
       locale,
       t,
-      isPaywalled,
-      cost,
-      checkRateLimit,
-      useCredits,
-      addCredits,
       topicHistory,
       recordAnalysisTimestamp,
       incrementUserAnalysisCount,
       updateTopicHistory,
-      onOpenPaymentModal,
       onShowToast,
-      onCreditUpdate,
       clearAnalysis
     ]
   )
@@ -216,7 +176,7 @@ export function useTopicAnalysis(
    */
   const retry = useCallback(async () => {
     if (userInput.trim()) {
-      await handleAnalyze(userInput, true)
+      await handleAnalyze(userInput)
     }
   }, [userInput, handleAnalyze])
 

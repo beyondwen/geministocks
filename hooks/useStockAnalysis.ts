@@ -13,20 +13,13 @@ import { getStockAnalysisWithStreaming } from '../services/streamingService'
 interface UseStockAnalysisOptions {
   locale: Locale
   t: (key: string, params?: any) => string
-  isPaywalled: boolean
-  cost: number
-  onOpenPaymentModal?: () => void
   onShowToast?: (message: string, type: 'success' | 'info') => void
-  onCreditUpdate?: (newBalance: number) => void
 }
 
 interface UseStockAnalysisCallbacks {
   recordAnalysisTimestamp?: () => void
   incrementUserAnalysisCount?: () => void
   updateStockHistory?: (history: StockHistoryEntry[]) => void
-  checkRateLimit?: () => boolean
-  useCredits?: (amount: number) => number
-  addCredits?: (amount: number) => number
 }
 
 export function useStockAnalysis(
@@ -36,20 +29,13 @@ export function useStockAnalysis(
   const {
     locale,
     t,
-    isPaywalled,
-    cost,
-    onOpenPaymentModal,
-    onShowToast,
-    onCreditUpdate
+    onShowToast
   } = options
 
   const {
     recordAnalysisTimestamp = () => {},
     incrementUserAnalysisCount = () => {},
-    updateStockHistory = () => {},
-    checkRateLimit = () => false,
-    useCredits = (amount: number) => 0,
-    addCredits = (amount: number) => 0
+    updateStockHistory = () => {}
   } = callbacks
 
   // Main stock analysis state
@@ -78,19 +64,9 @@ export function useStockAnalysis(
   }, [])
 
   const handleStockAnalyze = useCallback(
-    async (query: string, bypassCreditCheck = false) => {
+    async (query: string) => {
       if (!query.trim()) {
         setStockError(t('errors.emptyStock'))
-        return
-      }
-
-      if (checkRateLimit()) {
-        setStockError(t('errors.rateLimit'))
-        return
-      }
-
-      if (isPaywalled && !bypassCreditCheck) {
-        onOpenPaymentModal?.()
         return
       }
 
@@ -98,9 +74,6 @@ export function useStockAnalysis(
       setIsStockLoading(true)
 
       try {
-        const updatedBalance = useCredits(cost)
-        onCreditUpdate?.(updatedBalance)
-
         const report = await getStockAnalysisWithStreaming(
           query,
           setStockProgress,
@@ -122,9 +95,6 @@ export function useStockAnalysis(
 
         onShowToast?.(t('success.analysisDone'), 'success')
       } catch (err) {
-        const refundedBalance = addCredits(cost)
-        onCreditUpdate?.(refundedBalance)
-
         const errorMessage =
           err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError')
         setStockError(errorMessage)
@@ -137,18 +107,13 @@ export function useStockAnalysis(
         setPartialStockData(null)
       }
     },
-    [locale, t, isPaywalled, cost, checkRateLimit, useCredits, addCredits, stockHistory, recordAnalysisTimestamp, incrementUserAnalysisCount, updateStockHistory, onOpenPaymentModal, onShowToast, onCreditUpdate, clearAnalysis]
+    [locale, t, stockHistory, recordAnalysisTimestamp, incrementUserAnalysisCount, updateStockHistory, onShowToast, clearAnalysis]
   )
 
   const handleInlineStockAnalyze = useCallback(
-    async (ticker: string, bypassCreditCheck = false) => {
+    async (ticker: string) => {
       if (!ticker.trim()) {
         setInlineStockError(t('errors.emptyStock'))
-        return
-      }
-
-      if (isPaywalled && !bypassCreditCheck) {
-        onOpenPaymentModal?.()
         return
       }
 
@@ -157,9 +122,6 @@ export function useStockAnalysis(
       setIsInlineStockLoading(true)
 
       try {
-        const updatedBalance = useCredits(cost)
-        onCreditUpdate?.(updatedBalance)
-
         const report = await getStockAnalysisWithStreaming(
           ticker,
           setInlineStockProgress,
@@ -168,9 +130,6 @@ export function useStockAnalysis(
 
         setInlineStockAnalysisReport(report)
       } catch (err) {
-        const refundedBalance = addCredits(cost)
-        onCreditUpdate?.(refundedBalance)
-
         const errorMessage =
           err instanceof Error ? t('errors.analysisFailed', { message: err.message }) : t('errors.unknownError')
         setInlineStockError(errorMessage)
@@ -179,7 +138,7 @@ export function useStockAnalysis(
         setInlineStockProgress(0)
       }
     },
-    [locale, t, isPaywalled, cost, useCredits, addCredits, onOpenPaymentModal, onShowToast, onCreditUpdate]
+    [locale, t, onShowToast]
   )
 
   const clearHistory = useCallback(() => {
