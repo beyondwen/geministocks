@@ -1,4 +1,4 @@
-import type { AnalysisReport, StockAnalysisReport } from '../types'
+import type { AnalysisReport } from '../types'
 
 /**
  * 分析缓存服务
@@ -158,7 +158,6 @@ class CacheManager<T> {
 
 // 创建专用缓存管理器
 export const topicAnalysisCache = new CacheManager<AnalysisReport>()
-export const stockAnalysisCache = new CacheManager<StockAnalysisReport>()
 
 /**
  * 定期清理过期缓存（每小时一次）
@@ -166,7 +165,6 @@ export const stockAnalysisCache = new CacheManager<StockAnalysisReport>()
 export function initCacheCleanup(): void {
   setInterval(() => {
     topicAnalysisCache.cleanup()
-    stockAnalysisCache.cleanup()
   }, 60 * 60 * 1000)
 
   console.log('[v0] Cache cleanup scheduled')
@@ -177,7 +175,6 @@ export function initCacheCleanup(): void {
  */
 export function clearAllCaches(): void {
   topicAnalysisCache.clear()
-  stockAnalysisCache.clear()
 }
 
 export { CacheManager }

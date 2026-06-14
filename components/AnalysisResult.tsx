@@ -1,13 +1,11 @@
 
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
-import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory, StockAnalysisReport } from '../types';
-import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, ChartTrendingUpIcon, LightBulbIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon, XIcon } from './icons/Icons';
+import type { AnalysisReport, InvestmentScore, PolymarketData, Scenario, TimeHorizonStrategy, TAM_SAM_SOM, CompetitiveLandscape, CatalystTracker, PolicyAnalysis, TechTrajectory } from '../types';
+import { DownloadIcon, SparklesIcon, CheckCircleIcon, DocumentArrowDownIcon, ChartTrendingUpIcon, LightBulbIcon, ChartTrendingUpIcon as TrendingUpIcon, TrendingDownIcon, ScaleIcon, CalendarIcon, TrophyIcon, MegaphoneIcon, BeakerIcon, PlusIcon } from './icons/Icons';
 import TieredSuggestionsDisplay from './TieredSuggestionsDisplay';
 import IndustryChainViz from './IndustryChainViz';
 import TextRenderer from './TextRenderer';
 import { useI18n } from '../hooks/useI18n';
-import Loader from './Loader';
-import StockAnalysisResult from './StockAnalysisResult';
 import { exportElementAsImage, exportElementAsHtml, generateExportFilename } from '../utils/exportUtils';
 
 
@@ -381,25 +379,13 @@ interface AnalysisResultProps {
   report: AnalysisReport;
   userInput: string;
   onNewAnalysis: () => void;
-  onAnalyzeStock: (query: string) => void;
-  inlineReport: StockAnalysisReport | null;
-  isInlineLoading: boolean;
-  inlineProgress: number;
-  inlineError: string | null;
-  onClearInlineReport: () => void;
 }
 
 
 const AnalysisResult: React.FC<AnalysisResultProps> = ({ 
     report, 
     userInput, 
-    onNewAnalysis, 
-    onAnalyzeStock,
-    inlineReport,
-    isInlineLoading,
-    inlineProgress,
-    inlineError,
-    onClearInlineReport
+    onNewAnalysis
 }) => {
   const { t, locale } = useI18n();
   const exportRef = useRef<HTMLDivElement>(null);
@@ -501,16 +487,8 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
   const FallbackContent = <p className="text-gray-500 text-sm">{t('analysisResult.noDataAvailable')}</p>;
 
   return (
-    <div className="space-y-6 animate-reveal-scale">
-      <InlineStockAnalysisModal
-          isOpen={isInlineLoading || !!inlineReport || !!inlineError}
-          isLoading={isInlineLoading}
-          progress={inlineProgress}
-          report={inlineReport}
-          error={inlineError}
-          onClose={onClearInlineReport}
-      />
-      {/* Data Freshness Indicator */}
+  <div className="space-y-6 animate-reveal-scale">
+        {/* Data Freshness Indicator */}
       {report.dataFreshness && (
         <div className="no-print flex items-center justify-end gap-2 text-xs text-gray-500">
           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${
@@ -641,7 +619,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
                     />
                 )}
                 
-                {report.competitiveLandscape && <CompetitiveLandscapeCard landscape={report.competitiveLandscape} onAnalyzeStock={onAnalyzeStock} />}
+                {report.competitiveLandscape && <CompetitiveLandscapeCard landscape={report.competitiveLandscape} />}
                 {report.catalystTracker && <CatalystTrackerCard tracker={report.catalystTracker} />}
                 {report.policyAnalysis && <PolicyAnalysisCard analysis={report.policyAnalysis} />}
                 {report.techTrajectory && <TechTrajectoryCard trajectory={report.techTrajectory} />}
@@ -677,7 +655,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
 
             </div>
             
-            {report.tieredSuggestions && <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} onAnalyzeStock={onAnalyzeStock} />}
+            {report.tieredSuggestions && <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} />}
 
             {report.sources && report.sources.length > 0 && (
                 <Card title={t('analysisResult.sourcesTitle')} icon={<DocumentArrowDownIcon className="w-5 h-5"/>}>
