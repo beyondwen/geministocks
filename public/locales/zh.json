@@ -48,19 +48,11 @@
   },
   "userGuideModal": {
     "title": "超级挖掘机・使用说明",
-    "intro": "为了获得最佳分析效果，请根据您的需求选择合适的分析模式：",
+    "intro": "输入您感兴趣的投资主题，AI 将为您生成一份深度挖掘分析报告。",
     "topicTitle": "挖掘分析",
     "topicIcon": "✍️",
-    "topicDescription": "适用于分析宏观主题、行业趋势、新闻事件或任何您感兴趣的投资概念。您可以输入文字、粘贴新闻链接或文章内容。",
+    "topicDescription": "适用于分析宏观主题、行业趋势、新闻事件或任何您感兴趣的投资概念。您可以输入文字、粘贴新闻链接或文章内容，AI 会结合最新信息生成多维度的投资分析报告。",
     "topicExample": "例如：「AI Agent 的投资机会」、「英伟达 GTC 2024 大会要点」、「https://...」",
-    "stockTitle": "个股分析",
-    "stockIcon": "📈",
-    "stockDescription": "专为深度分析单一上市公司而设计。系统会从财务、技术、管理等多个维度生成一份机构级的分析报告。",
-    "stockExample": "例如：「AAPL」、「苹果公司」、「00700.HK」、「腾讯控股」",
-    "positionalTitle": "卡位战法",
-    "positionalIcon": "⚔️",
-    "positionalDescription": "一种高级策略分析。输入一个公认的行业龙头股，AI 会在同一板块中寻找业务相似、但市值或地位较低，有潜力\"补涨\"的\"龙二\"或\"龙三\"。",
-    "positionalExample": "例如：「英伟达」、「宁德时代」、「贵州茅台」",
     "closeButton": "我明白了"
   },
   "languageSwitcher": {
@@ -377,7 +369,7 @@
   "researchConsensus": {
     "title": "机构研报洞察",
     "epsTitle": "机构一致性 EPS 预测",
-    "noEps": "暂无机构一致性EPS预测数据。",
+    "noEps": "暂无机构一致性EPS预测数据��",
     "targetPriceTitle": "机构一致���目标价",
     "noTargetPrice": "暂无机构一致���目标价数据。",
     "low": "最低",

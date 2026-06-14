@@ -48,19 +48,11 @@
   },
   "userGuideModal": {
     "title": "Super Digger ・ User Guide",
-    "intro": "To get the best analysis results, please choose the appropriate analysis mode for your needs:",
+    "intro": "Enter an investment topic you're interested in, and the AI will generate an in-depth analysis report for you.",
     "topicTitle": "Dig Analysis",
     "topicIcon": "✍️",
-    "topicDescription": "Suitable for analyzing macro themes, industry trends, news events, or any investment concept you are interested in. You can enter text, paste news links, or article content.",
+    "topicDescription": "Suitable for analyzing macro themes, industry trends, news events, or any investment concept you are interested in. You can enter text, paste news links, or article content, and the AI will generate a multi-dimensional investment analysis report based on the latest information.",
     "topicExample": "e.g., \"Investment opportunities in AI Agents\", \"Key points from NVIDIA GTC 2024\", \"https://...\"",
-    "stockTitle": "Stock Analysis",
-    "stockIcon": "📈",
-    "stockDescription": "Designed for in-depth analysis of a single public company. The system will generate an institutional-grade report from multiple dimensions like financials, technicals, and management.",
-    "stockExample": "e.g., \"AAPL\", \"Apple Inc.\", \"00700.HK\", \"Tencent\"",
-    "positionalTitle": "Positional Warfare",
-    "positionalIcon": "⚔️",
-    "positionalDescription": "An advanced strategy analysis. Input a recognized industry leader, and the AI will search within the same sector for companies with similar business models but lower market caps or positions, identifying potential 'catch-up' opportunities.",
-    "positionalExample": "e.g., \"NVIDIA\", \"CATL\", \"Kweichow Moutai\"",
     "closeButton": "Got It"
   },
   "languageSwitcher": {
