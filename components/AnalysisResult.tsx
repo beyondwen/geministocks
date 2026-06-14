@@ -220,7 +220,7 @@ const TimeHorizonStrategyCard: React.FC<{ horizons: TimeHorizonStrategy }> = ({ 
 
 // --- New Professional-Grade Topic Analysis Components ---
 
-const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape, onAnalyzeStock: (query: string) => void }> = ({ landscape, onAnalyzeStock }) => {
+const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape }> = ({ landscape }) => {
     const { t } = useI18n();
     return (
         <Card title={t('competitiveLandscape.title')} icon={<TrophyIcon className="w-5 h-5"/>} className="md:col-span-2">
@@ -240,9 +240,9 @@ const CompetitiveLandscapeCard: React.FC<{ landscape: CompetitiveLandscape, onAn
                         {landscape.keyPlayers.map((p, i) => (
                             <tr key={i} className="border-b border-gray-200 last:border-b-0">
                                 <td className="p-3">
-                                    <button onClick={() => onAnalyzeStock(p.name)} className="text-left font-medium text-black hover:text-gray-700 animated-underline transition-colors">
+                                    <span className="text-left font-medium text-black">
                                         {p.name}
-                                    </button>
+                                    </span>
                                 </td>
                                 <td className="p-3">{p.marketShare}</td>
                                 <td className="p-3">{p.techAdvantage}</td>
@@ -372,49 +372,6 @@ const TechTrajectoryCard: React.FC<{ trajectory: TechTrajectory }> = ({ trajecto
                 <p className="text-sm">{trajectory.moatAnalysis}</p>
             </div>
         </Card>
-    );
-};
-
-
-// --- Inline Analysis Modal ---
-const InlineStockAnalysisModal: React.FC<{
-    isOpen: boolean;
-    isLoading: boolean;
-    progress: number;
-    report: StockAnalysisReport | null;
-    error: string | null;
-    onClose: () => void;
-}> = ({ isOpen, isLoading, progress, report, error, onClose }) => {
-    const { t } = useI18n();
-    if (!isOpen) return null;
-
-    const modalTitle = report?.companyProfile.name || t('stockAnalysisInput.title');
-
-    return (
-        <div 
-            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-40 animate-fade-in no-print" 
-            onClick={onClose}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="inline-stock-analysis-title"
-        >
-            <div 
-                className="bg-white/95 rounded-2xl shadow-floating w-[95vw] h-[90vh] max-w-5xl flex flex-col" 
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
-                    <h2 id="inline-stock-analysis-title" className="text-xl font-bold text-gray-800">{modalTitle}</h2>
-                    <button onClick={onClose} className="p-2 rounded-full text-gray-500 hover:bg-gray-100">
-                        <XIcon className="w-6 h-6" />
-                    </button>
-                </div>
-                <div className="flex-grow overflow-y-auto">
-                    {isLoading && <Loader taskType="stock" currentStep={progress} />}
-                    {error && <div className="p-8 text-center text-red-600 bg-red-50/80 rounded-lg m-4">{error}</div>}
-                    {report && <StockAnalysisResult report={report} onNewAnalysis={onClose} />}
-                </div>
-            </div>
-        </div>
     );
 };
 
