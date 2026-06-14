@@ -634,6 +634,14 @@ const MainPage: React.FC = () => {
                         >
                             <span>金融工具箱</span>
                         </a>
+                        <a 
+                            href="https://t.me/serenitymap_bot"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
+                        >
+                            <span>{locale === 'zh' ? '产业图谱' : 'Industry Map'}</span>
+                        </a>
                         <button 
                             onClick={() => setIsUserGuideModalOpen(true)} 
                             className="hidden sm:flex items-center gap-x-1.5 text-sm font-medium text-gray-600 hover:text-black transition-colors"
