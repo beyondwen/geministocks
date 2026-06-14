@@ -114,10 +114,9 @@ interface TierDisplayProps {
   stocks: StockTicker[];
   keywords: string[];
   colorClasses: string;
-  onAnalyzeStock: (query: string) => void;
 }
 
-const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords, colorClasses, onAnalyzeStock }) => {
+const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords, colorClasses }) => {
   if (!stocks || stocks.length === 0) {
     return null;
   }
@@ -130,7 +129,7 @@ const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-b-lg border-x border-b border-gray-200">
         {stocks.map((stock, index) => (
-          <StockCard key={`${stock.ticker}-${index}`} stock={stock} keywords={keywords} onAnalyze={onAnalyzeStock} />
+          <StockCard key={`${stock.ticker}-${index}`} stock={stock} keywords={keywords} />
         ))}
       </div>
     </div>
@@ -142,10 +141,9 @@ const TierDisplay: React.FC<TierDisplayProps> = ({ title, icon, stocks, keywords
 interface TieredSuggestionsDisplayProps {
   suggestions: TieredSuggestions;
   keywords: string[];
-  onAnalyzeStock: (query: string) => void;
 }
 
-const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ suggestions, keywords, onAnalyzeStock }) => {
+const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ suggestions, keywords }) => {
   const { t } = useI18n();
   const { coreHoldings, strategicSatellites, watchlist } = suggestions || {};
 
@@ -157,7 +155,6 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         stocks={coreHoldings}
         keywords={keywords}
         colorClasses="bg-gray-200 text-black"
-        onAnalyzeStock={onAnalyzeStock}
       />
       <TierDisplay
         title={t('tieredSuggestions.satellite')}
@@ -165,7 +162,6 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         stocks={strategicSatellites}
         keywords={keywords}
         colorClasses="bg-gray-100 text-black"
-        onAnalyzeStock={onAnalyzeStock}
       />
       <TierDisplay
         title={t('tieredSuggestions.watchlist')}
@@ -173,7 +169,6 @@ const TieredSuggestionsDisplay: React.FC<TieredSuggestionsDisplayProps> = ({ sug
         stocks={watchlist}
         keywords={keywords}
         colorClasses="bg-gray-100 text-black"
-        onAnalyzeStock={onAnalyzeStock}
       />
     </div>
   );

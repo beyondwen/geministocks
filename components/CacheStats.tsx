@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { topicAnalysisCache, stockAnalysisCache } from '../services/cacheService'
+import { topicAnalysisCache } from '../services/cacheService'
 
 /**
  * 缓存统计组件 - 显示当前缓存中存储的分析数量
@@ -7,15 +7,12 @@ import { topicAnalysisCache, stockAnalysisCache } from '../services/cacheService
  */
 export function CacheStats() {
   const [topicCacheSize, setTopicCacheSize] = useState(0)
-  const [stockCacheSize, setStockCacheSize] = useState(0)
 
   useEffect(() => {
     // 定期更新缓存统计信息
     const interval = setInterval(() => {
       const topicStats = topicAnalysisCache.getStats()
-      const stockStats = stockAnalysisCache.getStats()
       setTopicCacheSize(topicStats.size)
-      setStockCacheSize(stockStats.size)
     }, 5000)
 
     return () => clearInterval(interval)
@@ -44,7 +41,6 @@ export function CacheStats() {
     >
       <div style={{ marginBottom: '4px', fontWeight: 'bold' }}>缓存统计</div>
       <div>话题分析缓存: {topicCacheSize}</div>
-      <div>股票分析缓存: {stockCacheSize}</div>
     </div>
   )
 }
