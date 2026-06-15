@@ -8,6 +8,17 @@ export default defineConfig(() => {
         port: 3000,
         host: '0.0.0.0',
         allowedHosts: true,
+        proxy: {
+          // Same-origin proxy for Ollama Cloud (ollama.com does not send CORS
+          // headers, so the browser cannot call it directly). The frontend uses
+          // a relative base URL "/ollama-api/v1" which is forwarded here.
+          '/ollama-api': {
+            target: 'https://ollama.com',
+            changeOrigin: true,
+            secure: true,
+            rewrite: (p) => p.replace(/^\/ollama-api/, ''),
+          },
+        },
       },
       plugins: [react()],
       resolve: {
