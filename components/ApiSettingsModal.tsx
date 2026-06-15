@@ -58,8 +58,12 @@ const PRESETS: CloudPreset[] = [
     badge: 'HOT',
   },
   {
+    // Ollama Cloud does not send CORS headers, so the browser cannot call
+    // ollama.com directly. We route through a same-origin proxy (configured in
+    // vite.config.ts for dev/preview and vercel.json for production) that
+    // forwards /ollama-api/* to https://ollama.com/*.
     label: 'Ollama',
-    baseUrl: 'https://ollama.com/v1',
+    baseUrl: '/ollama-api/v1',
     modelPlaceholder: 'gpt-oss:120b',
     keyUrl: 'https://ollama.com/settings/keys',
     hintZh: '在 ollama.com/settings/keys 创建 API Key 并填入下方，然后点击「获取模型列表」选择云端模型即可。',

@@ -62,11 +62,15 @@
   ],
   "rewrites": [
     {
+      "source": "/ollama-api/:path*",
+      "destination": "https://ollama.com/:path*"
+    },
+    {
       "source": "/auth/google/callback",
       "destination": "/"
     },
     {
-      "source": "/((?!api|assets|favicon.ico|robots.txt|sitemap.xml).*)",
+      "source": "/((?!api|ollama-api|assets|favicon.ico|robots.txt|sitemap.xml).*)",
       "destination": "/"
     }
   ],
