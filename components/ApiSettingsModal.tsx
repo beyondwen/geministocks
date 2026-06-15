@@ -19,10 +19,28 @@ interface ApiSettingsModalProps {
   onSaved?: () => void;
 }
 
-const PRESETS: { label: string; baseUrl: string; modelPlaceholder: string }[] = [
+interface CloudPreset {
+  label: string;
+  baseUrl: string;
+  modelPlaceholder: string;
+  // Optional hint shown when the preset is selected (e.g. where to get an API key)
+  keyUrl?: string;
+  hintZh?: string;
+  hintEn?: string;
+}
+
+const PRESETS: CloudPreset[] = [
   { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', modelPlaceholder: 'deepseek/deepseek-chat-v3.1:free' },
   { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', modelPlaceholder: 'deepseek-chat' },
   { label: 'MiniMax', baseUrl: 'https://api.minimaxi.com/v1', modelPlaceholder: 'MiniMax-Text-01' },
+  {
+    label: 'Ollama',
+    baseUrl: 'https://ollama.com/v1',
+    modelPlaceholder: 'gpt-oss:120b',
+    keyUrl: 'https://ollama.com/settings/keys',
+    hintZh: '在 ollama.com/settings/keys 创建 API Key 并填入下方，然后点击「获取模型列表」选择云端模型即可。',
+    hintEn: 'Create an API key at ollama.com/settings/keys and paste it below, then click "Fetch Models" to pick a cloud model.',
+  },
 ];
 
 interface LocalPreset {
@@ -295,8 +313,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         <div className="px-6 py-5 space-y-5">
           <p className="text-sm text-gray-500 leading-relaxed">
             {zh
-              ? '支持云端 API（OpenRouter、DeepSeek、MiniMax）或运行在本机的 CLI 服务（Claude Code、Codex）。配置仅保存在您的浏览器本地，不会上传到服务器。'
-              : 'Use a cloud API (OpenRouter, DeepSeek, MiniMax) or a CLI service running on your machine (Claude Code, Codex). Your config is stored locally in your browser only.'}
+              ? '支持云端 API（OpenRouter、DeepSeek、MiniMax、Ollama）或运行在本机的 CLI 服务（Claude Code、Codex）。配置仅保存在您的浏览器本地，不会上传到服务器。'
+              : 'Use a cloud API (OpenRouter, DeepSeek, MiniMax, Ollama) or a CLI service running on your machine (Claude Code, Codex). Your config is stored locally in your browser only.'}
           </p>
 
           {/* Mode switch: Cloud API vs Local CLI */}
@@ -485,6 +503,27 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
                 : 'Enter any OpenAI-compatible endpoint on your machine, e.g. http://localhost:8000/v1. The local server must allow browser CORS access.'}
             </p>
           )}
+
+          {/* Cloud preset hint (e.g. where to get an API key) */}
+          {mode === 'cloud' && !isCustomProvider && (() => {
+            const activePreset = PRESETS.find((p) => p.baseUrl === baseUrl);
+            if (!activePreset?.hintZh) return null;
+            return (
+              <div className="px-3 py-2.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800 leading-relaxed -mt-2 space-y-1.5">
+                <p>{zh ? activePreset.hintZh : activePreset.hintEn}</p>
+                {activePreset.keyUrl && (
+                  <a
+                    href={activePreset.keyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center font-medium text-blue-700 underline hover:text-blue-900"
+                  >
+                    {zh ? '前往创建 API Key →' : 'Create an API key →'}
+                  </a>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Cloud custom provider hint */}
           {mode === 'cloud' && isCustomProvider && (
