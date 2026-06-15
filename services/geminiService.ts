@@ -5,6 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
 import { getApiConfig, getChatCompletionsUrl, buildAuthHeaders } from './apiConfigService';
+import { isExaSearchEnabled, searchExa, formatExaResultsForPrompt } from './exaSearchService';
 
 // Error thrown when the user has not configured their API settings yet
 export const API_NOT_CONFIGURED_ERROR = 'API_NOT_CONFIGURED';
@@ -327,10 +328,30 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
     const modelDisplayName = getModelDisplayName();
     const { part1System, part2System, part3System } = getAnalysisSystemInstructions(locale, modelDisplayName);
 
-    const prompt = `Please analyze the following text: --- ${topic} ---`;
-
-    // Smart web search: only enable for market-sensitive queries
+    // Smart web search: only enable for market-sensitive queries (OpenRouter native plugin)
     const enableWebSearch = detectNeedsWebSearch(topic);
+
+    // Real-time search via Exa (works for any model): if the user has enabled and
+    // configured Exa, fetch the latest web results for this topic BEFORE analysis
+    // and inject them into the prompt as verified real-time data.
+    let realTimeContext = '';
+    let exaUsed = false;
+    if (isExaSearchEnabled()) {
+        try {
+            const { ok, results } = await searchExa(topic);
+            if (ok && results.length > 0) {
+                realTimeContext = formatExaResultsForPrompt(results, locale);
+                exaUsed = true;
+            }
+        } catch (err) {
+            // Real-time search is best-effort; never block analysis if it fails
+            captureError(err instanceof Error ? err : new Error(String(err)), { stage: 'exa-search' });
+        }
+    }
+
+    const prompt = realTimeContext
+        ? `${realTimeContext}\n\n---\n\nPlease analyze the following text: --- ${topic} ---`
+        : `Please analyze the following text: --- ${topic} ---`;
 
     onProgress(0); // "Running core analysis..."
     
@@ -354,7 +375,7 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
         dataFreshness: {
             generatedAt: now.toISOString(),
             dataAsOf: now.toISOString().split('T')[0],
-            isRealTimeEnabled: enableWebSearch,
+            isRealTimeEnabled: enableWebSearch || exaUsed,
         },
     };
     
