@@ -5,13 +5,17 @@
  * 并将结果注入到 prompt 中作为「已核实的实时数据」。
  *
  * 配置保存在浏览器 localStorage 中，不会上传到服务器。
- * Exa REST 接口支持浏览器跨域（返回 CORS 头），可直接带用户自己的 key 调用，无需代理。
+ *
+ * 注意：api.exa.ai 的响应不返回 Access-Control-Allow-Origin 头，浏览器无法直接
+ * 读取跨域响应（会报 "Failed to fetch"）。因此通过同源代理转发：
+ * 开发/预览环境见 vite.config.ts 的 "/exa-api" 代理，生产环境见 vercel.json 的 rewrite，
+ * 都会把 /exa-api/* 转发到 https://api.exa.ai/*。
  */
 
 import type { Locale } from '../hooks/useI18n';
 
 const EXA_CONFIG_KEY = 'exa-search-config';
-const EXA_SEARCH_URL = 'https://api.exa.ai/search';
+const EXA_SEARCH_URL = '/exa-api/search';
 
 export interface ExaSearchConfig {
   apiKey: string;

@@ -18,6 +18,15 @@ export default defineConfig(() => {
             secure: true,
             rewrite: (p) => p.replace(/^\/ollama-api/, ''),
           },
+          // Same-origin proxy for Exa (api.exa.ai does not return
+          // Access-Control-Allow-Origin, so the browser cannot read responses
+          // directly). The frontend calls "/exa-api/search" which is forwarded here.
+          '/exa-api': {
+            target: 'https://api.exa.ai',
+            changeOrigin: true,
+            secure: true,
+            rewrite: (p) => p.replace(/^\/exa-api/, ''),
+          },
         },
       },
       plugins: [react()],

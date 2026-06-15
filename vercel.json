@@ -66,11 +66,15 @@
       "destination": "https://ollama.com/:path*"
     },
     {
+      "source": "/exa-api/:path*",
+      "destination": "https://api.exa.ai/:path*"
+    },
+    {
       "source": "/auth/google/callback",
       "destination": "/"
     },
     {
-      "source": "/((?!api|ollama-api|assets|favicon.ico|robots.txt|sitemap.xml).*)",
+      "source": "/((?!api|ollama-api|exa-api|assets|favicon.ico|robots.txt|sitemap.xml).*)",
       "destination": "/"
     }
   ],
