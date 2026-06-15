@@ -12,6 +12,7 @@ import {
   LocalServiceStatus,
   UserApiConfig,
 } from '../services/apiConfigService';
+import { getExaConfig, saveExaConfig, testExaConnection } from '../services/exaSearchService';
 
 interface ApiSettingsModalProps {
   isOpen: boolean;
@@ -127,6 +128,13 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const [originCopied, setOriginCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Exa real-time search state
+  const [exaApiKey, setExaApiKey] = useState('');
+  const [exaEnabled, setExaEnabled] = useState(false);
+  const [showExaKey, setShowExaKey] = useState(false);
+  const [exaTesting, setExaTesting] = useState(false);
+  const [exaTestResult, setExaTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
   const runLocalScan = async (autoSelect: boolean) => {
     setScanning(true);
     const results = await scanLocalServices(LOCAL_PRESETS.map((p) => p.baseUrl));
@@ -197,6 +205,11 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
       setHasScanned(false);
       setImportError(null);
       setOriginCopied(false);
+      const exa = getExaConfig();
+      setExaApiKey(exa.apiKey);
+      setExaEnabled(exa.enabled);
+      setShowExaKey(false);
+      setExaTestResult(null);
     }
   }, [isOpen]);
 
@@ -246,9 +259,20 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
   const handleSave = () => {
     if (!isValid) return;
     saveApiConfig({ baseUrl, apiKey, model } as UserApiConfig);
+    // Persist Exa real-time search config alongside the model config
+    saveExaConfig({ apiKey: exaApiKey, enabled: exaEnabled });
     setSaved(true);
     onSaved?.();
     setTimeout(() => onClose(), 600);
+  };
+
+  const handleTestExa = async () => {
+    if (!exaApiKey.trim() || exaTesting) return;
+    setExaTesting(true);
+    setExaTestResult(null);
+    const result = await testExaConnection(exaApiKey);
+    setExaTestResult(result);
+    setExaTesting(false);
   };
 
   const handleClear = () => {
@@ -725,6 +749,96 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
                 ? '建议选择支持 JSON 输出的模型，以获得最佳分析效果。'
                 : 'Models with JSON output support are recommended for best results.'}
             </p>
+          </div>
+
+          {/* Exa real-time search */}
+          <div className="space-y-2.5 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <label htmlFor="exa-enabled" className="block text-sm font-medium text-gray-700">
+                  {zh ? '实时搜索（Exa）' : 'Real-time Search (Exa)'}
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {zh
+                    ? '开启后，生成报告前会用 Exa 搜索该主题的最新网络资料并注入分析，适用于任何模型。'
+                    : 'When on, the latest web results for your topic are fetched via Exa and injected before analysis. Works with any model.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                id="exa-enabled"
+                role="switch"
+                aria-checked={exaEnabled}
+                onClick={() => setExaEnabled((v) => !v)}
+                disabled={!exaApiKey.trim()}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  exaEnabled && exaApiKey.trim() ? 'bg-gray-900' : 'bg-gray-300'
+                }`}
+                aria-label={zh ? '开启实时搜索' : 'Enable real-time search'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    exaEnabled && exaApiKey.trim() ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="px-3 py-2.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800 leading-relaxed">
+              <p>
+                {zh
+                  ? '在 exa.ai 创建 API Key 并填入下方，开启开关后即可在分析时自动联网获取最新信息。'
+                  : 'Create an API key at exa.ai and paste it below, then toggle on to enrich analysis with live web data.'}
+              </p>
+              <a
+                href="https://dashboard.exa.ai/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center font-medium text-blue-700 underline hover:text-blue-900 mt-1"
+              >
+                {zh ? '前往创建 Exa API Key →' : 'Create an Exa API key →'}
+              </a>
+            </div>
+
+            <div className="relative">
+              <input
+                id="exa-api-key"
+                type={showExaKey ? 'text' : 'password'}
+                value={exaApiKey}
+                onChange={(e) => {
+                  setExaApiKey(e.target.value);
+                  setExaTestResult(null);
+                  if (!e.target.value.trim()) setExaEnabled(false);
+                }}
+                placeholder={zh ? 'Exa API Key' : 'Exa API Key'}
+                className="w-full px-3 py-2 pr-16 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowExaKey(!showExaKey)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-gray-800 px-2 py-1"
+              >
+                {showExaKey ? (zh ? '隐藏' : 'Hide') : (zh ? '显示' : 'Show')}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleTestExa}
+                disabled={!exaApiKey.trim() || exaTesting}
+                className="text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-500 rounded-full px-3 py-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exaTesting ? (zh ? '测试中…' : 'Testing…') : (zh ? '测试 Exa 连接' : 'Test Exa')}
+              </button>
+              {exaTestResult && (
+                <span className={`text-xs ${exaTestResult.ok ? 'text-green-700' : 'text-red-600'}`}>
+                  {exaTestResult.ok
+                    ? (zh ? '连接成功' : 'Connected')
+                    : (zh ? `失败：${exaTestResult.message}` : `Failed: ${exaTestResult.message}`)}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Test result */}
