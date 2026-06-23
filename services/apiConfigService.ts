@@ -75,10 +75,49 @@ export function isApiConfigured(): boolean {
 }
 
 /**
- * 获取 chat/completions 完整端点
+ * 是否为本机地址（本机 CLI 服务需浏览器直连，不走代理）
+ */
+function isLocalHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return (
+    h === 'localhost' ||
+    h === '0.0.0.0' ||
+    h === '::1' ||
+    h.endsWith('.local') ||
+    /^127\./.test(h) ||
+    /^192\.168\./.test(h) ||
+    /^10\./.test(h) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+  );
+}
+
+/**
+ * 把请求地址转换为实际 fetch 用的地址。
+ *
+ * 许多 OpenAI 兼容服务（含第三方中转）不返回 CORS 头，浏览器无法直接读取跨域响应
+ * （报 "Failed to fetch"）。这里把"绝对的、非本机的 https 地址"改写为走同源代理
+ * /api/cors-proxy?target=<原地址>（开发/预览见 vite.config.ts，生产见 api/cors-proxy.ts）。
+ *
+ * - 相对地址（如预设 /ollama-api/v1、/exa-api 已是同源代理）原样返回
+ * - 本机 CLI（localhost 等）需浏览器直连，原样返回
+ */
+export function toRequestUrl(rawUrl: string): string {
+  if (!/^https?:\/\//i.test(rawUrl)) return rawUrl; // 相对地址：原样
+  try {
+    const u = new URL(rawUrl);
+    if (isLocalHost(u.hostname)) return rawUrl; // 本机直连
+    // 非本机绝对地址：走同源代理绕过 CORS
+    return `/api/cors-proxy?target=${encodeURIComponent(rawUrl)}`;
+  } catch {
+    return rawUrl;
+  }
+}
+
+/**
+ * 获取 chat/completions 完整端点（必要时经同源代理）
  */
 export function getChatCompletionsUrl(config: UserApiConfig): string {
-  return `${config.baseUrl}/chat/completions`;
+  return toRequestUrl(`${config.baseUrl}/chat/completions`);
 }
 
 /**
@@ -91,7 +130,7 @@ export async function fetchAvailableModels(
 ): Promise<{ ok: boolean; models: string[]; message: string }> {
   try {
     const normalizedBase = baseUrl.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
-    const response = await fetch(`${normalizedBase}/models`, {
+    const response = await fetch(toRequestUrl(`${normalizedBase}/models`), {
       method: 'GET',
       headers: buildAuthHeaders(apiKey),
     });
