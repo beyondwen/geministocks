@@ -105,6 +105,67 @@ function extractJson(text: string): string {
  * @param enableWebSearch Whether to enable real-time web search (OpenRouter only).
  * @returns The JSON-parsed response from the model.
  */
+// Transient upstream errors that are safe to retry (gateway timeouts, overload, rate limits).
+const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+const MAX_FETCH_ATTEMPTS = 3;
+const FETCH_TIMEOUT_MS = 120_000; // abort a single attempt after 2 minutes
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * fetch with a per-attempt timeout and automatic retries on transient failures
+ * (gateway timeouts like 504, overload, rate limits, and network/abort errors).
+ * Non-retryable responses (e.g. 400/401) are returned as-is so the caller can
+ * inspect the body. Uses exponential backoff with jitter.
+ */
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        try {
+            const response = await fetch(url, { ...init, signal: controller.signal });
+            clearTimeout(timer);
+            // Retry transient upstream errors if we still have attempts left.
+            if (!response.ok && RETRYABLE_STATUS.has(response.status) && attempt < MAX_FETCH_ATTEMPTS) {
+                addBreadcrumb('ai', `Transient error ${response.status}, retrying`, { attempt });
+                await sleep(800 * 2 ** (attempt - 1) + Math.random() * 400);
+                continue;
+            }
+            return response;
+        } catch (err) {
+            clearTimeout(timer);
+            lastError = err;
+            // Network errors and timeouts (AbortError) are retryable.
+            if (attempt < MAX_FETCH_ATTEMPTS) {
+                addBreadcrumb('ai', 'Network/timeout error, retrying', { attempt });
+                await sleep(800 * 2 ** (attempt - 1) + Math.random() * 400);
+                continue;
+            }
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error('Network request failed after retries.');
+}
+
+/**
+ * Build a concise, user-friendly error message from an HTTP error response.
+ * Strips noisy HTML (e.g. nginx 504 pages) and gives a clear hint for transient
+ * gateway errors so the report failure message stays readable.
+ */
+function formatHttpError(status: number, body: string): string {
+    if (RETRYABLE_STATUS.has(status)) {
+        return `服务暂时不可用（HTTP ${status}，上游网关超时或繁忙）。已自动重试多次仍失败，请稍后重试，或在设置中更换其他模型/服务商。`;
+    }
+    // Strip HTML tags/comments and collapse whitespace; cap length.
+    const text = body
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const detail = text.slice(0, 300);
+    return `API request failed with status ${status}${detail ? `: ${detail}` : ''}`;
+}
+
 async function callOpenRouterAI(prompt: string, systemInstruction: string, modelName: string, enableWebSearch: boolean = false): Promise<any> {
     const config = requireApiConfig();
     const apiUrl = getChatCompletionsUrl(config);
@@ -143,7 +204,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
         }
 
         // First attempt with JSON mode; if the provider rejects it, retry without it.
-        let response = await fetch(apiUrl, {
+        let response = await fetchWithRetry(apiUrl, {
             method: 'POST',
             headers,
             body: JSON.stringify(buildRequestBody(true))
@@ -156,17 +217,17 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
 
             if (jsonModeUnsupported) {
                 addBreadcrumb('ai', 'JSON mode unsupported by provider, retrying without it');
-                response = await fetch(apiUrl, {
+                response = await fetchWithRetry(apiUrl, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(buildRequestBody(false))
                 });
                 if (!response.ok) {
                     const retryErrorBody = await response.text();
-                    throw new Error(`API request failed with status ${response.status}: ${retryErrorBody}`);
+                    throw new Error(formatHttpError(response.status, retryErrorBody));
                 }
             } else {
-                throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+                throw new Error(formatHttpError(response.status, errorBody));
             }
         }
 
