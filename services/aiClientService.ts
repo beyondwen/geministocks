@@ -7,7 +7,7 @@
 
 import { addBreadcrumb, captureError } from './sentry'
 
-interface AIAnalysisRequest {
+export interface AIAnalysisRequest {
   prompt: string
   systemInstruction: string
   userId: string

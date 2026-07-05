@@ -1,6 +1,6 @@
 import { runSkillPrompt } from './geminiService';
+import type { Locale } from '../hooks/useI18n';
 import type {
-    Locale,
     SkillReport,
     DCFValuationReport,
     EarningsPreviewReport,

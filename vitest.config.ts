@@ -27,10 +27,12 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.spec.ts'
       ],
-      lines: 70,
-      functions: 70,
-      branches: 70,
-      statements: 70
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70
+      }
     },
     
     // 包含/排除模式
@@ -39,12 +41,8 @@ export default defineConfig({
     
     // 超时设置
     testTimeout: 10000,
-    hookTimeout: 10000,
-    
-    // 并发
-    threads: true,
-    maxThreads: 4,
-    minThreads: 1
+    hookTimeout: 10000
+    // 并发：Vitest 4 默认使用多线程池，无需显式配置
   },
   
   resolve: {

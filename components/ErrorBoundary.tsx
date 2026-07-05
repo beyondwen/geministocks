@@ -34,7 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to monitoring service
-    captureReactError(error, errorInfo)
+    captureReactError(error, { componentStack: errorInfo.componentStack ?? '' })
     
     // Track event
     trackEvent({
