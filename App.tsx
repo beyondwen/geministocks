@@ -228,6 +228,15 @@ const MainPage: React.FC = () => {
     updateTopicHistory(newHistory);
   };
 
+  // Re-run the analysis for a past topic with fresh data (adds a new history entry)
+  const handleReanalyzeTopicHistory = (id: number) => {
+    const entry = topicHistory.find((e) => e.id === id);
+    if (!entry) return;
+    setUserInput(entry.topic);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleAnalyze(entry.topic);
+  };
+
   const handleClearTopicHistory = () => {
     updateTopicHistory([]);
   };
@@ -358,10 +367,16 @@ const MainPage: React.FC = () => {
                       />}
                     </div>
                      <AnalysisHistory
-                        history={topicHistory.map(h => ({ id: h.id, text: h.topic }))}
+                        history={topicHistory.map(h => ({
+                          id: h.id,
+                          text: h.topic,
+                          score: h.report?.investmentScore?.score,
+                          gapScore: h.report?.informationGapScore?.score,
+                        }))}
                         onSelect={handleSelectTopicHistory}
                         onDelete={handleDeleteTopicHistory}
                         onClear={handleClearTopicHistory}
+                        onReanalyze={handleReanalyzeTopicHistory}
                       />
                   </div>
                 )}

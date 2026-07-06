@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NewspaperIcon, SparklesIcon, XIcon, ExternalLinkIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
 import { extractNewsConcepts } from '../services/geminiService';
+import { isApiConfigured } from '../services/apiConfigService';
 
 // --- Data & Types ---
 export interface NewsArticle {
@@ -48,6 +49,7 @@ const truncateText = (text: string, length: number) => {
 // --- Concept tag cache (avoid repeated AI calls for the same articles) ---
 const CONCEPT_CACHE_KEY = 'news-concept-tags';
 const CONCEPT_CACHE_MAX = 120;
+const AUTO_EXTRACT_KEY = 'news-auto-extract';
 
 const loadConceptCache = (): Record<string, string[]> => {
   try {
@@ -175,23 +177,29 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [conceptTags, setConceptTags] = useState<Record<string, string[]>>({});
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [autoExtract, setAutoExtract] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(AUTO_EXTRACT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const { t, locale } = useI18n();
 
-  // Restore cached tags for currently shown articles
-  useEffect(() => {
-    if (articles.length === 0) return;
-    const cache = loadConceptCache();
-    const restored: Record<string, string[]> = {};
-    for (const article of articles) {
-      if (cache[article.link]?.length) restored[article.link] = cache[article.link];
-    }
-    setConceptTags(restored);
-    setExtractError(null);
-  }, [articles]);
+  const toggleAutoExtract = () => {
+    setAutoExtract(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem(AUTO_EXTRACT_KEY, next ? '1' : '0');
+      } catch { /* best-effort */ }
+      return next;
+    });
+  };
 
-  const handleExtractConcepts = async () => {
+  // Extract tags for articles not present in `known`, merging results into state + cache
+  const runExtraction = async (known: Record<string, string[]>) => {
     if (isExtracting) return;
-    const pending = articles.filter(a => !conceptTags[a.link]?.length);
+    const pending = articles.filter(a => !known[a.link]?.length);
     if (pending.length === 0) return;
     setIsExtracting(true);
     setExtractError(null);
@@ -201,7 +209,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         locale
       );
       const cache = loadConceptCache();
-      const next = { ...conceptTags };
+      const next = { ...known };
       pending.forEach((article, i) => {
         if (tagsList[i]?.length) {
           next[article.link] = tagsList[i];
@@ -217,6 +225,25 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
       setIsExtracting(false);
     }
   };
+
+  const handleExtractConcepts = () => runExtraction(conceptTags);
+
+  // Restore cached tags for currently shown articles; auto-extract missing ones when enabled
+  useEffect(() => {
+    if (articles.length === 0) return;
+    const cache = loadConceptCache();
+    const restored: Record<string, string[]> = {};
+    for (const article of articles) {
+      if (cache[article.link]?.length) restored[article.link] = cache[article.link];
+    }
+    setConceptTags(restored);
+    setExtractError(null);
+    // Only auto-run when the user enabled it AND a model is configured (avoids error toasts on fresh installs)
+    if (autoExtract && isApiConfigured() && articles.some(a => !restored[a.link]?.length)) {
+      runExtraction(restored);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articles, autoExtract]);
 
   useEffect(() => {
     const fetchNewsForSource = async () => {
@@ -303,15 +330,34 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
             </button>
           ))}
           {!isLoading && !error && articles.length > 0 && (
-            <button
-              onClick={handleExtractConcepts}
-              disabled={isExtracting || articles.every(a => conceptTags[a.link]?.length)}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 text-gray-700 hover:border-black hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={t('latestNews.extractConceptsHint')}
-            >
-              <SparklesIcon className="w-3.5 h-3.5" />
-              {isExtracting ? t('latestNews.extracting') : t('latestNews.extractConcepts')}
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={handleExtractConcepts}
+                disabled={isExtracting || articles.every(a => conceptTags[a.link]?.length)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 text-gray-700 hover:border-black hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t('latestNews.extractConceptsHint')}
+              >
+                <SparklesIcon className="w-3.5 h-3.5" />
+                {isExtracting ? t('latestNews.extracting') : t('latestNews.extractConcepts')}
+              </button>
+              <button
+                onClick={toggleAutoExtract}
+                role="switch"
+                aria-checked={autoExtract}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-black transition-colors"
+                title={t('latestNews.autoExtractHint')}
+              >
+                <span
+                  className={`relative inline-flex h-4 w-7 shrink-0 rounded-full transition-colors ${autoExtract ? 'bg-black' : 'bg-gray-300'}`}
+                  aria-hidden="true"
+                >
+                  <span
+                    className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${autoExtract ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+                  />
+                </span>
+                {t('latestNews.autoExtract')}
+              </button>
+            </div>
           )}
         </div>
         {extractError && (

@@ -68,7 +68,9 @@
     "extracting": "提取中…",
     "extractError": "概念提取失败，请检查模型配置后重试。",
     "extractConceptsHint": "用 AI 为当前新闻提取可交易的概念标签，点击标签即可发起挖掘分析",
-    "tagHint": "挖掘「{{tag}}」"
+    "tagHint": "挖掘「{{tag}}」",
+    "autoExtract": "自动",
+    "autoExtractHint": "开启后，加载新闻时自动提取概念标签（消耗模型配额）"
   },
   "loader": {
     "analyzing": "正在分析中...",
@@ -110,7 +112,14 @@
     "searchPlaceholder": "搜索历史记录...",
     "noResults": "未找到匹配的记录。",
     "clearAll": "清空所有历史记录",
-    "deleteLabel": "删除历史记录"
+    "deleteLabel": "删除历史记录",
+    "sortNewest": "最新",
+    "sortScore": "按吸引力",
+    "sortGapScore": "按信息差",
+    "sortLabel": "排序方式",
+    "scoreBadge": "投资吸引力评分",
+    "gapScoreBadge": "信息差评分",
+    "reanalyzeLabel": "用最新数据重新分析"
   },
   "analysisResult": {
     "newAnalysis": "新的分析",

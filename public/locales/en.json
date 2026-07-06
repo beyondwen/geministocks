@@ -68,7 +68,9 @@
     "extracting": "Extracting…",
     "extractError": "Concept extraction failed. Check your model settings and retry.",
     "extractConceptsHint": "Use AI to extract tradeable concept tags from the current news; click a tag to dig into it",
-    "tagHint": "Dig into \"{{tag}}\""
+    "tagHint": "Dig into \"{{tag}}\"",
+    "autoExtract": "Auto",
+    "autoExtractHint": "When enabled, concept tags are extracted automatically when news loads (uses model quota)"
   },
   "loader": {
     "analyzing": "Analyzing...",
@@ -110,7 +112,14 @@
     "searchPlaceholder": "Search history...",
     "noResults": "No matching records found.",
     "clearAll": "Clear All History",
-    "deleteLabel": "Delete history item"
+    "deleteLabel": "Delete history item",
+    "sortNewest": "Newest",
+    "sortScore": "By Score",
+    "sortGapScore": "By Info Gap",
+    "sortLabel": "Sort by",
+    "scoreBadge": "Investment attractiveness score",
+    "gapScoreBadge": "Information gap score",
+    "reanalyzeLabel": "Re-analyze with fresh data"
   },
   "analysisResult": {
     "newAnalysis": "New Analysis",
