@@ -63,7 +63,12 @@
     "analyzeButton": "一键分析",
     "errorNotFound": "所选新闻源未找到。",
     "errorLoad": "无法加载 \"{{sourceName}}\" 的新闻。请稍后再试或选择其他来源。",
-    "noNews": "该来源暂无最新动态。"
+    "noNews": "该来源暂无最新动态。",
+    "extractConcepts": "AI 概念标签",
+    "extracting": "提取中…",
+    "extractError": "概念提取失败，请检查模型配置后重试。",
+    "extractConceptsHint": "用 AI 为当前新闻提取可交易的概念标签，点击标签即可发起挖掘分析",
+    "tagHint": "挖掘「{{tag}}」"
   },
   "loader": {
     "analyzing": "正在分析中...",
@@ -143,7 +148,8 @@
     "unlockPrompt": "解锁实时搜索功能，即可每日获取一条 AI 投资灵感。"
   },
   "scoreDisplay": {
-    "title": "投资吸引力评分"
+    "title": "投资吸引力评分",
+    "infoGapTitle": "信息差评分"
   },
   "sentiments": {
     "Positive": "乐观",

@@ -76,7 +76,7 @@ const Card: React.FC<{ title: string; icon: React.ReactNode; children: React.Rea
   </div>
 );
 
-const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) => {
+const ScoreDisplay: React.FC<{ scoreData: InvestmentScore; title?: string; accentColor?: string }> = ({ scoreData, title, accentColor = '#ED702E' }) => {
   const { t } = useI18n();
   const { score, reason } = scoreData;
 
@@ -87,15 +87,15 @@ const ScoreDisplay: React.FC<{ scoreData: InvestmentScore }> = ({ scoreData }) =
           <div className={`p-2 bg-black rounded-xl shadow-lg mr-3`}>
             <SparklesIcon className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-2xl font-light text-black">{t('scoreDisplay.title')}</h3>
+          <h3 className="text-2xl font-light text-black">{title || t('scoreDisplay.title')}</h3>
         </div>
         <div className="text-center sm:text-right">
           <div className="relative">
-            <p className={`text-5xl tracking-tight font-bold`} style={{ color: '#ED702E' }}>
+            <p className={`text-5xl tracking-tight font-bold`} style={{ color: accentColor }}>
               {score}
               <span className="text-2xl font-medium opacity-70 text-gray-500">/100</span>
             </p>
-            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 rounded-full opacity-60`} style={{ backgroundColor: '#ED702E' }}></div>
+            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 rounded-full opacity-60`} style={{ backgroundColor: accentColor }}></div>
           </div>
         </div>
       </div>
@@ -579,7 +579,16 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
         
         <div className="space-y-6">
             {report.polymarketData && <PolymarketInfoCard data={report.polymarketData} />}
-            {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
+            <div className={`grid grid-cols-1 gap-6 ${report.informationGapScore ? 'lg:grid-cols-2' : ''}`}>
+                {report.investmentScore && <ScoreDisplay scoreData={report.investmentScore} />}
+                {report.informationGapScore && (
+                    <ScoreDisplay
+                        scoreData={report.informationGapScore}
+                        title={t('scoreDisplay.infoGapTitle')}
+                        accentColor="#1C1917"
+                    />
+                )}
+            </div>
             
             {report.summary && (
               <div className="mb-6">

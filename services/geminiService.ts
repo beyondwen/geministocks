@@ -290,6 +290,7 @@ You MUST respond strictly in JSON format. Do not add any extra text.`;
     const part1Schema = `{
       "summary": "string (1-3 sentence summary)",
       "investmentScore": { "score": "number (1-100)", "reason": "string (brief justification for the score)" },
+      "informationGapScore": { "score": "number (1-100, how large the information/expectation gap is: high means the market has NOT yet fully priced in this information and there is an exploitable edge; low means it is already widely known and priced in)", "reason": "string (brief justification: what the market consensus is vs. what this information implies)" },
       "analysis": {
         "industryChain": { "upstream": [{"name": "string", "description": "string"}], "midstream": [{"name": "string", "description": "string"}], "downstream": [{"name": "string", "description": "string"}] },
         "marketSentiment": { "sentiment": "'Positive' | 'Neutral' | 'Negative'", "description": "string (Brief 1-sentence assessment of the current market mood)" }
@@ -527,4 +528,31 @@ export const getPolymarketAnalysis = async (url: string, locale: Locale): Promis
  */
 export const runSkillPrompt = async (prompt: string, systemInstruction: string): Promise<any> => {
     return callOpenRouterAI(prompt, systemInstruction, getModelName(), true);
+};
+
+/**
+ * Extract investment concept tags for a batch of news articles in a single AI call.
+ * Returns one tag array per input article (empty array when nothing was extracted).
+ * Used by the LatestNews feed to turn headlines into clickable dig-analysis entries.
+ */
+export const extractNewsConcepts = async (
+    articles: { title: string; description: string }[],
+    locale: Locale
+): Promise<string[][]> => {
+    if (articles.length === 0) return [];
+    const lang = locale === 'zh' ? 'Simplified Chinese' : 'English';
+    const systemInstruction = `You are a financial news analyst. For EACH numbered news item, extract 1-3 short investment concept tags (industry themes, supply chains, or sectors likely to move on this news, e.g. "折叠屏", "苹果产业链", "AI芯片"). Tags must be in ${lang}, each 2-10 characters, specific and tradeable (avoid generic words like "科技" or "经济"). You MUST respond strictly in JSON, no extra text. Schema: {"items": [{"index": "number (the news item number)", "tags": ["string"]}]}`;
+    const prompt = articles
+        .map((a, i) => `${i}. ${a.title} — ${a.description.slice(0, 150)}`)
+        .join('\n');
+
+    const data = await callOpenRouterAI(prompt, systemInstruction, getModelName(), false);
+    const result: string[][] = articles.map(() => []);
+    for (const item of data?.items || []) {
+        const idx = Number(item?.index);
+        if (Number.isInteger(idx) && idx >= 0 && idx < articles.length && Array.isArray(item?.tags)) {
+            result[idx] = item.tags.slice(0, 3).map((tag: unknown) => String(tag).trim()).filter(Boolean);
+        }
+    }
+    return result;
 };

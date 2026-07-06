@@ -137,6 +137,8 @@ export interface AnalysisReport {
   dataFreshness?: DataFreshness; // New: Track data freshness
   summary: string;
   investmentScore: InvestmentScore;
+  // How much of an information/expectation gap exists (high = market hasn't priced it in)
+  informationGapScore?: InvestmentScore;
   analysis: {
     macroPolicy?: string; // Deprecated: Moved to policyAnalysis
     industryChain: IndustryChain | string;
