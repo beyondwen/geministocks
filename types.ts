@@ -116,6 +116,13 @@ export interface TechTrajectory {
 }
 
 
+// A web source fetched via real-time search (Exa) and injected into the analysis
+export interface RealTimeSource {
+  title: string;
+  url: string;
+  publishedDate?: string;
+}
+
 // Data freshness metadata for tracking real-time data quality
 export interface DataFreshness {
   generatedAt: string;      // ISO timestamp when report was generated
@@ -154,6 +161,7 @@ export interface AnalysisReport {
   };
   tieredSuggestions: TieredSuggestions;
   sources?: GroundingSource[];
+  realTimeSources?: RealTimeSource[]; // Web sources fetched via Exa real-time search
   polymarketData?: PolymarketData;
 }
 

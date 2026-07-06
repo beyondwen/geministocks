@@ -45,7 +45,12 @@ const truncateText = (text: string, length: number) => {
 };
 
 // --- News Detail Modal ---
-const NewsDetailModal: React.FC<{ article: NewsArticle | null; onClose: () => void }> = ({ article, onClose }) => {
+const NewsDetailModal: React.FC<{
+  article: NewsArticle | null;
+  onClose: () => void;
+  onAnalyze: (topic: string) => void;
+}> = ({ article, onClose, onAnalyze }) => {
+  const { t } = useI18n();
   if (!article) return null;
 
   const createMarkup = (htmlString: string) => {
@@ -79,19 +84,31 @@ const NewsDetailModal: React.FC<{ article: NewsArticle | null; onClose: () => vo
         <div className="mt-4 flex-grow overflow-y-auto pr-4 text-gray-700 leading-relaxed prose prose-sm max-w-none" style={{ scrollbarWidth: 'thin' }}>
           <div dangerouslySetInnerHTML={createMarkup(article.description)} />
         </div>
-        <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
+        <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center gap-3">
           <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-gray-100 text-gray-800">
             {article.sourceName}
           </span>
-          <a
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-xl shadow-sm hover:bg-gray-800 transition-all"
-          >
-            <ExternalLinkIcon className="w-4 h-4" />
-            查看原文
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-black text-sm font-medium rounded-xl shadow-sm hover:bg-gray-100 transition-all"
+            >
+              <ExternalLinkIcon className="w-4 h-4" />
+              查看原文
+            </a>
+            <button
+              onClick={() => {
+                onClose();
+                onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-xl shadow-sm hover:bg-gray-800 transition-all"
+            >
+              <SparklesIcon className="w-4 h-4" />
+              {t('latestNews.analyzeButton')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -190,7 +207,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
 
   return (
     <>
-      <NewsDetailModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+      <NewsDetailModal article={selectedArticle} onClose={() => setSelectedArticle(null)} onAnalyze={onAnalyze} />
       <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-full">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-black rounded-xl shadow-lg">
