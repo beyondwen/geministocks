@@ -63,7 +63,12 @@
     "analyzeButton": "One-Click Analysis",
     "errorNotFound": "The selected news source was not found.",
     "errorLoad": "Failed to load news from \"{{sourceName}}\". Please try again later or select another source.",
-    "noNews": "No recent news from this source."
+    "noNews": "No recent news from this source.",
+    "extractConcepts": "AI Concept Tags",
+    "extracting": "Extracting…",
+    "extractError": "Concept extraction failed. Check your model settings and retry.",
+    "extractConceptsHint": "Use AI to extract tradeable concept tags from the current news; click a tag to dig into it",
+    "tagHint": "Dig into \"{{tag}}\""
   },
   "loader": {
     "analyzing": "Analyzing...",
@@ -143,7 +148,8 @@
     "unlockPrompt": "Unlock the real-time search feature to get a daily AI investment tidbit."
   },
   "scoreDisplay": {
-    "title": "Investment Attractiveness Score"
+    "title": "Investment Attractiveness Score",
+    "infoGapTitle": "Information Gap Score"
   },
   "sentiments": {
     "Positive": "Positive",

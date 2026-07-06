@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NewspaperIcon, SparklesIcon, XIcon, ExternalLinkIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
+import { extractNewsConcepts } from '../services/geminiService';
 
 // --- Data & Types ---
 export interface NewsArticle {
@@ -42,6 +43,33 @@ const stripHtml = (html: string) => {
 
 const truncateText = (text: string, length: number) => {
   return text.length > length ? text.substring(0, length) + '...' : text;
+};
+
+// --- Concept tag cache (avoid repeated AI calls for the same articles) ---
+const CONCEPT_CACHE_KEY = 'news-concept-tags';
+const CONCEPT_CACHE_MAX = 120;
+
+const loadConceptCache = (): Record<string, string[]> => {
+  try {
+    return JSON.parse(localStorage.getItem(CONCEPT_CACHE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
+const saveConceptCache = (cache: Record<string, string[]>) => {
+  try {
+    const keys = Object.keys(cache);
+    // Prune oldest entries (insertion order) when the cache grows too large
+    if (keys.length > CONCEPT_CACHE_MAX) {
+      for (const key of keys.slice(0, keys.length - CONCEPT_CACHE_MAX)) {
+        delete cache[key];
+      }
+    }
+    localStorage.setItem(CONCEPT_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* storage full or unavailable — cache is best-effort */
+  }
 };
 
 // --- News Detail Modal ---
@@ -144,7 +172,51 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeSourceId, setActiveSourceId] = useState<string>('xueqiu'); // Default to 雪球
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-  const { t } = useI18n();
+  const [conceptTags, setConceptTags] = useState<Record<string, string[]>>({});
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const { t, locale } = useI18n();
+
+  // Restore cached tags for currently shown articles
+  useEffect(() => {
+    if (articles.length === 0) return;
+    const cache = loadConceptCache();
+    const restored: Record<string, string[]> = {};
+    for (const article of articles) {
+      if (cache[article.link]?.length) restored[article.link] = cache[article.link];
+    }
+    setConceptTags(restored);
+    setExtractError(null);
+  }, [articles]);
+
+  const handleExtractConcepts = async () => {
+    if (isExtracting) return;
+    const pending = articles.filter(a => !conceptTags[a.link]?.length);
+    if (pending.length === 0) return;
+    setIsExtracting(true);
+    setExtractError(null);
+    try {
+      const tagsList = await extractNewsConcepts(
+        pending.map(a => ({ title: a.title, description: stripHtml(a.description) })),
+        locale
+      );
+      const cache = loadConceptCache();
+      const next = { ...conceptTags };
+      pending.forEach((article, i) => {
+        if (tagsList[i]?.length) {
+          next[article.link] = tagsList[i];
+          cache[article.link] = tagsList[i];
+        }
+      });
+      setConceptTags(next);
+      saveConceptCache(cache);
+    } catch (err) {
+      console.error('Concept extraction failed:', err);
+      setExtractError(t('latestNews.extractError'));
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchNewsForSource = async () => {
@@ -216,7 +288,7 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
           <h3 className="text-xl font-semibold text-black">{t('latestNews.title')}</h3>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-4">
+        <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-4 mb-4">
           {sources.map(source => (
             <button
               key={source.id}
@@ -230,7 +302,21 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
               {source.name}
             </button>
           ))}
+          {!isLoading && !error && articles.length > 0 && (
+            <button
+              onClick={handleExtractConcepts}
+              disabled={isExtracting || articles.every(a => conceptTags[a.link]?.length)}
+              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 text-gray-700 hover:border-black hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={t('latestNews.extractConceptsHint')}
+            >
+              <SparklesIcon className="w-3.5 h-3.5" />
+              {isExtracting ? t('latestNews.extracting') : t('latestNews.extractConcepts')}
+            </button>
+          )}
         </div>
+        {extractError && (
+          <p className="text-xs text-red-600 -mt-2 mb-3">{extractError}</p>
+        )}
 
         {isLoading ? (
           <NewsSkeleton />
@@ -270,6 +356,21 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                   {truncateText(stripHtml(article.description), 140)}
                 </p>
+
+                {conceptTags[article.link]?.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {conceptTags[article.link].map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => onAnalyze(locale === 'zh' ? `${tag}（相关新闻：${article.title}）` : `${tag} (related news: ${article.title})`)}
+                        className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-stone-100 text-stone-700 border border-stone-200 hover:bg-black hover:text-white hover:border-black transition-colors"
+                        title={t('latestNews.tagHint', { tag })}
+                      >
+                        # {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <button
                   onClick={() => onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`)}

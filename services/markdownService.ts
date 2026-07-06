@@ -70,6 +70,9 @@ export const analysisReportToMarkdown = (report: AnalysisReport, userInput: stri
     
     if(report.investmentScore) md += h2(`Investment Score: ${report.investmentScore.score}/100`);
     if(report.investmentScore) md += `${report.investmentScore.reason}\n\n`;
+
+    if(report.informationGapScore) md += h2(`Information Gap Score: ${report.informationGapScore.score}/100`);
+    if(report.informationGapScore) md += `${report.informationGapScore.reason}\n\n`;
     
     if(report.summary) md += h2('Overall Summary');
     if(report.summary) md += blockquote(report.summary);
