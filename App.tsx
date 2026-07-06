@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { HashRouter, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 // Use streaming service with fallback to legacy
 import { 
@@ -9,20 +9,24 @@ import {
 } from './services/streamingService';
 import type { AnalysisReport, TopicHistoryEntry } from './types';
 import AnalysisInput from './components/AnalysisInput';
-import AnalysisResult from './components/AnalysisResult';
 import Loader from './components/Loader';
 import StreamingLoader from './components/StreamingLoader';
-// import AdSenseAd from './components/AdSenseAd';
 import AnalysisHistory from './components/AnalysisHistory';
-import { NewspaperIcon, SparklesIcon, HeartIcon, XIcon, AcademicCapIcon, ChartTrendingUpIcon, ExternalLinkIcon, QuestionMarkCircleIcon } from './components/icons/Icons';
-import AboutPage from './components/AboutPage';
-import UserGuideModal from './components/UserGuideModal';
 import { CacheStats } from './components/CacheStats';
-import LanguageSwitcher from './components/LanguageSwitcher';
+import AppHeader from './components/AppHeader';
+import LatestNews, { NEWS_SOURCES } from './components/LatestNews';
+import Toast from './components/Toast';
 import { useI18n } from './hooks/useI18n';
-import ApiSettingsModal from './components/ApiSettingsModal';
 import { isApiConfigured } from './services/apiConfigService';
 
+// Code-split heavy, interaction-gated components so they don't bloat the
+// initial bundle: modals only load when opened, the report only after an
+// analysis completes, and the About page only when routed to.
+const AnalysisResult = lazy(() => import('./components/AnalysisResult'));
+const ApiSettingsModal = lazy(() => import('./components/ApiSettingsModal'));
+const UserGuideModal = lazy(() => import('./components/UserGuideModal'));
+const ImageModal = lazy(() => import('./components/ImageModal'));
+const AboutPage = lazy(() => import('./components/AboutPage'));
 
 // --- Constants ---
 const TOPIC_HISTORY_STORAGE_KEY = 'gemini-analysis-history';
@@ -44,363 +48,6 @@ const getUserId = (): string => {
     return uuidv4();
   }
 };
-
-// --- Data & Types ---
-interface NewsArticle {
-  title: string;
-  link: string;
-  description: string;
-  pubDate: string;
-  sourceName: string;
-}
-
-interface NewsSource {
-  id: string;
-  name: string;
-  url: string;
-  type?: 'rss' | 'json';
-}
-
-const NEWS_SOURCES: NewsSource[] = [
-  { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
-  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
-  { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
-  { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
-  { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
-];
-
-const SOURCE_COLORS: { [key: string]: string } = {
-  '36氪': 'bg-gray-100 text-gray-800',
-  '极客洞察': 'bg-gray-100 text-gray-800',
-  '雪球': 'bg-gray-100 text-gray-800',
-  '彭博': 'bg-gray-100 text-gray-800',
-  'Buzzing': 'bg-gray-100 text-gray-800',
-};
-
-
-// --- Helper Components ---
-const NewsDetailModal: React.FC<{ article: NewsArticle | null; onClose: () => void; }> = ({ article, onClose }) => {
-  if (!article) return null;
-
-  const createMarkup = (htmlString: string) => {
-    return { __html: htmlString };
-  };
-
-  return (
-    <div
-      className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="news-modal-title"
-    >
-      <div
-        className="bg-white p-6 max-w-2xl w-full h-[80vh] flex flex-col text-left relative animate-reveal-scale rounded-2xl shadow-floating"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-start pb-4 border-b border-gray-200">
-          <h2 id="news-modal-title" className="text-xl font-bold text-gray-800 pr-8">
-            {article.title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
-            aria-label="关闭"
-          >
-            <XIcon className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="mt-4 flex-grow overflow-y-auto pr-4 text-gray-700 leading-relaxed prose prose-sm max-w-none" style={{ scrollbarWidth: 'thin' }}>
-          <div dangerouslySetInnerHTML={createMarkup(article.description)} />
-        </div>
-        <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-gray-100 text-gray-800`}>
-                {article.sourceName}
-            </span>
-            <a 
-                href={article.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-xl shadow-sm hover:bg-gray-800 transition-all"
-            >
-                <ExternalLinkIcon className="w-4 h-4" />
-                查看原文
-            </a>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const stripHtml = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || "";
-};
-
-const truncateText = (text: string, length: number) => {
-  return text.length > length ? text.substring(0, length) + '...' : text;
-};
-
-const NewsSkeleton: React.FC = () => (
-    <div className="space-y-4">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="animate-pulse flex space-x-4">
-          <div className="flex-1 space-y-3 py-1">
-            <div className="h-4 bg-slate-200/80 rounded w-3/4"></div>
-            <div className="space-y-2">
-              <div className="h-3 bg-slate-200/80 rounded"></div>
-              <div className="h-3 bg-slate-200/80 rounded w-5/6"></div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-);
-
-// --- Enhanced LatestNews Component ---
-interface LatestNewsProps {
-  onAnalyze: (topic: string) => void;
-  sources: NewsSource[];
-}
-
-const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeSourceId, setActiveSourceId] = useState<string>('xueqiu'); // Default to 雪球
-  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-  const { t } = useI18n();
-
-  useEffect(() => {
-    const fetchNewsForSource = async () => {
-      const source = sources.find(s => s.id === activeSourceId);
-      if (!source) {
-        setError(t('latestNews.errorNotFound'));
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        let fetchedArticles: Omit<NewsArticle, 'sourceName'>[] = [];
-        if (source.type === 'json') {
-          const response = await fetch(source.url);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          if (!data.items) throw new Error(`Invalid JSON feed format.`);
-          
-          fetchedArticles = data.items.map((item: any) => ({
-            title: item.title,
-            link: item.url,
-            description: item.summary || item.content_html || '',
-            pubDate: item.date_published || new Date().toISOString(),
-          }));
-        } else {
-          const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
-          const response = await fetch(API_URL);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          if (data.status !== 'ok') throw new Error(`Failed to fetch news feed via rss2json.`);
-          
-          fetchedArticles = data.items.map((item: any) => ({
-            title: item.title,
-            link: item.link,
-            description: item.description,
-            pubDate: item.pubDate,
-          }));
-        }
-        
-        const articlesWithSource = fetchedArticles.map(article => ({ ...article, sourceName: source.name }));
-        // Sort by date before slicing to ensure the latest articles are shown
-        articlesWithSource.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-        setArticles(articlesWithSource.slice(0, 4));
-
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`Failed to fetch from ${source.name}:`, errorMessage);
-        setError(t('latestNews.errorLoad', { sourceName: source.name }));
-        setArticles([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNewsForSource();
-  }, [activeSourceId, sources, t]);
-
-  return (
-    <>
-      <NewsDetailModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
-      <div className="bg-white border border-stone-200/90 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-full">
-        <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-black rounded-xl shadow-lg">
-                <NewspaperIcon className="w-5 h-5 text-white"/>
-            </div>
-            <h3 className="text-xl font-semibold text-black">{t('latestNews.title')}</h3>
-        </div>
-
-        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-4">
-          {sources.map(source => (
-            <button
-              key={source.id}
-              onClick={() => setActiveSourceId(source.id)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
-                activeSourceId === source.id
-                  ? 'bg-black text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {source.name}
-            </button>
-          ))}
-        </div>
-        
-        {isLoading ? (
-          <NewsSkeleton />
-        ) : error ? (
-          <div className="text-center py-4">
-            <p className="text-black bg-gray-100 p-3 rounded-lg border border-gray-200">{error}</p>
-          </div>
-        ) : (
-          <ul className="space-y-4">
-            {articles.length > 0 ? articles.map((article, index) => (
-              <li key={`${article.link}-${index}`} className="group relative border-b border-gray-200 pb-4 last:border-b-0 hover:bg-gray-50/80 transition-colors duration-300 rounded-xl p-3 -mx-3">
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-2xl shadow-floating opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-30 pointer-events-none">
-                    <div className="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
-                        <span className="font-bold text-gray-100">{article.sourceName}</span>
-                        <span className="font-mono text-gray-400 text-[10px]">{new Date(article.pubDate).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-gray-300 leading-relaxed line-clamp-6">
-                        {stripHtml(article.description)}
-                    </p>
-                    {/* Arrow */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-[6px] border-transparent border-t-gray-900/95"></div>
-                </div>
-
-                <div className="flex items-center gap-x-2 mb-1 flex-wrap">
-                    <button 
-                      onClick={() => setSelectedArticle(article)} 
-                      className="font-semibold text-black hover:text-gray-700 transition-colors text-left focus:outline-none focus-visible:underline"
-                    >
-                      {article.title}
-                    </button>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${SOURCE_COLORS[article.sourceName] || 'bg-gray-100 text-gray-800'}`}>
-                      {article.sourceName}
-                    </span>
-                </div>
-                
-                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  {truncateText(stripHtml(article.description), 140)}
-                </p>
-
-                <button
-                  onClick={() => onAnalyze(`${article.title}\n\n${stripHtml(article.description)}`)}
-                  className="mt-3 relative inline-flex items-center gap-2 px-4 py-1.5 text-white text-xs font-medium rounded-full group overflow-hidden btn-premium opacity-80 group-hover:opacity-100 group-hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                  <SparklesIcon className="w-4 h-4" />
-                  <span className="relative z-10">{t('latestNews.analyzeButton')}</span>
-                </button>
-              </li>
-            )) : (
-              <p className="text-center text-gray-500 py-4">{t('latestNews.noNews')}</p>
-            )}
-          </ul>
-        )}
-      </div>
-    </>
-  );
-};
-
-const Toast: React.FC<{ message: string; type: 'success' | 'info' }> = ({ message, type }) => {
-  const toastConfig = {
-    success: {
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      borderColor: 'border-gray-800',
-      iconBg: 'bg-gray-100',
-      iconColor: 'text-gray-800',
-    },
-    info: {
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-        </svg>
-      ),
-      borderColor: 'border-gray-800',
-      iconBg: 'bg-gray-100',
-      iconColor: 'text-gray-800',
-    },
-  };
-
-  const config = toastConfig[type];
-
-  return (
-    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
-      <div
-        className={`flex items-center gap-x-2.5 max-w-sm px-4 py-2.5 rounded-2xl border-l-4 shadow-floating bg-white animate-toast-in ${config.borderColor}`}
-        role="alert"
-      >
-        <div className={`flex-shrink-0 rounded-full p-1 ${config.iconBg} ${config.iconColor}`}>
-          {config.icon}
-        </div>
-        <div className="text-sm font-medium text-gray-800">
-          {message}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ImageModal: React.FC<{ imageUrl: string; onClose: () => void; title: string }> = ({ imageUrl, onClose, title }) => (
-  <div
-    className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
-    onClick={onClose}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="image-modal-title"
-  >
-    <div
-      className="bg-white p-6 max-w-sm w-full text-center relative animate-reveal-scale"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-3 right-3 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
-        aria-label="关闭"
-      >
-        <XIcon className="w-6 h-6" />
-      </button>
-      <h2 id="image-modal-title" className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
-      <div className="p-2 border-4 border-gray-100 rounded-lg inline-block">
-        <img
-          src={imageUrl}
-          alt="公众号二维码"
-          className="w-64 h-64 object-contain rounded-md"
-        />
-      </div>
-    </div>
-  </div>
-);
-
-const RadarIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 3v2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M21 12h-2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 21v-2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M3 12h2" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 12L7 7" className="radar-sweep" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-);
-
 
 const MainPage: React.FC = () => {
   const { t, locale } = useI18n();
@@ -592,87 +239,42 @@ const MainPage: React.FC = () => {
   return (
     <>
       <CacheStats />
-      <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
-      <ApiSettingsModal
-        isOpen={isApiSettingsOpen}
-        onClose={() => setIsApiSettingsOpen(false)}
-        onSaved={() => {
-          setApiConfigured(true);
-          setToast({
-            message: locale === 'zh' ? '模型已配置成功，现在可以开始分析了' : 'Model configured successfully. You can start analyzing now.',
-            type: 'success',
-          });
-        }}
-      />
+      {isUserGuideModalOpen && (
+        <Suspense fallback={null}>
+          <UserGuideModal isOpen={isUserGuideModalOpen} onClose={() => setIsUserGuideModalOpen(false)} />
+        </Suspense>
+      )}
+      {isApiSettingsOpen && (
+        <Suspense fallback={null}>
+          <ApiSettingsModal
+            isOpen={isApiSettingsOpen}
+            onClose={() => setIsApiSettingsOpen(false)}
+            onSaved={() => {
+              setApiConfigured(true);
+              setToast({
+                message: locale === 'zh' ? '模型已配置成功，现在可以开始分析了' : 'Model configured successfully. You can start analyzing now.',
+                type: 'success',
+              });
+            }}
+          />
+        </Suspense>
+      )}
       {toast && <Toast message={toast.message} type={toast.type} />}
       {isImageModalOpen && (
-          <ImageModal
-              imageUrl="https://youke1.picui.cn/s1/2025/10/02/68de9d3a88ef4.jpg"
-              onClose={() => setIsImageModalOpen(false)}
-              title={t('imageModal.title')}
-          />
+          <Suspense fallback={null}>
+            <ImageModal
+                imageUrl="https://youke1.picui.cn/s1/2025/10/02/68de9d3a88ef4.jpg"
+                onClose={() => setIsImageModalOpen(false)}
+                title={t('imageModal.title')}
+            />
+          </Suspense>
       )}
       <div className="min-h-screen relative z-10">
-         <header className="sticky top-0 z-30 w-full bg-[#FBFBFA]/80 backdrop-blur-sm border-b border-stone-200/90">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Left side: Logo & Title */}
-                    <div className="flex items-center gap-x-3">
-                        <RadarIcon className="w-8 h-8 text-black" />
-                        <h1 className="text-xl font-semibold text-gray-800">
-                            {t('header.title')}
-                        </h1>
-                    </div>
-
-                    {/* Right side: Controls */}
-                    <div className="flex items-center gap-x-4 sm:gap-x-6">
-                        <a 
-                            href="https://mastergo.lovable.app/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
-                        >
-                            <span>金融工具箱</span>
-                        </a>
-                        <a 
-                            href="https://stocks.mastersgo.cc"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
-                        >
-                            <span>{locale === 'zh' ? '产业图谱' : 'Industry Map'}</span>
-                        </a>
-                        <button 
-                            onClick={() => setIsUserGuideModalOpen(true)} 
-                            className="hidden sm:flex items-center gap-x-1.5 text-sm font-medium text-gray-600 hover:text-black transition-colors"
-                            aria-label={t('header.userGuide')}
-                        >
-                            <AcademicCapIcon className="w-5 h-5" />
-                            <span>{t('header.userGuide')}</span>
-                        </button>
-                        {/* API Settings button */}
-                        <button
-                            onClick={() => setIsApiSettingsOpen(true)}
-                            className={`flex items-center gap-x-1.5 text-xs sm:text-sm font-medium px-3 py-1 rounded-full border shadow-sm transition-colors ${
-                                apiConfigured
-                                    ? 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
-                                    : 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
-                            }`}
-                            aria-label={locale === 'zh' ? '模型 API 设置' : 'Model API Settings'}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <span>{locale === 'zh' ? (apiConfigured ? '模型设置' : '配置模型') : (apiConfigured ? 'API Settings' : 'Setup API')}</span>
-                        </button>
-                        <div className="hidden sm:block">
-                            <LanguageSwitcher />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <AppHeader
+          apiConfigured={apiConfigured}
+          onOpenUserGuide={() => setIsUserGuideModalOpen(true)}
+          onOpenApiSettings={() => setIsApiSettingsOpen(true)}
+        />
 
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           <main>
@@ -739,11 +341,13 @@ const MainPage: React.FC = () => {
                         <p className="text-sm mt-1">{error}</p>
                     </div>
                 ) : analysisReport ? (
-                    <AnalysisResult 
-                        report={analysisReport} 
-                        userInput={userInput} 
-                        onNewAnalysis={handleNewAnalysis}
-                    />
+                    <Suspense fallback={<Loader taskType="topic" currentStep={3} />}>
+                      <AnalysisResult 
+                          report={analysisReport} 
+                          userInput={userInput} 
+                          onNewAnalysis={handleNewAnalysis}
+                      />
+                    </Suspense>
                 ) : (
                   // DASHBOARD VIEW
                   <div className="space-y-8 animate-fade-in">
@@ -759,7 +363,6 @@ const MainPage: React.FC = () => {
                         onDelete={handleDeleteTopicHistory}
                         onClear={handleClearTopicHistory}
                       />
-                      {/* <AdSenseAd /> */}
                   </div>
                 )}
             </div>
@@ -789,7 +392,14 @@ const App: React.FC = () => {
     <HashRouter>
       <Routes>
         <Route path="/" element={<MainPage />} />
-        <Route path="/about" element={<AboutPage />} />
+        <Route
+          path="/about"
+          element={
+            <Suspense fallback={null}>
+              <AboutPage />
+            </Suspense>
+          }
+        />
       </Routes>
     </HashRouter>
   );

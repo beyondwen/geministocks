@@ -36,8 +36,8 @@ interface AnalysisResponse {
 
 export default async function handler(
   req: VercelRequest,
-  res: VercelResponse<AnalysisResponse>
-): Promise<void> {
+  res: VercelResponse
+) {
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({

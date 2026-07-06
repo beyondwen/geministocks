@@ -73,7 +73,7 @@ class MonitoringService {
    */
   private async initSentry() {
     try {
-      const Sentry = await import('@sentry/browser')
+      const Sentry = await import('@sentry/react')
       
       Sentry.init({
         dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -167,7 +167,7 @@ class MonitoringService {
     this.userId = userId
 
     if (this.config.enabled && userId) {
-      import('@sentry/browser').then(Sentry => {
+      import('@sentry/react').then(Sentry => {
         Sentry.setUser({
           id: userId,
           email,
@@ -184,7 +184,7 @@ class MonitoringService {
     this.userId = null
 
     if (this.config.enabled) {
-      import('@sentry/browser').then(Sentry => {
+      import('@sentry/react').then(Sentry => {
         Sentry.setUser(null)
       })
     }
@@ -201,7 +201,7 @@ class MonitoringService {
       return
     }
 
-    import('@sentry/browser').then(Sentry => {
+    import('@sentry/react').then(Sentry => {
       Sentry.captureException(new Error(error.message), {
         extra: {
           ...error.extra,
@@ -234,7 +234,7 @@ class MonitoringService {
       return
     }
 
-    import('@sentry/browser').then(Sentry => {
+    import('@sentry/react').then(Sentry => {
       Sentry.captureMessage(message, level)
     })
   }
@@ -269,7 +269,7 @@ class MonitoringService {
     this.eventBuffer.push(event)
 
     if (this.config.enabled) {
-      import('@sentry/browser').then(Sentry => {
+      import('@sentry/react').then(Sentry => {
         Sentry.addBreadcrumb({
           category: event.category,
           message: event.name,
