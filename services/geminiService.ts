@@ -397,12 +397,17 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
     // and inject them into the prompt as verified real-time data.
     let realTimeContext = '';
     let exaUsed = false;
+    let realTimeSources: AnalysisReport['realTimeSources'] = [];
     if (isExaSearchEnabled()) {
         try {
             const { ok, results } = await searchExa(topic);
             if (ok && results.length > 0) {
                 realTimeContext = formatExaResultsForPrompt(results, locale);
                 exaUsed = true;
+                // Keep the fetched sources so the report can display citations
+                realTimeSources = results
+                    .filter((r) => r.url)
+                    .map((r) => ({ title: r.title, url: r.url, publishedDate: r.publishedDate }));
             }
         } catch (err) {
             // Real-time search is best-effort; never block analysis if it fails
@@ -433,6 +438,7 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
         ...part2Result,
         ...part3Result,
         modelUsed: modelDisplayName,
+        ...(realTimeSources.length > 0 ? { realTimeSources } : {}),
         dataFreshness: {
             generatedAt: now.toISOString(),
             dataAsOf: now.toISOString().split('T')[0],

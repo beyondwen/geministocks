@@ -158,6 +158,15 @@ export const analysisReportToMarkdown = (report: AnalysisReport, userInput: stri
     if(report.tieredSuggestions) md += h2('Tiered Suggestions');
     if(report.tieredSuggestions) md += tieredSuggestionsToMarkdown(report.tieredSuggestions);
     
+    if(report.realTimeSources?.length) {
+        md += h2('Real-time Search Sources');
+        report.realTimeSources.forEach(s => {
+            const date = s.publishedDate ? ` (${s.publishedDate.split('T')[0]})` : '';
+            md += `- [${s.title}](${s.url})${date}\n`;
+        });
+        md += '\n';
+    }
+
     if(report.sources?.length) {
         md += h2('Reference Sources');
         report.sources.forEach(s => md += `- [${s.title}](${s.uri})\n`);

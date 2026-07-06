@@ -657,6 +657,48 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
             
             {report.tieredSuggestions && <TieredSuggestionsDisplay suggestions={report.tieredSuggestions} keywords={keywords} />}
 
+            {report.realTimeSources && report.realTimeSources.length > 0 && (
+                <Card title={locale === 'zh' ? '实时搜索来源' : 'Real-time Search Sources'} icon={<GlobeIcon className="w-5 h-5"/>}>
+                    <p className="text-xs text-gray-500 -mt-2 mb-3">
+                        {locale === 'zh'
+                            ? '以下最新网络资料已通过 Exa 实时搜索获取，并注入本次分析：'
+                            : 'The following live web results were fetched via Exa and injected into this analysis:'}
+                    </p>
+                    <ul className="space-y-3">
+                        {report.realTimeSources.map((source, index) => {
+                            let domain = '';
+                            try { domain = new URL(source.url).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
+                            return (
+                                <li key={index} className="flex items-start gap-3">
+                                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-700 text-[10px] font-bold">
+                                        {index + 1}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <a
+                                            href={source.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm font-medium text-black hover:text-gray-700 animated-underline transition-colors break-words"
+                                            title={source.title}
+                                        >
+                                            {source.title}
+                                        </a>
+                                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+                                            {domain && <span className="font-mono">{domain}</span>}
+                                            {source.publishedDate && (
+                                                <span>
+                                                    {new Date(source.publishedDate).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </Card>
+            )}
+
             {report.sources && report.sources.length > 0 && (
                 <Card title={t('analysisResult.sourcesTitle')} icon={<DocumentArrowDownIcon className="w-5 h-5"/>}>
                     <ul className="list-disc list-inside space-y-2 text-sm">
