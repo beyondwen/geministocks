@@ -44,7 +44,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ apiConfigured, onOpenUserGuide, o
               rel="noopener noreferrer"
               className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
             >
-              <span>金融工具箱</span>
+              <span>工具箱</span>
             </a>
             <a
               href="https://stocks.mastersgo.cc"
@@ -52,7 +52,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ apiConfigured, onOpenUserGuide, o
               rel="noopener noreferrer"
               className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
             >
-              <span>{locale === 'zh' ? '产业图谱' : 'Industry Map'}</span>
+              <span>{locale === 'zh' ? '图谱' : 'Industry Map'}</span>
             </a>
             <button
               onClick={onOpenUserGuide}
