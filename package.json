@@ -1,8 +1,15 @@
 {
-  "name": "挖掘机（分支）",
+  "name": "super-digger",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered investment research tool: turn any financial news or topic into a structured analysis report using your own AI model (BYOM).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yaoleifly/geministocks.git"
+  },
+  "author": "僧僧 <codes@z.org>",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
