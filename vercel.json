@@ -70,11 +70,15 @@
       "destination": "https://api.exa.ai/:path*"
     },
     {
+      "source": "/anysearch-api/:path*",
+      "destination": "https://api.anysearch.com/:path*"
+    },
+    {
       "source": "/auth/google/callback",
       "destination": "/"
     },
     {
-      "source": "/((?!api|ollama-api|exa-api|assets|favicon.ico|robots.txt|sitemap.xml).*)",
+      "source": "/((?!api|ollama-api|exa-api|anysearch-api|assets|favicon.ico|robots.txt|sitemap.xml).*)",
       "destination": "/"
     }
   ],

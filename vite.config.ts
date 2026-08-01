@@ -87,6 +87,14 @@ export default defineConfig(() => {
             secure: true,
             rewrite: (p) => p.replace(/^\/exa-api/, ''),
           },
+          // Same-origin proxy for AnySearch (api.anysearch.com). The frontend
+          // calls "/anysearch-api/v1/search" which is forwarded here.
+          '/anysearch-api': {
+            target: 'https://api.anysearch.com',
+            changeOrigin: true,
+            secure: true,
+            rewrite: (p) => p.replace(/^\/anysearch-api/, ''),
+          },
         },
       },
       plugins: [corsProxyDevPlugin(), react()],
