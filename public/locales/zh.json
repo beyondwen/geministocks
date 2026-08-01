@@ -44,7 +44,12 @@
     "contact": "联系邮箱：",
     "openSource": "开源于 GitHub",
     "company": "出品：",
-    "companyName": "小声科技"
+    "companyName": "小声科技",
+    "deployOwn": "部署你自己的实例：",
+    "deployVercel": "Deploy to Vercel",
+    "deployVercelHint": "一键克隆仓库并部署到 Vercel（推荐，API 代理开箱即用）",
+    "deployCloudflare": "Deploy to Cloudflare",
+    "deployCloudflareHint": "部署到 Cloudflare（需自行配置 API 代理）"
   },
   "imageModal": {
     "title": "欢迎关注\"小声读书\""
