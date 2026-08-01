@@ -82,6 +82,13 @@ interface LocalPreset {
 
 const LOCAL_PRESETS: LocalPreset[] = [
   {
+    label: '9Router',
+    baseUrl: 'http://localhost:20128/v1',
+    modelPlaceholder: 'kr/claude-sonnet-4.5',
+    hintZh: '聚合 60+ 服务商的本机智能网关：npm i -g 9router 后运行 9router，在 localhost:20128/dashboard 连接服务商并复制 API Key 填入下方，然后点击「获取模型列表」选择模型。',
+    hintEn: 'Local smart gateway aggregating 60+ providers: npm i -g 9router, then run 9router. Connect providers at localhost:20128/dashboard, copy the API key below, then click "Fetch Models" to pick a model.',
+  },
+  {
     label: 'Claude Code',
     baseUrl: 'http://localhost:3456/v1',
     modelPlaceholder: 'claude-sonnet-4-5',
@@ -365,8 +372,8 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose, on
         <div className="px-6 py-5 space-y-5">
           <p className="text-sm text-gray-500 leading-relaxed">
             {zh
-              ? '支持云端 API（OpenRouter、DeepSeek、MiniMax、Ollama）或运行在本机的 CLI 服务（Claude Code、Codex）。配置仅保存在您的浏览器本地，不会上传到服务器。'
-              : 'Use a cloud API (OpenRouter, DeepSeek, MiniMax, Ollama) or a CLI service running on your machine (Claude Code, Codex). Your config is stored locally in your browser only.'}
+              ? '支持云端 API（OpenRouter、DeepSeek、MiniMax、Ollama）或运行在本机的 CLI 服务（9Router、Claude Code、Codex）。配置仅保存在您的浏览器本地，不会上传到服务器。'
+              : 'Use a cloud API (OpenRouter, DeepSeek, MiniMax, Ollama) or a CLI service running on your machine (9Router, Claude Code, Codex). Your config is stored locally in your browser only.'}
           </p>
 
           {/* Mode switch: Cloud API vs Local CLI */}
