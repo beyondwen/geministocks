@@ -57,6 +57,30 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose }) => {
                 description={t('userGuideModal.topicDescription')}
                 example={t('userGuideModal.topicExample')}
             />
+            <GuideSection
+                icon={t('userGuideModal.searchIcon')}
+                title={t('userGuideModal.searchTitle')}
+                description={t('userGuideModal.searchDescription')}
+                example={t('userGuideModal.searchExample')}
+            />
+            <GuideSection
+                icon={t('userGuideModal.newsIcon')}
+                title={t('userGuideModal.newsTitle')}
+                description={t('userGuideModal.newsDescription')}
+                example={t('userGuideModal.newsExample')}
+            />
+            <GuideSection
+                icon={t('userGuideModal.historyIcon')}
+                title={t('userGuideModal.historyTitle')}
+                description={t('userGuideModal.historyDescription')}
+                example={t('userGuideModal.historyExample')}
+            />
+            <GuideSection
+                icon={t('userGuideModal.modelIcon')}
+                title={t('userGuideModal.modelTitle')}
+                description={t('userGuideModal.modelDescription')}
+                example={t('userGuideModal.modelExample')}
+            />
         </div>
 
         <div className="mt-8 flex justify-center">
