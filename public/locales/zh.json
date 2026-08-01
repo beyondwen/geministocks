@@ -42,7 +42,9 @@
     "accountNameEn": "小声读书",
     "endText": "",
     "contact": "联系邮箱：",
-    "openSource": "开源于 GitHub"
+    "openSource": "开源于 GitHub",
+    "company": "出品：",
+    "companyName": "小声科技"
   },
   "imageModal": {
     "title": "欢迎关注\"小声读书\""

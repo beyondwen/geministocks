@@ -42,7 +42,9 @@
     "accountNameEn": "Xiaosheng Dushu",
     "endText": "",
     "contact": "Contact Email: ",
-    "openSource": "Open Source on GitHub"
+    "openSource": "Open Source on GitHub",
+    "company": "Made by ",
+    "companyName": "Ssgoo Tech"
   },
   "imageModal": {
     "title": "Welcome to follow \"Xiaosheng Dushu\""

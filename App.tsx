@@ -405,6 +405,17 @@ const MainPage: React.FC = () => {
                     codes@z.org
                   </a>
                 </p>
+                <p className="text-sm text-gray-500">
+                  {t('footer.company')}
+                  <a
+                    href="https://ssgoo.net"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-black hover:text-gray-700 animated-underline transition-colors"
+                  >
+                    {t('footer.companyName')}
+                  </a>
+                </p>
              </div>
           </footer>
         </div>
