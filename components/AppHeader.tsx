@@ -39,12 +39,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({ apiConfigured, onOpenUserGuide, o
           {/* Right side: Controls */}
           <div className="flex items-center gap-x-4 sm:gap-x-6">
             <a
-              href="https://mastergo.lovable.app/"
+              href="https://stocks.mastersgo.cc/#policyView"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-x-1.5 text-xs sm:text-sm font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
             >
-              <span>工具箱</span>
+              <span>{locale === 'zh' ? '政策压力' : 'Policy Pressure'}</span>
             </a>
             <a
               href="https://stocks.mastersgo.cc"
