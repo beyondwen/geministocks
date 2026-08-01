@@ -53,7 +53,23 @@
     "topicIcon": "✍️",
     "topicDescription": "Suitable for analyzing macro themes, industry trends, news events, or any investment concept you are interested in. You can enter text, paste news links, or article content, and the AI will generate a multi-dimensional investment analysis report based on the latest information.",
     "topicExample": "e.g., \"Investment opportunities in AI Agents\", \"Key points from NVIDIA GTC 2024\", \"https://...\"",
-    "closeButton": "Got It"
+    "closeButton": "Got It",
+    "searchIcon": "🌐",
+    "searchTitle": "Real-time Search",
+    "searchDescription": "Enable real-time search in API Settings to automatically fetch the latest web results for your topic before analysis; all citations are listed at the bottom of the report. Two providers are supported: Exa (requires an API key from exa.ai) and AnySearch (free anonymous tier works without a key; add a key for higher quota).",
+    "searchExample": "The \"Real-time Search Sources\" card in the report shows each cited page title, domain, and publish date so you can verify data freshness.",
+    "newsIcon": "📰",
+    "newsTitle": "Latest News & Concept Tags",
+    "newsDescription": "The homepage aggregates five news sources: Xueqiu, 36Kr, Geek Insight, Bloomberg, and Buzzing. Click \"AI Concept Tags\" to extract tradeable concept tags (e.g. \"Foldable Display\", \"AI Chips\") for the current news in one batch; click any tag to dig into that concept. Turn on \"Auto\" to extract automatically when switching sources. Each article also has a one-click analyze button.",
+    "newsExample": "Example: a foldable-phone launch article gets a \"Foldable Display\" tag — click it to analyze the supply-chain opportunity.",
+    "historyIcon": "📊",
+    "historyTitle": "History & Review",
+    "historyDescription": "Every analysis is saved to history, with both the investment attractiveness score (orange) and information gap score (black) shown as badges. Sort by Newest / Score / Info Gap to surface high-value leads. Click any entry to reopen the full report, or hit the refresh button to re-analyze the same topic with fresh data and compare score changes.",
+    "historyExample": "Example: \"Solid-state batteries\" scored 90 on info gap a week ago but drops to 40 on re-analysis — the market has priced it in.",
+    "modelIcon": "🔌",
+    "modelTitle": "Bring Your Own Model",
+    "modelDescription": "Open API Settings to configure your AI model. Cloud APIs: OpenRouter, DeepSeek, MiniMax, Ollama, or any OpenAI-compatible service. Local CLI: 9Router (a local gateway aggregating 60+ providers), Claude Code, and Codex — the app auto-scans local services and shows their status. All settings stay in your browser.",
+    "modelExample": "Example: npm i -g 9router, run it, then pick the 9Router preset under \"Local CLI\" to auto-connect to localhost:20128."
   },
   "languageSwitcher": {
     "label": "Select language"

@@ -53,7 +53,23 @@
     "topicIcon": "✍️",
     "topicDescription": "适用于分析宏观主题、行业趋势、新闻事件或任何您感兴趣的投资概念。您可以输入文字、粘贴新闻链接或文章内容，AI 会结合最新信息生成多维度的投资分析报告。",
     "topicExample": "例如：「AI Agent 的投资机会」、「英伟达 GTC 2024 大会要点」、「https://...」",
-    "closeButton": "我明白了"
+    "closeButton": "我明白了",
+    "searchIcon": "🌐",
+    "searchTitle": "实时搜索",
+    "searchDescription": "在「模型设置」中开启实时搜索后，生成报告前会自动联网检索该主题的最新资料并注入分析，报告底部会列出全部引用来源。支持两种服务商：Exa（需在 exa.ai 创建 API Key）和 AnySearch（有免费匿名额度，无需 Key 即可使用；填写 Key 可提升配额）。",
+    "searchExample": "报告中的「实时搜索来源」卡片会展示引用的网页标题、域名和发布日期，便于核实数据新鲜度。",
+    "newsIcon": "📰",
+    "newsTitle": "最新动态与概念标签",
+    "newsDescription": "首页聚合雪球、36氪、极客洞察、彭博、Buzzing 五个新闻源。点击「AI 概念标签」可为当前新闻批量提取可交易的概念标签（如「折叠屏」「AI芯片」），点击任意标签即可就该概念发起挖掘分析；打开「自动」开关后，切换新闻源时会自动提取。每条新闻也可直接点击「一键分析」。",
+    "newsExample": "例如：一条折叠屏手机发布的新闻被提取出「折叠屏」标签，点击标签即分析该概念的产业链机会。",
+    "historyIcon": "📊",
+    "historyTitle": "历史记录与复盘",
+    "historyDescription": "每次分析会自动保存到历史记录，列表直接展示投资吸引力评分（橙色）和信息差评分（黑色）双徽章，可按「最新 / 按吸引力 / 按信息差」排序，快速找到高价值线索。点击任意记录可回看完整报告，点击刷新按钮可用最新数据对同一主题重新分析，对比评分变化。",
+    "historyExample": "例如：一周前「固态电池」信息差评分 90，重新分析后降至 40，说明市场已逐步消化该信息。",
+    "modelIcon": "🔌",
+    "modelTitle": "接入你自己的模型",
+    "modelDescription": "点击「模型设置」配置 AI 模型：云端 API 支持 OpenRouter、DeepSeek、MiniMax、Ollama 及任意 OpenAI 兼容服务；本机 CLI 支持 9Router（聚合 60+ 服务商的本地网关）、Claude Code、Codex，应用会自动扫描本机服务并显示运行状态。所有配置仅保存在浏览器本地。",
+    "modelExample": "例如：npm i -g 9router 并运行后，在「本机 CLI」中选择 9Router 预设即可自动连接 localhost:20128。"
   },
   "languageSwitcher": {
     "label": "选择语言"
