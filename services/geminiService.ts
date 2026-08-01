@@ -5,7 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 import { captureError, addBreadcrumb } from './sentry';
 
 import { getApiConfig, getChatCompletionsUrl, buildAuthHeaders } from './apiConfigService';
-import { isExaSearchEnabled, searchExa, formatExaResultsForPrompt } from './exaSearchService';
+import { isExaSearchEnabled, searchExa, formatExaResultsForPrompt, getExaConfig } from './exaSearchService';
 
 // Error thrown when the user has not configured their API settings yet
 export const API_NOT_CONFIGURED_ERROR = 'API_NOT_CONFIGURED';
@@ -393,12 +393,13 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
     // Smart web search: only enable for market-sensitive queries (OpenRouter native plugin)
     const enableWebSearch = detectNeedsWebSearch(topic);
 
-    // Real-time search via Exa (works for any model): if the user has enabled and
-    // configured Exa, fetch the latest web results for this topic BEFORE analysis
-    // and inject them into the prompt as verified real-time data.
+    // Real-time search (Exa / AnySearch, works for any model): if the user has
+    // enabled real-time search, fetch the latest web results for this topic
+    // BEFORE analysis and inject them into the prompt as verified real-time data.
     let realTimeContext = '';
     let exaUsed = false;
     let realTimeSources: AnalysisReport['realTimeSources'] = [];
+    const searchProviderUsed = getExaConfig().provider;
     if (isExaSearchEnabled()) {
         try {
             const { ok, results } = await searchExa(topic);
@@ -439,7 +440,7 @@ export const getAnalysis = async (topic: string, onProgress: (stepIndex: number)
         ...part2Result,
         ...part3Result,
         modelUsed: modelDisplayName,
-        ...(realTimeSources.length > 0 ? { realTimeSources } : {}),
+        ...(realTimeSources.length > 0 ? { realTimeSources, searchProviderUsed } : {}),
         dataFreshness: {
             generatedAt: now.toISOString(),
             dataAsOf: now.toISOString().split('T')[0],

@@ -669,9 +669,20 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({
             {report.realTimeSources && report.realTimeSources.length > 0 && (
                 <Card title={locale === 'zh' ? '实时搜索来源' : 'Real-time Search Sources'} icon={<GlobeIcon className="w-5 h-5"/>}>
                     <p className="text-xs text-gray-500 -mt-2 mb-3">
-                        {locale === 'zh'
-                            ? '以下最新网络资料已通过 Exa 实时搜索获取，并注入本次分析：'
-                            : 'The following live web results were fetched via Exa and injected into this analysis:'}
+                        {(() => {
+                            // Older reports have no searchProviderUsed; fall back to a generic label
+                            const providerName = report.searchProviderUsed === 'anysearch'
+                                ? 'AnySearch'
+                                : report.searchProviderUsed === 'exa' ? 'Exa' : '';
+                            if (locale === 'zh') {
+                                return providerName
+                                    ? `以下最新网络资料已通过 ${providerName} 实时搜索获取，并注入本次分析：`
+                                    : '以下最新网络资料已通过实时搜索获取，并注入本次分析：';
+                            }
+                            return providerName
+                                ? `The following live web results were fetched via ${providerName} and injected into this analysis:`
+                                : 'The following live web results were fetched via real-time search and injected into this analysis:';
+                        })()}
                     </p>
                     <ul className="space-y-3">
                         {report.realTimeSources.map((source, index) => {

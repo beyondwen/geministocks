@@ -163,7 +163,8 @@ export interface AnalysisReport {
   };
   tieredSuggestions: TieredSuggestions;
   sources?: GroundingSource[];
-  realTimeSources?: RealTimeSource[]; // Web sources fetched via Exa real-time search
+  realTimeSources?: RealTimeSource[]; // Web sources fetched via real-time search (Exa / AnySearch)
+  searchProviderUsed?: 'exa' | 'anysearch'; // Which real-time search provider produced realTimeSources
   polymarketData?: PolymarketData;
 }
 
