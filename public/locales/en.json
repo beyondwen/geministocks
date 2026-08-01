@@ -94,7 +94,12 @@
     "extractConceptsHint": "Use AI to extract tradeable concept tags from the current news; click a tag to dig into it",
     "tagHint": "Dig into \"{{tag}}\"",
     "autoExtract": "Auto",
-    "autoExtractHint": "When enabled, concept tags are extracted automatically when news loads (uses model quota)"
+    "autoExtractHint": "When enabled, concept tags are extracted automatically when news loads (uses model quota)",
+    "trending": "Trending",
+    "trendingHint": "Aggregate all sources, interleaved by recency",
+    "hotConcepts": "Hot Concepts",
+    "hotConceptHint": "\"{tag}\" appears in {count} articles across {sources} sources — click to analyze",
+    "crossSource": "{sources} sources"
   },
   "loader": {
     "analyzing": "Analyzing...",

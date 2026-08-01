@@ -2,7 +2,7 @@
 import type { AnalysisReport } from '../types';
 import type { Locale } from '../hooks/useI18n';
 import { jsonrepair } from 'jsonrepair';
-import { captureError, addBreadcrumb } from './sentry';
+import { captureError, addBreadcrumb } from '../utils/telemetry';
 
 import { getApiConfig, getChatCompletionsUrl, buildAuthHeaders } from './apiConfigService';
 import { isExaSearchEnabled, searchExa, formatExaResultsForPrompt, getExaConfig } from './exaSearchService';
@@ -189,7 +189,7 @@ async function callOpenRouterAI(prompt: string, systemInstruction: string, model
     } catch (error) {
         console.error('Error calling AI Service:', error);
         
-        // Capture error in Sentry with context
+        // Capture error with context for local diagnostics
         if (error instanceof Error) {
             captureError(error, {
                 model: modelName,

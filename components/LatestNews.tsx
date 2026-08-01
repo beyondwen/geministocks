@@ -51,6 +51,9 @@ const CONCEPT_CACHE_KEY = 'news-concept-tags';
 const CONCEPT_CACHE_MAX = 120;
 const AUTO_EXTRACT_KEY = 'news-auto-extract';
 
+// Pseudo-source id for the cross-source aggregated "trending" view
+const TRENDING_ID = 'trending';
+
 const loadConceptCache = (): Record<string, string[]> => {
   try {
     return JSON.parse(localStorage.getItem(CONCEPT_CACHE_KEY) || '{}');
@@ -246,63 +249,99 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   }, [articles, autoExtract]);
 
   useEffect(() => {
-    const fetchNewsForSource = async () => {
-      const source = sources.find(s => s.id === activeSourceId);
-      if (!source) {
-        setError(t('latestNews.errorNotFound'));
-        setIsLoading(false);
-        return;
-      }
+    // Fetch one source and return its articles sorted by date (newest first)
+    const fetchSource = async (source: NewsSource): Promise<NewsArticle[]> => {
+      let fetchedArticles: Omit<NewsArticle, 'sourceName'>[] = [];
+      if (source.type === 'json') {
+        const response = await fetch(source.url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (!data.items) throw new Error(`Invalid JSON feed format.`);
 
+        fetchedArticles = data.items.map((item: any) => ({
+          title: item.title,
+          link: item.url,
+          description: item.summary || item.content_html || '',
+          pubDate: item.date_published || new Date().toISOString(),
+        }));
+      } else {
+        const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (data.status !== 'ok') throw new Error(`Failed to fetch news feed via rss2json.`);
+
+        fetchedArticles = data.items.map((item: any) => ({
+          title: item.title,
+          link: item.link,
+          description: item.description,
+          pubDate: item.pubDate,
+        }));
+      }
+      return fetchedArticles
+        .map(article => ({ ...article, sourceName: source.name }))
+        .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+    };
+
+    const fetchNews = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        let fetchedArticles: Omit<NewsArticle, 'sourceName'>[] = [];
-        if (source.type === 'json') {
-          const response = await fetch(source.url);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          if (!data.items) throw new Error(`Invalid JSON feed format.`);
-
-          fetchedArticles = data.items.map((item: any) => ({
-            title: item.title,
-            link: item.url,
-            description: item.summary || item.content_html || '',
-            pubDate: item.date_published || new Date().toISOString(),
-          }));
+        if (activeSourceId === TRENDING_ID) {
+          // Aggregate view: fetch all sources in parallel (best-effort), interleave the freshest
+          const results = await Promise.allSettled(sources.map(s => fetchSource(s)));
+          const merged = results
+            .filter((r): r is PromiseFulfilledResult<NewsArticle[]> => r.status === 'fulfilled')
+            // Cap each source so a single high-volume feed can't dominate the mix
+            .flatMap(r => r.value.slice(0, 3));
+          if (merged.length === 0) throw new Error('All sources failed');
+          merged.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+          setArticles(merged.slice(0, 10));
         } else {
-          const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
-          const response = await fetch(API_URL);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          const data = await response.json();
-          if (data.status !== 'ok') throw new Error(`Failed to fetch news feed via rss2json.`);
-
-          fetchedArticles = data.items.map((item: any) => ({
-            title: item.title,
-            link: item.link,
-            description: item.description,
-            pubDate: item.pubDate,
-          }));
+          const source = sources.find(s => s.id === activeSourceId);
+          if (!source) {
+            setError(t('latestNews.errorNotFound'));
+            return;
+          }
+          const list = await fetchSource(source);
+          setArticles(list.slice(0, 4));
         }
-
-        const articlesWithSource = fetchedArticles.map(article => ({ ...article, sourceName: source.name }));
-        // Sort by date before slicing to ensure the latest articles are shown
-        articlesWithSource.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-        setArticles(articlesWithSource.slice(0, 4));
-
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`Failed to fetch from ${source.name}:`, errorMessage);
-        setError(t('latestNews.errorLoad', { sourceName: source.name }));
+        console.error(`Failed to fetch news (${activeSourceId}):`, errorMessage);
+        const sourceName = activeSourceId === TRENDING_ID
+          ? t('latestNews.trending')
+          : (sources.find(s => s.id === activeSourceId)?.name ?? activeSourceId);
+        setError(t('latestNews.errorLoad', { sourceName }));
         setArticles([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchNewsForSource();
+    fetchNews();
   }, [activeSourceId, sources, t]);
+
+  // Hot concepts: tags whose articles span >= 2 distinct sources (cross-source = heat signal),
+  // or appear on >= 2 articles. Only meaningful in the trending view.
+  const hotConcepts = React.useMemo(() => {
+    if (activeSourceId !== TRENDING_ID) return [];
+    const tagMap = new Map<string, { sources: Set<string>; count: number }>();
+    for (const article of articles) {
+      for (const tag of conceptTags[article.link] ?? []) {
+        const entry = tagMap.get(tag) ?? { sources: new Set<string>(), count: 0 };
+        entry.sources.add(article.sourceName);
+        entry.count += 1;
+        tagMap.set(tag, entry);
+      }
+    }
+    return [...tagMap.entries()]
+      .filter(([, v]) => v.sources.size >= 2 || v.count >= 2)
+      .sort((a, b) => (b[1].sources.size - a[1].sources.size) || (b[1].count - a[1].count))
+      .slice(0, 8)
+      .map(([tag, v]) => ({ tag, sourceCount: v.sources.size, count: v.count }));
+  }, [activeSourceId, articles, conceptTags]);
 
   return (
     <>
@@ -316,6 +355,17 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-4 mb-4">
+          <button
+            onClick={() => setActiveSourceId(TRENDING_ID)}
+            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
+              activeSourceId === TRENDING_ID
+                ? 'bg-black text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            title={t('latestNews.trendingHint')}
+          >
+            {t('latestNews.trending')}
+          </button>
           {sources.map(source => (
             <button
               key={source.id}
@@ -362,6 +412,25 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         </div>
         {extractError && (
           <p className="text-xs text-red-600 -mt-2 mb-3">{extractError}</p>
+        )}
+
+        {hotConcepts.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <span className="text-xs font-semibold text-stone-500 mr-1">{t('latestNews.hotConcepts')}</span>
+            {hotConcepts.map(({ tag, sourceCount, count }) => (
+              <button
+                key={tag}
+                onClick={() => onAnalyze(locale === 'zh' ? `${tag}（多源热点概念）` : `${tag} (trending concept across sources)`)}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-white text-stone-800 border border-stone-300 hover:bg-black hover:text-white hover:border-black transition-colors"
+                title={t('latestNews.hotConceptHint', { tag, sources: String(sourceCount), count: String(count) })}
+              >
+                # {tag}
+                <span className="text-[10px] font-semibold text-orange-600">
+                  ×{count}{sourceCount >= 2 ? ` · ${t('latestNews.crossSource', { sources: String(sourceCount) })}` : ''}
+                </span>
+              </button>
+            ))}
+          </div>
         )}
 
         {isLoading ? (
