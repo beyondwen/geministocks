@@ -7,20 +7,23 @@ Thanks for your interest! 感谢你的关注！Issues and PRs are welcome in **E
 ```bash
 git clone https://github.com/yaoleifly/geministocks.git
 cd geministocks
-npm install
-npm run dev        # http://localhost:3000
+pnpm install
+pnpm dev           # http://localhost:3000
 ```
 
 No environment variables are needed. Configure a model via the in-app **API Settings** (any OpenAI-compatible endpoint works, e.g. a local Ollama or 9Router).
 
 ## Before you submit a PR 提交 PR 前
 
-1. **Type check & build must pass 类型检查与构建必须通过:**
+1. **Typecheck, tests & build must pass 类型检查、测试与构建必须通过** (CI runs the same checks on every PR):
 
    ```bash
-   npx tsc --noEmit
-   npm run build
+   pnpm typecheck
+   pnpm test
+   pnpm build
    ```
+
+   New logic in `services/` or `utils/` should come with unit tests (Vitest, colocated `*.test.ts`). Pure-logic tests run in the node environment; add `// @vitest-environment happy-dom` at the top of the file if the code needs `localStorage`/DOM.
 
 2. **Keep the BYOM principle 遵守 BYOM 原则** — never introduce code that sends user API keys or analysis content to any server other than the user's chosen model provider (see [SECURITY.md](SECURITY.md)).
 

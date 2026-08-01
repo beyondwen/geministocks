@@ -28,8 +28,8 @@ AI-powered investment research tool. Turn any financial news or topic into a str
 Requires Node.js 18+.
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open http://localhost:3000, click **API Settings** in the top-right corner, and connect your model. No environment variables are required — see [.env.example](.env.example) for the few optional ones.
@@ -93,7 +93,7 @@ npm i -g vercel && vercel
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Before submitting, run:
 
 ```bash
-npx tsc --noEmit && npm run build
+pnpm typecheck && pnpm test && pnpm build
 ```
 
 ### License
@@ -121,8 +121,8 @@ npx tsc --noEmit && npm run build
 前置要求：Node.js 18+
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 打开 http://localhost:3000，点击右上角「模型设置」连接你的 AI 模型即可。无需配置任何环境变量——少量可选项见 [.env.example](.env.example)。
@@ -137,7 +137,7 @@ npm run dev
 
 ### 参与贡献
 
-欢迎 PR，流程见 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题报告见 [SECURITY.md](SECURITY.md)。提交前请运行 `npx tsc --noEmit && npm run build`。
+欢迎 PR，流程见 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题报告见 [SECURITY.md](SECURITY.md)。提交前请运行 `pnpm typecheck && pnpm test && pnpm build`。
 
 ### 联系
 
