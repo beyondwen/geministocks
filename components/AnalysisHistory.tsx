@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
 import { ClockIcon, TrashIcon, RefreshIcon } from './icons/Icons';
 import { useI18n } from '../hooks/useI18n';
-
-interface DisplayHistoryItem {
-  id: number;
-  text: string;
-  score?: number; // investment attractiveness score (1-100)
-  gapScore?: number; // information gap score (1-100)
-}
-
-type SortMode = 'newest' | 'score' | 'gapScore';
+import { filterHistory, sortHistory, type DisplayHistoryItem, type SortMode } from '../utils/historyUtils';
 
 interface AnalysisHistoryProps {
   history: DisplayHistoryItem[];
@@ -45,15 +37,7 @@ const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, on
     onReanalyze?.(id);
   };
 
-  const filteredHistory = history.filter(entry =>
-    typeof entry.text === 'string' && entry.text.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const sortedHistory = [...filteredHistory].sort((a, b) => {
-    if (sortMode === 'score') return (b.score ?? -1) - (a.score ?? -1);
-    if (sortMode === 'gapScore') return (b.gapScore ?? -1) - (a.gapScore ?? -1);
-    return b.id - a.id; // id is Date.now() — newest first
-  });
+  const sortedHistory = sortHistory(filterHistory(history, searchTerm), sortMode);
 
   const sortOptions: { mode: SortMode; label: string }[] = [
     { mode: 'newest', label: t('analysisHistory.sortNewest') },
