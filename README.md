@@ -90,7 +90,7 @@ npm i -g vercel && vercel
 
 ### Contributing
 
-PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Before submitting, run:
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the [ROADMAP](ROADMAP.md) for planned work. Before submitting, run:
 
 ```bash
 pnpm typecheck && pnpm test && pnpm build
@@ -133,11 +133,11 @@ pnpm dev
 
 ### 部署
 
-点击上方 Deploy 按钮一键部署，或使用 `vercel` CLI。`vercel.json` 已内置 API 代理 rewrite 与安全响应头。Fork 后请检查 `api/cors-proxy.ts` 的代理防护（同站校验、仅 https、SSRF 防护）是否适合你的域名。
+点击上方 Deploy 按钮一键部署，或使用 `vercel` CLI。`vercel.json` 已内置 API 代理 rewrite 与安全响应头。Fork 后请检查 `api/cors-proxy.ts` 的代理防护（���站校验、仅 https、SSRF 防护）是否适合你的域名。
 
 ### 参与贡献
 
-欢迎 PR，流程见 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题报告见 [SECURITY.md](SECURITY.md)。提交前请运行 `pnpm typecheck && pnpm test && pnpm build`。
+欢迎 PR，流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，规划见 [ROADMAP](ROADMAP.md)；安全问题报告见 [SECURITY.md](SECURITY.md)。提交前请运行 `pnpm typecheck && pnpm test && pnpm build`。
 
 ### 联系
 

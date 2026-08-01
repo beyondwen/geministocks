@@ -94,7 +94,12 @@
     "extractConceptsHint": "用 AI 为当前新闻提取可交易的概念标签，点击标签即可发起挖掘分析",
     "tagHint": "挖掘「{{tag}}」",
     "autoExtract": "自动",
-    "autoExtractHint": "开启后，加载新闻时自动提取概念标签（消耗模型配额）"
+    "autoExtractHint": "开启后，加载新闻时自动提取概念标签（消耗模型配额）",
+    "trending": "热门",
+    "trendingHint": "聚合全部新闻源，按时间混排最新内容",
+    "hotConcepts": "热点概念",
+    "hotConceptHint": "「{tag}」出现在 {count} 条新闻（{sources} 个来源）中，点击发起挖掘分析",
+    "crossSource": "{sources}源"
   },
   "loader": {
     "analyzing": "正在分析中...",
