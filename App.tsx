@@ -228,6 +228,15 @@ const MainPage: React.FC = () => {
     updateTopicHistory(newHistory);
   };
 
+  // Re-run the analysis for a past topic with fresh data (adds a new history entry)
+  const handleReanalyzeTopicHistory = (id: number) => {
+    const entry = topicHistory.find((e) => e.id === id);
+    if (!entry) return;
+    setUserInput(entry.topic);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleAnalyze(entry.topic);
+  };
+
   const handleClearTopicHistory = () => {
     updateTopicHistory([]);
   };
@@ -293,8 +302,8 @@ const MainPage: React.FC = () => {
                     </h2>
                     <p className="mt-1 text-sm text-amber-800 leading-relaxed text-pretty">
                       {locale === 'zh'
-                        ? '本应用使用你自己的模型 API。支持云端服务（OpenRouter、DeepSeek、MiniMax）或运行在本机的 CLI（Claude Code、Codex）。配置仅保存在本地浏览器。'
-                        : 'This app uses your own model API. Choose a cloud service (OpenRouter, DeepSeek, MiniMax) or a CLI running on your machine (Claude Code, Codex). Your config stays in your browser.'}
+                        ? '本应用使用你自己的模型 API。支持云端服务（OpenRouter、DeepSeek、MiniMax）或运行在本机的 CLI（9Router、Claude Code、Codex）。配置仅保存在本地浏览器。'
+                        : 'This app uses your own model API. Choose a cloud service (OpenRouter, DeepSeek, MiniMax) or a CLI running on your machine (9Router, Claude Code, Codex). Your config stays in your browser.'}
                     </p>
                   </div>
                   <button
@@ -358,10 +367,16 @@ const MainPage: React.FC = () => {
                       />}
                     </div>
                      <AnalysisHistory
-                        history={topicHistory.map(h => ({ id: h.id, text: h.topic }))}
+                        history={topicHistory.map(h => ({
+                          id: h.id,
+                          text: h.topic,
+                          score: h.report?.investmentScore?.score,
+                          gapScore: h.report?.informationGapScore?.score,
+                        }))}
                         onSelect={handleSelectTopicHistory}
                         onDelete={handleDeleteTopicHistory}
                         onClear={handleClearTopicHistory}
+                        onReanalyze={handleReanalyzeTopicHistory}
                       />
                   </div>
                 )}
