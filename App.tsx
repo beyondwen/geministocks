@@ -18,6 +18,7 @@ import LatestNews, { NEWS_SOURCES } from './components/LatestNews';
 import Toast from './components/Toast';
 import { useI18n } from './hooks/useI18n';
 import { isApiConfigured } from './services/apiConfigService';
+import { GitHubIcon } from './components/icons/Icons';
 
 // Code-split heavy, interaction-gated components so they don't bloat the
 // initial bundle: modals only load when opened, the report only after an
@@ -385,6 +386,16 @@ const MainPage: React.FC = () => {
           
           <footer className="text-center mt-16 py-8 border-t border-gray-200">
              <div className="flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-4">
+                <a
+                  href="https://github.com/yaoleifly/geministocks"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black transition-colors"
+                >
+                  <GitHubIcon className="w-4 h-4" aria-hidden="true" />
+                  <span className="font-medium">{t('footer.openSource')}</span>
+                  <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded border border-gray-300 text-gray-500">MIT</span>
+                </a>
                 <p className="text-sm text-gray-500">
                   {t('footer.contact')}
                   <a
@@ -392,6 +403,17 @@ const MainPage: React.FC = () => {
                     className="font-medium text-black hover:text-gray-700 animated-underline transition-colors"
                   >
                     codes@z.org
+                  </a>
+                </p>
+                <p className="text-sm text-gray-500">
+                  {t('footer.company')}
+                  <a
+                    href="https://ssgoo.net"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-black hover:text-gray-700 animated-underline transition-colors"
+                  >
+                    {t('footer.companyName')}
                   </a>
                 </p>
              </div>
