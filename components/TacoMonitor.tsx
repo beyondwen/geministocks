@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../hooks/useI18n';
 import { analyzeTacoSignals } from '../services/geminiService';
 import { isApiConfigured } from '../services/apiConfigService';
-import { fetchAllSources, type NewsSource } from '../services/newsService';
+import { type NewsSource } from '../services/newsService';
+import { gatherIndicatorArticles, TACO_QUERIES } from '../services/indicatorNewsService';
 import { deriveTacoPhase, computeEdgeDecay, decayBand, type TacoScanResult, type TacoPhase } from '../utils/tacoUtils';
 import { SparklesIcon } from './icons/Icons';
 
@@ -61,11 +62,9 @@ const TacoMonitor: React.FC<{ sources: NewsSource[] }> = ({ sources }) => {
     setIsScanning(true);
     setScanError(null);
     try {
-      const articles = await fetchAllSources(sources, 6, 24);
-      const result = await analyzeTacoSignals(
-        articles.map(a => ({ title: a.title, description: a.description, sourceName: a.sourceName })),
-        locale
-      );
+      // Targeted search (if enabled) + display RSS + English-finance RSS pack
+      const { articles } = await gatherIndicatorArticles(sources, TACO_QUERIES);
+      const result = await analyzeTacoSignals(articles, locale);
       setScan(result);
       saveStored(result);
     } catch (err) {

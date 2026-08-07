@@ -14,6 +14,8 @@ export const NEWS_SOURCES: NewsSource[] = [
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
   { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
+  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
 ];
 
 const SOURCE_COLORS: { [key: string]: string } = {
@@ -22,6 +24,8 @@ const SOURCE_COLORS: { [key: string]: string } = {
   '雪球': 'bg-gray-100 text-gray-800',
   '彭博': 'bg-gray-100 text-gray-800',
   'Buzzing': 'bg-gray-100 text-gray-800',
+  'CNBC': 'bg-gray-100 text-gray-800',
+  'MarketWatch': 'bg-gray-100 text-gray-800',
 };
 
 // --- Helpers ---
