@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useI18n } from '../hooks/useI18n';
 import { analyzeMarketSentiment } from '../services/geminiService';
 import { isApiConfigured } from '../services/apiConfigService';
-import { fetchAllSources, type NewsSource } from '../services/newsService';
+import { type NewsSource } from '../services/newsService';
+import { gatherIndicatorArticles, THERMOMETER_QUERIES } from '../services/indicatorNewsService';
 import { computeExitPressure, pressureBand, type SentimentScanResult } from '../utils/sentimentUtils';
 import { SparklesIcon } from './icons/Icons';
 
@@ -67,12 +68,9 @@ const MarketThermometer: React.FC<{ sources: NewsSource[] }> = ({ sources }) => 
     setIsScanning(true);
     setScanError(null);
     try {
-      // Wider window than the display feed: up to 6 per source, 24 total
-      const articles = await fetchAllSources(sources, 6, 24);
-      const result = await analyzeMarketSentiment(
-        articles.map(a => ({ title: a.title, description: a.description, sourceName: a.sourceName })),
-        locale
-      );
+      // Targeted search (if enabled) + display RSS + English-finance RSS pack
+      const { articles } = await gatherIndicatorArticles(sources, THERMOMETER_QUERIES);
+      const result = await analyzeMarketSentiment(articles, locale);
       setScan(result);
       saveStored({ buffettPercentile, scan: result });
     } catch (err) {
