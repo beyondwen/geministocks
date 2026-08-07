@@ -98,8 +98,8 @@
     "trending": "Trending",
     "trendingHint": "Aggregate all sources, interleaved by recency",
     "hotConcepts": "Hot Concepts",
-    "hotConceptHint": "\"{tag}\" appears in {count} articles across {sources} sources — click to analyze",
-    "crossSource": "{sources} sources"
+    "hotConceptHint": "\"{{tag}}\" appears in {{count}} articles across {{sources}} sources — click to analyze",
+    "crossSource": "{{sources}} sources"
   },
   "loader": {
     "analyzing": "Analyzing...",
@@ -560,7 +560,7 @@
     "buffettLink": "Check current value",
     "newsScoreLabel": "News Crowding (AI)",
     "notScanned": "Not scanned yet. Click the button above to scan all news sources for institutional behavior signals.",
-    "lastScan": "Based on {count} articles · {time}",
+    "lastScan": "Based on {{count}} articles · {{time}}",
     "showSignals": "▸ Show the five signal details",
     "hideSignals": "▾ Hide signal details",
     "signal": {
@@ -577,5 +577,44 @@
       "extreme": "Extreme"
     },
     "disclaimer": "This gauge combines AI interpretation of public news with a manually entered valuation percentile. Research reference only, not investment advice. Major tops are rare events — treat this as a position-sizing input, not a sell-everything switch."
+  },
+  "taco": {
+    "title": "TACO Cycle Monitor",
+    "subtitle": "Tracks the tariff-game cycle (threat -> panic -> walk-back) via AI news scanning, plus the crowding of the TACO trade itself — the more famous the pattern, the faster its alpha decays and the higher the \"no chicken-out this time\" reputation-repair risk.",
+    "phaseLabel": "Current Cycle Phase",
+    "phase": {
+      "quiet": "Quiet",
+      "threat": "Threat Brewing",
+      "panic": "Panic Window",
+      "walkback": "Walk-back Rally",
+      "complacency": "Market Numb"
+    },
+    "confidence": "confidence {{value}}",
+    "complacencyNote": "Warning: markets have learned to ignore threats — TACO consensus is crowded. Watch for a credibility-restoring \"no chicken-out\" event (negative-skew risk).",
+    "quietNote": "No active tariff-game cycle in the current news window.",
+    "noData": "awaiting scan",
+    "decayLabel": "TACO Crowding (alpha decay)",
+    "decayHint": "Blends media density of the TACO meme itself (60%) with market numbness to threats (40%). Higher = the pattern is common knowledge, less edge remains, fatter left tail.",
+    "decay": {
+      "fresh": "Fresh",
+      "known": "Well-known",
+      "crowded": "Crowded"
+    },
+    "scanNow": "AI Scan News",
+    "rescan": "Rescan",
+    "scanning": "Scanning…",
+    "noApi": "Configure an AI model in API Settings first",
+    "scanError": "Scan failed, please retry later",
+    "lastScan": "Based on {{count}} articles · {{time}}",
+    "showSignals": "▸ Show the five signal details",
+    "hideSignals": "▾ Hide signal details",
+    "signal": {
+      "threatEscalation": "Threat Escalation Density",
+      "marketPanic": "Panic Reaction Intensity",
+      "walkback": "Walk-back / Softening",
+      "complacency": "Threat Numbness",
+      "tacoMentions": "TACO Meme Exposure"
+    },
+    "disclaimer": "AI interpretation of public news; the phase reflects the current news window only. Past validity of the TACO pattern does not guarantee the future — the one failure may cost far more than all prior small wins. Research reference only, not investment advice."
   }
 }
