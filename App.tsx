@@ -15,6 +15,7 @@ import AnalysisHistory from './components/AnalysisHistory';
 import { CacheStats } from './components/CacheStats';
 import AppHeader from './components/AppHeader';
 import LatestNews, { NEWS_SOURCES } from './components/LatestNews';
+import MarketThermometer from './components/MarketThermometer';
 import Toast from './components/Toast';
 import { useI18n } from './hooks/useI18n';
 import { isApiConfigured } from './services/apiConfigService';
@@ -367,6 +368,7 @@ const MainPage: React.FC = () => {
                         sources={NEWS_SOURCES}
                       />}
                     </div>
+                    <MarketThermometer sources={NEWS_SOURCES} />
                      <AnalysisHistory
                         history={topicHistory.map(h => ({
                           id: h.id,

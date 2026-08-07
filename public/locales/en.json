@@ -544,5 +544,38 @@
     "description": "If you find Super Digger helpful, please consider supporting the author.",
     "description2": "Your support motivates us to continuously improve the service.",
     "buyMeACoffee": "Buy Me A Coffee"
+  },
+  "thermometer": {
+    "title": "Market Thermometer",
+    "subtitle": "Valuation x sentiment framework: the Buffett indicator sets the risk zone (slow variable), AI scans news for institutional top signals (fast variable), combined into a 0-100 exit-pressure score.",
+    "exitPressure": "Exit Pressure",
+    "noData": "awaiting data",
+    "scanNow": "AI Scan News",
+    "rescan": "Rescan",
+    "scanning": "Scanning…",
+    "noApi": "Configure an AI model in API Settings first",
+    "scanError": "Scan failed, please retry later",
+    "buffettLabel": "Buffett Indicator Percentile",
+    "buffettHint": "Historical percentile of market cap / GDP (P90 = higher than 90% of history).",
+    "buffettLink": "Check current value",
+    "newsScoreLabel": "News Crowding (AI)",
+    "notScanned": "Not scanned yet. Click the button above to scan all news sources for institutional behavior signals.",
+    "lastScan": "Based on {count} articles · {time}",
+    "showSignals": "▸ Show the five signal details",
+    "hideSignals": "▾ Hide signal details",
+    "signal": {
+      "targetPriceRaises": "Target-Price Raise Density",
+      "consensusBullish": "Bullish Consensus Crowding",
+      "goodNewsFatigue": "Good-News Fatigue",
+      "institutionalRetreat": "Institutional Retreat",
+      "externalBlame": "External-Blame Narrative"
+    },
+    "band": {
+      "calm": "Calm",
+      "elevated": "Elevated",
+      "high": "High",
+      "extreme": "Extreme"
+    },
+    "disclaimer": "This gauge combines AI interpretation of public news with a manually entered valuation percentile. Research reference only, not investment advice. Major tops are rare events — treat this as a position-sizing input, not a sell-everything switch."
   }
 }

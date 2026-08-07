@@ -544,5 +544,38 @@
     "description": "如果觉得挖掘机对您有帮助，请考虑支持作者。",
     "description2": "您的支持激励我们不断改进服务。",
     "buyMeACoffee": "请我喝杯咖啡"
+  },
+  "thermometer": {
+    "title": "市场情绪温度计",
+    "subtitle": "估值 × 情绪双因子框架：巴菲特指数定义风险区域（慢变量），AI 扫描新闻中的机构行为顶部信号（快变量），合成 0-100 离场压力分。",
+    "exitPressure": "离场压力分",
+    "noData": "待输入数据",
+    "scanNow": "AI 扫描新闻",
+    "rescan": "重新扫描",
+    "scanning": "扫描中…",
+    "noApi": "请先在「模型设置」中配置 AI 模型",
+    "scanError": "扫描失败，请稍后重试",
+    "buffettLabel": "巴菲特指数历史分位",
+    "buffettHint": "总市值/GDP 的历史百分位（P90 = 高于 90% 的历史时期）。",
+    "buffettLink": "查看当前值",
+    "newsScoreLabel": "新闻拥挤度（AI）",
+    "notScanned": "尚未扫描。点击右上角按钮，AI 将扫描全部新闻源中的机构行为信号。",
+    "lastScan": "基于 {count} 条新闻 · {time}",
+    "showSignals": "▸ 查看五项机构行为信号明细",
+    "hideSignals": "▾ 收起信号明细",
+    "signal": {
+      "targetPriceRaises": "目标价上调密度",
+      "consensusBullish": "一致看多拥挤度",
+      "goodNewsFatigue": "利好钝化",
+      "institutionalRetreat": "机构撤离迹象",
+      "externalBlame": "外因甩锅叙事"
+    },
+    "band": {
+      "calm": "平静",
+      "elevated": "升温",
+      "high": "警戒",
+      "extreme": "极端"
+    },
+    "disclaimer": "本指标基于公开新闻的 AI 解读与手动输入的估值分位，仅供研究参考，不构成投资建议。大顶样本极少，请将其视为仓位调节参考而非清仓开关。"
   }
 }

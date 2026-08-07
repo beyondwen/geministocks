@@ -3,22 +3,10 @@ import { NewspaperIcon, SparklesIcon, XIcon, ExternalLinkIcon } from './icons/Ic
 import { useI18n } from '../hooks/useI18n';
 import { extractNewsConcepts } from '../services/geminiService';
 import { isApiConfigured } from '../services/apiConfigService';
+import { fetchNewsSource, fetchAllSources, type NewsArticle, type NewsSource } from '../services/newsService';
 
-// --- Data & Types ---
-export interface NewsArticle {
-  title: string;
-  link: string;
-  description: string;
-  pubDate: string;
-  sourceName: string;
-}
-
-export interface NewsSource {
-  id: string;
-  name: string;
-  url: string;
-  type?: 'rss' | 'json';
-}
+// Re-export so existing imports (App.tsx) keep working
+export type { NewsArticle, NewsSource };
 
 export const NEWS_SOURCES: NewsSource[] = [
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
@@ -249,62 +237,21 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   }, [articles, autoExtract]);
 
   useEffect(() => {
-    // Fetch one source and return its articles sorted by date (newest first)
-    const fetchSource = async (source: NewsSource): Promise<NewsArticle[]> => {
-      let fetchedArticles: Omit<NewsArticle, 'sourceName'>[] = [];
-      if (source.type === 'json') {
-        const response = await fetch(source.url);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (!data.items) throw new Error(`Invalid JSON feed format.`);
-
-        fetchedArticles = data.items.map((item: any) => ({
-          title: item.title,
-          link: item.url,
-          description: item.summary || item.content_html || '',
-          pubDate: item.date_published || new Date().toISOString(),
-        }));
-      } else {
-        const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.status !== 'ok') throw new Error(`Failed to fetch news feed via rss2json.`);
-
-        fetchedArticles = data.items.map((item: any) => ({
-          title: item.title,
-          link: item.link,
-          description: item.description,
-          pubDate: item.pubDate,
-        }));
-      }
-      return fetchedArticles
-        .map(article => ({ ...article, sourceName: source.name }))
-        .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-    };
-
     const fetchNews = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
         if (activeSourceId === TRENDING_ID) {
-          // Aggregate view: fetch all sources in parallel (best-effort), interleave the freshest
-          const results = await Promise.allSettled(sources.map(s => fetchSource(s)));
-          const merged = results
-            .filter((r): r is PromiseFulfilledResult<NewsArticle[]> => r.status === 'fulfilled')
-            // Cap each source so a single high-volume feed can't dominate the mix
-            .flatMap(r => r.value.slice(0, 3));
-          if (merged.length === 0) throw new Error('All sources failed');
-          merged.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-          setArticles(merged.slice(0, 10));
+          // Aggregate view: parallel best-effort fetch, capped per source, interleaved by recency
+          setArticles(await fetchAllSources(sources, 3, 10));
         } else {
           const source = sources.find(s => s.id === activeSourceId);
           if (!source) {
             setError(t('latestNews.errorNotFound'));
             return;
           }
-          const list = await fetchSource(source);
+          const list = await fetchNewsSource(source);
           setArticles(list.slice(0, 4));
         }
       } catch (err) {

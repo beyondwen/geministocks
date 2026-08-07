@@ -491,3 +491,52 @@ export const extractNewsConcepts = async (
     }
     return result;
 };
+
+/**
+ * Market thermometer: scan a window of news articles for institutional-behavior
+ * top signals (the "fast variable" of the valuation x sentiment framework):
+ * target-price raise density, consensus bullishness, good-news fatigue,
+ * institutional retreat after earnings, and blame-external-factors narratives.
+ * Returns a 0-100 crowding score plus per-signal strength and evidence.
+ */
+export const analyzeMarketSentiment = async (
+    articles: { title: string; description: string; sourceName: string }[],
+    locale: Locale
+): Promise<import('../utils/sentimentUtils').SentimentScanResult> => {
+    if (articles.length === 0) {
+        return { newsScore: 0, signals: [], scannedAt: new Date().toISOString(), articleCount: 0 };
+    }
+    const lang = locale === 'zh' ? 'Simplified Chinese' : 'English';
+    const systemInstruction = `You are a contrarian sell-side behavior analyst. Scan the numbered financial news items for INSTITUTIONAL TOP-SIGNAL behaviors:
+1. "targetPriceRaises" — analysts/institutions raising target prices or price forecasts, especially in clusters
+2. "consensusBullish" — crowded unanimous bullish language ("all analysts agree", "strong buy consensus", price targets chasing price)
+3. "goodNewsFatigue" — stocks/indices failing to rally on good earnings or positive news (buyers exhausted)
+4. "institutionalRetreat" — funds/insiders reducing positions while ratings stay bullish
+5. "externalBlame" — narratives blaming declines on external factors (deleveraging, rates, war) while avoiding fundamentals
+
+For EACH signal give: strength 0-100 (0 = absent, 100 = pervasive across many items) and one-sentence evidence in ${lang} citing which news items support it (or state it is absent).
+Then give "newsScore" 0-100: the aggregate crowding/euphoria level implied by this news window (high = crowded consensus + top signals present; low = fear/neutral/no signals). Be conservative: sparse or ambiguous evidence must yield low strengths.
+Respond STRICTLY in JSON. Schema: {"newsScore": number, "signals": [{"key": "string (one of the five keys above)", "strength": number, "evidence": "string"}]}`;
+    const prompt = articles
+        .map((a, i) => `${i}. [${a.sourceName}] ${a.title} — ${stripToPlainText(a.description).slice(0, 150)}`)
+        .join('\n');
+
+    const data = await callOpenRouterAI(prompt, systemInstruction, getModelName(), false);
+    const VALID_KEYS = ['targetPriceRaises', 'consensusBullish', 'goodNewsFatigue', 'institutionalRetreat', 'externalBlame'];
+    const signals = (Array.isArray(data?.signals) ? data.signals : [])
+        .filter((s: any) => VALID_KEYS.includes(s?.key))
+        .map((s: any) => ({
+            key: String(s.key),
+            strength: Math.min(100, Math.max(0, Number(s.strength) || 0)),
+            evidence: String(s.evidence || '').slice(0, 300),
+        }));
+    return {
+        newsScore: Math.min(100, Math.max(0, Number(data?.newsScore) || 0)),
+        signals,
+        scannedAt: new Date().toISOString(),
+        articleCount: articles.length,
+    };
+};
+
+/** Strip HTML tags without relying on DOMParser (keeps this callable in any environment). */
+const stripToPlainText = (html: string): string => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
