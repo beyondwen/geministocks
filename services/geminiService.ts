@@ -538,5 +538,44 @@ Respond STRICTLY in JSON. Schema: {"newsScore": number, "signals": [{"key": "str
     };
 };
 
+/**
+ * TACO monitor: scan news for the Trump-tariff-threat game cycle
+ * (threat -> panic -> walk-back) plus two decay signals: market complacency
+ * toward threats, and media density of the TACO meme itself (common knowledge
+ * = alpha decay). Pure phase/decay math lives in utils/tacoUtils.ts.
+ */
+export const analyzeTacoSignals = async (
+    articles: { title: string; description: string; sourceName: string }[],
+    locale: Locale
+): Promise<import('../utils/tacoUtils').TacoScanResult> => {
+    if (articles.length === 0) {
+        return { signals: [], scannedAt: new Date().toISOString(), articleCount: 0 };
+    }
+    const lang = locale === 'zh' ? 'Simplified Chinese' : 'English';
+    const systemInstruction = `You are a policy-game analyst tracking the "TACO" pattern (Trump Always Chickens Out: aggressive tariff/trade threat -> market panic -> walk-back/pause/deal -> rally). Scan the numbered financial news items for FIVE signals:
+1. "threatEscalation" — NEW tariff/trade/sanction threats or escalation rhetoric from Trump or the US administration
+2. "marketPanic" — markets actually selling off or panicking in response to trade threats (not generic volatility)
+3. "walkback" — softening: pauses, exemptions, "great deal" announcements, deadline extensions, retreat from threats
+4. "complacency" — markets/commentators explicitly IGNORING or dismissing threats ("markets shrugged off", "investors have learned", muted reaction to new threats)
+5. "tacoMentions" — media explicitly naming/discussing the TACO pattern or trade itself ("TACO trade", "Trump always chickens out", "buy the tariff dip" as known strategy)
+
+For EACH signal give: strength 0-100 (0 = absent in this window, 100 = pervasive) and one-sentence evidence in ${lang} citing which items support it (or state it is absent). Signals are about the CURRENT window only — do not use outside knowledge of past cycles. Be conservative: sparse or ambiguous evidence must yield low strengths.
+Respond STRICTLY in JSON. Schema: {"signals": [{"key": "string (one of the five keys)", "strength": number, "evidence": "string"}]}`;
+    const prompt = articles
+        .map((a, i) => `${i}. [${a.sourceName}] ${a.title} — ${stripToPlainText(a.description).slice(0, 150)}`)
+        .join('\n');
+
+    const data = await callOpenRouterAI(prompt, systemInstruction, getModelName(), false);
+    const VALID_TACO_KEYS = ['threatEscalation', 'marketPanic', 'walkback', 'complacency', 'tacoMentions'];
+    const signals = (Array.isArray(data?.signals) ? data.signals : [])
+        .filter((s: any) => VALID_TACO_KEYS.includes(s?.key))
+        .map((s: any) => ({
+            key: String(s.key),
+            strength: Math.min(100, Math.max(0, Number(s.strength) || 0)),
+            evidence: String(s.evidence || '').slice(0, 300),
+        }));
+    return { signals, scannedAt: new Date().toISOString(), articleCount: articles.length };
+};
+
 /** Strip HTML tags without relying on DOMParser (keeps this callable in any environment). */
 const stripToPlainText = (html: string): string => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();

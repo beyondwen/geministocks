@@ -16,6 +16,7 @@ import { CacheStats } from './components/CacheStats';
 import AppHeader from './components/AppHeader';
 import LatestNews, { NEWS_SOURCES } from './components/LatestNews';
 import MarketThermometer from './components/MarketThermometer';
+import TacoMonitor from './components/TacoMonitor';
 import Toast from './components/Toast';
 import { useI18n } from './hooks/useI18n';
 import { isApiConfigured } from './services/apiConfigService';
@@ -368,7 +369,10 @@ const MainPage: React.FC = () => {
                         sources={NEWS_SOURCES}
                       />}
                     </div>
-                    <MarketThermometer sources={NEWS_SOURCES} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                      <MarketThermometer sources={NEWS_SOURCES} />
+                      <TacoMonitor sources={NEWS_SOURCES} />
+                    </div>
                      <AnalysisHistory
                         history={topicHistory.map(h => ({
                           id: h.id,
