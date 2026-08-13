@@ -49,7 +49,7 @@
     "deployVercel": "Deploy to Vercel",
     "deployVercelHint": "One-click clone and deploy to Vercel (recommended, API proxies work out of the box)",
     "deployCloudflare": "Deploy to Cloudflare",
-    "deployCloudflareHint": "Deploy to Cloudflare (API proxies require manual setup)"
+    "deployCloudflareHint": "Deploy the app and API proxies to Cloudflare Workers"
   },
   "imageModal": {
     "title": "Welcome to follow \"Xiaosheng Dushu\""

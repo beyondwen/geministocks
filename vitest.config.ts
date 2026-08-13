@@ -6,6 +6,7 @@ export default defineConfig({
     // Pure-logic tests run in node by default; DOM-dependent test files opt in
     // to a browser-like environment with `// @vitest-environment happy-dom`.
     environment: 'node',
+    setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
     testTimeout: 10000,

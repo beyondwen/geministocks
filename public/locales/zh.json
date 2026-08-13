@@ -49,7 +49,7 @@
     "deployVercel": "Deploy to Vercel",
     "deployVercelHint": "一键克隆仓库并部署到 Vercel（推荐，API 代理开箱即用）",
     "deployCloudflare": "Deploy to Cloudflare",
-    "deployCloudflareHint": "部署到 Cloudflare（需自行配置 API 代理）"
+    "deployCloudflareHint": "将应用和 API 代理一并部署到 Cloudflare Workers"
   },
   "imageModal": {
     "title": "欢迎关注\"小声读书\""

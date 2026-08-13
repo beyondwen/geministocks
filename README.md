@@ -75,13 +75,22 @@ docs/           Design notes and archived plans
 
 ### Deploy
 
-One-click with the button above, or:
+One-click with the Vercel button above, or deploy to Vercel with:
 
 ```bash
 npm i -g vercel && vercel
 ```
 
 `vercel.json` ships with API rewrites and security headers. If you fork this project, review the proxy protections in `api/cors-proxy.ts` (same-site check, https-only, SSRF guard) for your own domain.
+
+To deploy the SPA and its API proxies together on Cloudflare Workers:
+
+```bash
+pnpm install
+pnpm deploy:cf
+```
+
+The Worker configuration lives in `wrangler.jsonc`; the proxy implementation is in `worker/index.ts`.
 
 ### Security
 
@@ -133,7 +142,16 @@ pnpm dev
 
 ### 部署
 
-点击上方 Deploy 按钮一键部署，或使用 `vercel` CLI。`vercel.json` 已内置 API 代理 rewrite 与安全响应头。Fork 后请检查 `api/cors-proxy.ts` 的代理防护（���站校验、仅 https、SSRF 防护）是否适合你的域名。
+点击上方 Deploy 按钮一键部署到 Vercel，或使用 `vercel` CLI。`vercel.json` 已内置 API 代理 rewrite 与安全响应头。Fork 后请检查 `api/cors-proxy.ts` 的代理防护（跨站校验、仅 https、SSRF 防护）是否适合你的域名。
+
+部署到 Cloudflare Workers（静态站与 API 代理会一起发布）：
+
+```bash
+pnpm install
+pnpm deploy:cf
+```
+
+Cloudflare 配置位于 `wrangler.jsonc`，代理实现位于 `worker/index.ts`。
 
 ### 参与贡献
 

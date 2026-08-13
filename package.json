@@ -12,11 +12,13 @@
   "author": "僧僧 <codes@z.org>",
   "scripts": {
     "dev": "vite",
+    "dev:cf": "wrangler dev",
     "build": "vite build",
+    "deploy:cf": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json --noEmit"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -38,6 +40,8 @@
     "happy-dom": "^20.11.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "vitest": "^4.1.8"
-  }
+    "vitest": "^4.1.8",
+    "wrangler": "^4.122.0"
+  },
+  "packageManager": "pnpm@10.34.5"
 }
