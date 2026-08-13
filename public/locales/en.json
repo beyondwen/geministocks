@@ -68,7 +68,7 @@
     "searchExample": "The \"Real-time Search Sources\" card in the report shows each cited page title, domain, and publish date so you can verify data freshness.",
     "newsIcon": "📰",
     "newsTitle": "Latest News & Concept Tags",
-    "newsDescription": "The homepage aggregates five news sources: Xueqiu, 36Kr, Geek Insight, Bloomberg, and Buzzing. Click \"AI Concept Tags\" to extract tradeable concept tags (e.g. \"Foldable Display\", \"AI Chips\") for the current news in one batch; click any tag to dig into that concept. Turn on \"Auto\" to extract automatically when switching sources. Each article also has a one-click analyze button.",
+    "newsDescription": "The homepage aggregates Xueqiu, Huxiu, Geek Insight, Bloomberg, Buzzing, Ahead of AI and more, and supports adding custom RSS feeds via \"+ RSS\". Click \"AI Concept Tags\" to batch-extract tradable concept tags for current news; click any tag to launch a dig analysis. With \"Auto\" on, tags are extracted automatically when switching sources. Each article also has one-click analysis.",
     "newsExample": "Example: a foldable-phone launch article gets a \"Foldable Display\" tag — click it to analyze the supply-chain opportunity.",
     "historyIcon": "📊",
     "historyTitle": "History & Review",
@@ -95,11 +95,14 @@
     "tagHint": "Dig into \"{{tag}}\"",
     "autoExtract": "Auto",
     "autoExtractHint": "When enabled, concept tags are extracted automatically when news loads (uses model quota)",
-    "trending": "Trending",
-    "trendingHint": "Aggregate all sources, interleaved by recency",
-    "hotConcepts": "Hot Concepts",
-    "hotConceptHint": "\"{{tag}}\" appears in {{count}} articles across {{sources}} sources — click to analyze",
-    "crossSource": "{{sources}} sources"
+    "addCustomSource": "Add",
+    "addCustomSourceHint": "Add a custom RSS source",
+    "removeCustomSource": "Remove custom source {{name}}",
+    "customSourceNamePlaceholder": "Name (e.g. Caixin)",
+    "customSourceUrlPlaceholder": "RSS URL, e.g. https://example.com/feed",
+    "customSourceRequired": "Name and RSS URL are required",
+    "customSourceInvalidUrl": "Invalid RSS URL",
+    "customSourceDuplicate": "This RSS source already exists"
   },
   "loader": {
     "analyzing": "Analyzing...",

@@ -3,20 +3,27 @@ import { NewspaperIcon, SparklesIcon, XIcon, ExternalLinkIcon } from './icons/Ic
 import { useI18n } from '../hooks/useI18n';
 import { extractNewsConcepts } from '../services/geminiService';
 import { isApiConfigured } from '../services/apiConfigService';
-import { fetchNewsSource, fetchAllSources, NEWS_SOURCES, type NewsArticle, type NewsSource } from '../services/newsService';
+import {
+  fetchNewsSource,
+  NEWS_SOURCES,
+  loadCustomSources,
+  saveCustomSources,
+  getDisplaySources,
+  type NewsArticle,
+  type NewsSource,
+} from '../services/newsService';
 
 // Re-export so existing imports (App.tsx) keep working
 export type { NewsArticle, NewsSource };
 export { NEWS_SOURCES };
 
 const SOURCE_COLORS: { [key: string]: string } = {
-  '36氪': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
+  '虎嗅': 'bg-gray-100 text-gray-800',
   '彭博': 'bg-gray-100 text-gray-800',
   'Buzzing': 'bg-gray-100 text-gray-800',
-  'CNBC': 'bg-gray-100 text-gray-800',
-  'MarketWatch': 'bg-gray-100 text-gray-800',
+  'Ahead of AI': 'bg-gray-100 text-gray-800',
 };
 
 // --- Helpers ---
@@ -33,9 +40,6 @@ const truncateText = (text: string, length: number) => {
 const CONCEPT_CACHE_KEY = 'news-concept-tags';
 const CONCEPT_CACHE_MAX = 120;
 const AUTO_EXTRACT_KEY = 'news-auto-extract';
-
-// Pseudo-source id for the cross-source aggregated "trending" view
-const TRENDING_ID = 'trending';
 
 const loadConceptCache = (): Record<string, string[]> => {
   try {
@@ -160,6 +164,11 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeSourceId, setActiveSourceId] = useState<string>('xueqiu'); // Default to 雪球
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [customSources, setCustomSources] = useState<NewsSource[]>(() => loadCustomSources());
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSourceName, setNewSourceName] = useState('');
+  const [newSourceUrl, setNewSourceUrl] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
   const [conceptTags, setConceptTags] = useState<Record<string, string[]>>({});
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -231,30 +240,29 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articles, autoExtract]);
 
+  // Tabs: visible built-ins + user's custom feeds
+  const displaySources = React.useMemo(
+    () => getDisplaySources(customSources),
+    [customSources]
+  );
+
   useEffect(() => {
     const fetchNews = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        if (activeSourceId === TRENDING_ID) {
-          // Aggregate view: parallel best-effort fetch, capped per source, interleaved by recency
-          setArticles(await fetchAllSources(sources, 3, 10));
-        } else {
-          const source = sources.find(s => s.id === activeSourceId);
-          if (!source) {
-            setError(t('latestNews.errorNotFound'));
-            return;
-          }
-          const list = await fetchNewsSource(source);
-          setArticles(list.slice(0, 4));
+        const source = displaySources.find(s => s.id === activeSourceId);
+        if (!source) {
+          setError(t('latestNews.errorNotFound'));
+          return;
         }
+        const list = await fetchNewsSource(source);
+        setArticles(list.slice(0, 4));
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         console.error(`Failed to fetch news (${activeSourceId}):`, errorMessage);
-        const sourceName = activeSourceId === TRENDING_ID
-          ? t('latestNews.trending')
-          : (sources.find(s => s.id === activeSourceId)?.name ?? activeSourceId);
+        const sourceName = displaySources.find(s => s.id === activeSourceId)?.name ?? activeSourceId;
         setError(t('latestNews.errorLoad', { sourceName }));
         setArticles([]);
       } finally {
@@ -263,27 +271,43 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
     };
 
     fetchNews();
-  }, [activeSourceId, sources, t]);
+  }, [activeSourceId, displaySources, t]);
 
-  // Hot concepts: tags whose articles span >= 2 distinct sources (cross-source = heat signal),
-  // or appear on >= 2 articles. Only meaningful in the trending view.
-  const hotConcepts = React.useMemo(() => {
-    if (activeSourceId !== TRENDING_ID) return [];
-    const tagMap = new Map<string, { sources: Set<string>; count: number }>();
-    for (const article of articles) {
-      for (const tag of conceptTags[article.link] ?? []) {
-        const entry = tagMap.get(tag) ?? { sources: new Set<string>(), count: 0 };
-        entry.sources.add(article.sourceName);
-        entry.count += 1;
-        tagMap.set(tag, entry);
-      }
+  const handleAddSource = () => {
+    setAddError(null);
+    const name = newSourceName.trim();
+    const url = newSourceUrl.trim();
+    if (!name || !url) {
+      setAddError(t('latestNews.customSourceRequired'));
+      return;
     }
-    return [...tagMap.entries()]
-      .filter(([, v]) => v.sources.size >= 2 || v.count >= 2)
-      .sort((a, b) => (b[1].sources.size - a[1].sources.size) || (b[1].count - a[1].count))
-      .slice(0, 8)
-      .map(([tag, v]) => ({ tag, sourceCount: v.sources.size, count: v.count }));
-  }, [activeSourceId, articles, conceptTags]);
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('bad protocol');
+    } catch {
+      setAddError(t('latestNews.customSourceInvalidUrl'));
+      return;
+    }
+    const all = [...NEWS_SOURCES, ...customSources];
+    if (all.some(s => s.url === url)) {
+      setAddError(t('latestNews.customSourceDuplicate'));
+      return;
+    }
+    const next = [...customSources, { id: `custom-${Date.now()}`, name, url, custom: true as const }];
+    setCustomSources(next);
+    saveCustomSources(next);
+    setNewSourceName('');
+    setNewSourceUrl('');
+    setShowAddForm(false);
+    setActiveSourceId(next[next.length - 1].id);
+  };
+
+  const handleRemoveSource = (id: string) => {
+    const next = customSources.filter(s => s.id !== id);
+    setCustomSources(next);
+    saveCustomSources(next);
+    if (activeSourceId === id) setActiveSourceId('xueqiu');
+  };
 
   return (
     <>
@@ -297,30 +321,43 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-4 mb-4">
-          <button
-            onClick={() => setActiveSourceId(TRENDING_ID)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
-              activeSourceId === TRENDING_ID
-                ? 'bg-black text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            title={t('latestNews.trendingHint')}
-          >
-            {t('latestNews.trending')}
-          </button>
-          {sources.map(source => (
-            <button
-              key={source.id}
-              onClick={() => setActiveSourceId(source.id)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
-                activeSourceId === source.id
-                  ? 'bg-black text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {source.name}
-            </button>
+          {displaySources.map(source => (
+            <span key={source.id} className="relative inline-flex items-center group/tab">
+              <button
+                onClick={() => setActiveSourceId(source.id)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
+                  activeSourceId === source.id
+                    ? 'bg-black text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } ${source.custom ? 'pr-7' : ''}`}
+              >
+                {source.name}
+              </button>
+              {source.custom && (
+                <button
+                  onClick={() => handleRemoveSource(source.id)}
+                  className={`absolute right-1.5 p-0.5 rounded-full transition-colors ${
+                    activeSourceId === source.id ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-black'
+                  }`}
+                  aria-label={t('latestNews.removeCustomSource', { name: source.name })}
+                  title={t('latestNews.removeCustomSource', { name: source.name })}
+                >
+                  <XIcon className="w-3 h-3" />
+                </button>
+              )}
+            </span>
           ))}
+          <button
+            onClick={() => { setShowAddForm(v => !v); setAddError(null); }}
+            className={`px-3 py-1.5 text-sm font-medium rounded-full border border-dashed transition-colors ${
+              showAddForm
+                ? 'border-black text-black bg-gray-50'
+                : 'border-gray-300 text-gray-500 hover:border-black hover:text-black'
+            }`}
+            title={t('latestNews.addCustomSourceHint')}
+          >
+            {'+ RSS'}
+          </button>
           {!isLoading && !error && articles.length > 0 && (
             <div className="ml-auto flex items-center gap-2">
               <button
@@ -356,22 +393,36 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
           <p className="text-xs text-red-600 -mt-2 mb-3">{extractError}</p>
         )}
 
-        {hotConcepts.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
-            <span className="text-xs font-semibold text-stone-500 mr-1">{t('latestNews.hotConcepts')}</span>
-            {hotConcepts.map(({ tag, sourceCount, count }) => (
+        {showAddForm && (
+          <div className="mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={newSourceName}
+                onChange={e => setNewSourceName(e.target.value)}
+                placeholder={t('latestNews.customSourceNamePlaceholder')}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black sm:w-36"
+                aria-label={t('latestNews.customSourceNamePlaceholder')}
+              />
+              <input
+                type="url"
+                value={newSourceUrl}
+                onChange={e => setNewSourceUrl(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !(e.nativeEvent as any).isComposing && (e as any).keyCode !== 229) handleAddSource();
+                }}
+                placeholder={t('latestNews.customSourceUrlPlaceholder')}
+                className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                aria-label={t('latestNews.customSourceUrlPlaceholder')}
+              />
               <button
-                key={tag}
-                onClick={() => onAnalyze(locale === 'zh' ? `${tag}（多源热点概念）` : `${tag} (trending concept across sources)`)}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-white text-stone-800 border border-stone-300 hover:bg-black hover:text-white hover:border-black transition-colors"
-                title={t('latestNews.hotConceptHint', { tag, sources: String(sourceCount), count: String(count) })}
+                onClick={handleAddSource}
+                className="px-4 py-1.5 text-sm font-medium rounded-lg bg-black text-white hover:bg-gray-800 transition-colors"
               >
-                # {tag}
-                <span className="text-[10px] font-semibold text-orange-600">
-                  ×{count}{sourceCount >= 2 ? ` · ${t('latestNews.crossSource', { sources: String(sourceCount) })}` : ''}
-                </span>
+                {t('latestNews.addCustomSource')}
               </button>
-            ))}
+            </div>
+            {addError && <p className="text-xs text-red-600 mt-2">{addError}</p>}
           </div>
         )}
 

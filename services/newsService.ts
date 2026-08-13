@@ -13,18 +13,53 @@ export interface NewsSource {
   name: string;
   url: string;
   type?: 'rss' | 'json';
+  /** Hidden sources are excluded from the display tabs but still feed the indicator scans. */
+  hidden?: boolean;
+  /** User-added sources (stored in localStorage, removable in the UI). */
+  custom?: boolean;
 }
 
-/** Display news sources (also part of the indicator scan window). */
+/** Built-in news sources (display tabs + indicator scan window). */
 export const NEWS_SOURCES: NewsSource[] = [
   { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
-  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
+  { id: 'huxiu', name: '虎嗅', url: 'https://rss.huxiu.com' },
   { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
   { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
   { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
-  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
-  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+  { id: 'ahead-of-ai', name: 'Ahead of AI', url: 'https://magazine.sebastianraschka.com/feed' },
+  // Hidden from tabs; still part of the indicator scan window (EN institutional signals)
+  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', hidden: true },
+  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', hidden: true },
 ];
+
+// --- User-defined custom RSS sources (localStorage) ---
+
+const CUSTOM_SOURCES_KEY = 'custom-news-sources';
+
+export const loadCustomSources = (): NewsSource[] => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CUSTOM_SOURCES_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((s: any) => s && typeof s.id === 'string' && typeof s.name === 'string' && typeof s.url === 'string')
+      .map((s: any) => ({ id: s.id, name: s.name, url: s.url, custom: true as const }));
+  } catch {
+    return [];
+  }
+};
+
+export const saveCustomSources = (sources: NewsSource[]): void => {
+  try {
+    localStorage.setItem(
+      CUSTOM_SOURCES_KEY,
+      JSON.stringify(sources.map(s => ({ id: s.id, name: s.name, url: s.url })))
+    );
+  } catch { /* best-effort */ }
+};
+
+/** Sources shown as tabs: visible built-ins plus the user's custom feeds. */
+export const getDisplaySources = (custom: NewsSource[]): NewsSource[] =>
+  [...NEWS_SOURCES.filter(s => !s.hidden), ...custom];
 
 /**
  * English financial media RSS (free feeds), used ONLY for indicator scanning.
