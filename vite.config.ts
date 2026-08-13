@@ -1,7 +1,64 @@
 import path from 'path';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'http';
 import react from '@vitejs/plugin-react';
+
+/**
+ * Dev/preview counterpart of the serverless function api/indicators.ts.
+ *
+ * The Vite dev server doesn't run Vercel functions, so without this the
+ * preview would silently fall back to "configure your own model" mode.
+ * Reuses the same compute core (services/indicatorPrecomputeCore.ts) via
+ * ssrLoadModule, with a simple in-memory cache standing in for the CDN.
+ */
+function indicatorsDevPlugin(env: Record<string, string>): Plugin {
+  const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // mirror prod s-maxage=6h
+  const cache = new Map<string, { payload: unknown; at: number }>();
+  const inflight = new Map<string, Promise<unknown>>();
+
+  return {
+    name: 'dev-indicators',
+    configureServer(server) {
+      server.middlewares.use('/api/indicators', async (req: IncomingMessage, res: ServerResponse) => {
+        const send = (status: number, payload: unknown) => {
+          res.statusCode = status;
+          res.setHeader('content-type', 'application/json');
+          res.end(JSON.stringify(payload));
+        };
+        const apiKey = env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+        if (!apiKey) return send(503, { error: 'Precompute not configured' });
+
+        const fullUrl = (req as any).originalUrl || req.url || '';
+        const locale = new URL(fullUrl, 'http://x').searchParams.get('locale') === 'en' ? 'en' : 'zh';
+
+        const cached = cache.get(locale);
+        if (cached && Date.now() - cached.at < CACHE_TTL_MS) return send(200, cached.payload);
+
+        try {
+          let promise = inflight.get(locale);
+          if (!promise) {
+            promise = server
+              .ssrLoadModule('/services/indicatorPrecomputeCore.ts')
+              .then(mod => mod.computeIndicators(
+                locale,
+                apiKey,
+                env.BUFFETT_PERCENTILE || process.env.BUFFETT_PERCENTILE,
+                env.INDICATORS_MODEL || process.env.INDICATORS_MODEL
+              ))
+              .finally(() => inflight.delete(locale));
+            inflight.set(locale, promise);
+          }
+          const payload = await promise;
+          cache.set(locale, { payload, at: Date.now() });
+          send(200, payload);
+        } catch (err) {
+          console.error('[dev] indicators precompute failed:', err instanceof Error ? err.message : err);
+          send(503, { error: 'Indicator precompute temporarily unavailable' });
+        }
+      });
+    },
+  };
+}
 
 /**
  * Dev/preview counterpart of the serverless function api/cors-proxy.ts.
@@ -62,7 +119,11 @@ function corsProxyDevPlugin(): Plugin {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+    // Load ALL env vars (no VITE_ prefix filter): the dev indicators middleware
+    // runs in Node and needs OPENROUTER_API_KEY, which Vite doesn't put on
+    // process.env by itself.
+    const env = loadEnv(mode, process.cwd(), '');
     return {
       server: {
         port: 3000,
@@ -97,7 +158,7 @@ export default defineConfig(() => {
           },
         },
       },
-      plugins: [corsProxyDevPlugin(), react()],
+      plugins: [corsProxyDevPlugin(), indicatorsDevPlugin(env), react()],
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
