@@ -13,9 +13,9 @@ import {
   type NewsSource,
 } from '../services/newsService';
 
-// Re-export so existing imports (App.tsx) keep working
+// Type-only re-exports keep Fast Refresh working (constants must be imported
+// from services/newsService directly — a value re-export here breaks HMR).
 export type { NewsArticle, NewsSource };
-export { NEWS_SOURCES };
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '极客洞察': 'bg-gray-100 text-gray-800',
