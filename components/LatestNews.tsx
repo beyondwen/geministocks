@@ -3,29 +3,32 @@ import { NewspaperIcon, SparklesIcon, XIcon, ExternalLinkIcon } from './icons/Ic
 import { useI18n } from '../hooks/useI18n';
 import { extractNewsConcepts } from '../services/geminiService';
 import { isApiConfigured } from '../services/apiConfigService';
-import { fetchNewsSource, fetchAllSources, type NewsArticle, type NewsSource } from '../services/newsService';
+import {
+  fetchNewsSource,
+  NEWS_SOURCES,
+  loadCustomSources,
+  saveCustomSources,
+  getDisplaySources,
+  loadSourcePrefs,
+  saveSourcePrefs,
+  applySourcePrefs,
+  moveId,
+  type NewsArticle,
+  type NewsSource,
+  type SourcePrefs,
+} from '../services/newsService';
 
-// Re-export so existing imports (App.tsx) keep working
+// Type-only re-exports keep Fast Refresh working (constants must be imported
+// from services/newsService directly — a value re-export here breaks HMR).
 export type { NewsArticle, NewsSource };
 
-export const NEWS_SOURCES: NewsSource[] = [
-  { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
-  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
-  { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
-  { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
-  { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
-  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
-  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
-];
-
 const SOURCE_COLORS: { [key: string]: string } = {
-  '36氪': 'bg-gray-100 text-gray-800',
   '极客洞察': 'bg-gray-100 text-gray-800',
   '雪球': 'bg-gray-100 text-gray-800',
+  '虎嗅': 'bg-gray-100 text-gray-800',
   '彭博': 'bg-gray-100 text-gray-800',
   'Buzzing': 'bg-gray-100 text-gray-800',
-  'CNBC': 'bg-gray-100 text-gray-800',
-  'MarketWatch': 'bg-gray-100 text-gray-800',
+  'Ahead of AI': 'bg-gray-100 text-gray-800',
 };
 
 // --- Helpers ---
@@ -42,9 +45,6 @@ const truncateText = (text: string, length: number) => {
 const CONCEPT_CACHE_KEY = 'news-concept-tags';
 const CONCEPT_CACHE_MAX = 120;
 const AUTO_EXTRACT_KEY = 'news-auto-extract';
-
-// Pseudo-source id for the cross-source aggregated "trending" view
-const TRENDING_ID = 'trending';
 
 const loadConceptCache = (): Record<string, string[]> => {
   try {
@@ -169,6 +169,21 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeSourceId, setActiveSourceId] = useState<string>('xueqiu'); // Default to 雪球
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [customSources, setCustomSources] = useState<NewsSource[]>(() => loadCustomSources());
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSourceName, setNewSourceName] = useState('');
+  const [newSourceUrl, setNewSourceUrl] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
+  const [sourcePrefs, setSourcePrefs] = useState<SourcePrefs>(() => loadSourcePrefs());
+  const [showManagePanel, setShowManagePanel] = useState(false);
+  // Dragged tab id: ref is the source of truth (state updates don't commit
+  // between dragstart and drop); state only drives the dim style.
+  const draggingIdRef = React.useRef<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const startDrag = (id: string | null) => {
+    draggingIdRef.current = id;
+    setDraggingId(id);
+  };
   const [conceptTags, setConceptTags] = useState<Record<string, string[]>>({});
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -240,30 +255,63 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articles, autoExtract]);
 
+  // All user-manageable sources (before user hide/order prefs)
+  const manageableSources = React.useMemo(
+    () => getDisplaySources(customSources),
+    [customSources]
+  );
+
+  // Tabs: manageable sources with user prefs applied (hide + drag order)
+  const displaySources = React.useMemo(
+    () => applySourcePrefs(manageableSources, sourcePrefs),
+    [manageableSources, sourcePrefs]
+  );
+
+  const updatePrefs = (next: SourcePrefs) => {
+    setSourcePrefs(next);
+    saveSourcePrefs(next);
+  };
+
+  const toggleSourceHidden = (id: string) => {
+    const hidden = sourcePrefs.hidden.includes(id)
+      ? sourcePrefs.hidden.filter(h => h !== id)
+      : [...sourcePrefs.hidden, id];
+    updatePrefs({ ...sourcePrefs, hidden });
+  };
+
+  const handleTabDrop = (targetId: string) => {
+    const fromId = draggingIdRef.current;
+    if (!fromId || fromId === targetId) return;
+    // Persist the full new tab order (current visible order with the move applied)
+    const order = moveId(displaySources.map(s => s.id), fromId, targetId);
+    updatePrefs({ ...sourcePrefs, order });
+    startDrag(null);
+  };
+
+  // Active tab hidden or removed: fall back to the first visible tab
+  useEffect(() => {
+    if (displaySources.length > 0 && !displaySources.some(s => s.id === activeSourceId)) {
+      setActiveSourceId(displaySources[0].id);
+    }
+  }, [displaySources, activeSourceId]);
+
   useEffect(() => {
     const fetchNews = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        if (activeSourceId === TRENDING_ID) {
-          // Aggregate view: parallel best-effort fetch, capped per source, interleaved by recency
-          setArticles(await fetchAllSources(sources, 3, 10));
-        } else {
-          const source = sources.find(s => s.id === activeSourceId);
-          if (!source) {
-            setError(t('latestNews.errorNotFound'));
-            return;
-          }
-          const list = await fetchNewsSource(source);
-          setArticles(list.slice(0, 4));
+        const source = displaySources.find(s => s.id === activeSourceId);
+        if (!source) {
+          setError(t('latestNews.errorNotFound'));
+          return;
         }
+        const list = await fetchNewsSource(source);
+        setArticles(list.slice(0, 4));
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         console.error(`Failed to fetch news (${activeSourceId}):`, errorMessage);
-        const sourceName = activeSourceId === TRENDING_ID
-          ? t('latestNews.trending')
-          : (sources.find(s => s.id === activeSourceId)?.name ?? activeSourceId);
+        const sourceName = displaySources.find(s => s.id === activeSourceId)?.name ?? activeSourceId;
         setError(t('latestNews.errorLoad', { sourceName }));
         setArticles([]);
       } finally {
@@ -272,27 +320,43 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
     };
 
     fetchNews();
-  }, [activeSourceId, sources, t]);
+  }, [activeSourceId, displaySources, t]);
 
-  // Hot concepts: tags whose articles span >= 2 distinct sources (cross-source = heat signal),
-  // or appear on >= 2 articles. Only meaningful in the trending view.
-  const hotConcepts = React.useMemo(() => {
-    if (activeSourceId !== TRENDING_ID) return [];
-    const tagMap = new Map<string, { sources: Set<string>; count: number }>();
-    for (const article of articles) {
-      for (const tag of conceptTags[article.link] ?? []) {
-        const entry = tagMap.get(tag) ?? { sources: new Set<string>(), count: 0 };
-        entry.sources.add(article.sourceName);
-        entry.count += 1;
-        tagMap.set(tag, entry);
-      }
+  const handleAddSource = () => {
+    setAddError(null);
+    const name = newSourceName.trim();
+    const url = newSourceUrl.trim();
+    if (!name || !url) {
+      setAddError(t('latestNews.customSourceRequired'));
+      return;
     }
-    return [...tagMap.entries()]
-      .filter(([, v]) => v.sources.size >= 2 || v.count >= 2)
-      .sort((a, b) => (b[1].sources.size - a[1].sources.size) || (b[1].count - a[1].count))
-      .slice(0, 8)
-      .map(([tag, v]) => ({ tag, sourceCount: v.sources.size, count: v.count }));
-  }, [activeSourceId, articles, conceptTags]);
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('bad protocol');
+    } catch {
+      setAddError(t('latestNews.customSourceInvalidUrl'));
+      return;
+    }
+    const all = [...NEWS_SOURCES, ...customSources];
+    if (all.some(s => s.url === url)) {
+      setAddError(t('latestNews.customSourceDuplicate'));
+      return;
+    }
+    const next = [...customSources, { id: `custom-${Date.now()}`, name, url, custom: true as const }];
+    setCustomSources(next);
+    saveCustomSources(next);
+    setNewSourceName('');
+    setNewSourceUrl('');
+    setShowAddForm(false);
+    setActiveSourceId(next[next.length - 1].id);
+  };
+
+  const handleRemoveSource = (id: string) => {
+    const next = customSources.filter(s => s.id !== id);
+    setCustomSources(next);
+    saveCustomSources(next);
+    if (activeSourceId === id) setActiveSourceId('xueqiu');
+  };
 
   return (
     <>
@@ -306,30 +370,74 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-4 mb-4">
-          <button
-            onClick={() => setActiveSourceId(TRENDING_ID)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
-              activeSourceId === TRENDING_ID
-                ? 'bg-black text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            title={t('latestNews.trendingHint')}
-          >
-            {t('latestNews.trending')}
-          </button>
-          {sources.map(source => (
-            <button
+          {displaySources.map(source => (
+            <span
               key={source.id}
-              onClick={() => setActiveSourceId(source.id)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
-                activeSourceId === source.id
-                  ? 'bg-black text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`relative inline-flex items-center group/tab transition-opacity ${
+                draggingId === source.id ? 'opacity-40' : ''
               }`}
+              draggable
+              onDragStart={e => {
+                startDrag(source.id);
+                if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={e => {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                handleTabDrop(source.id);
+              }}
+              onDragEnd={() => startDrag(null)}
             >
-              {source.name}
-            </button>
+              <button
+                onClick={() => setActiveSourceId(source.id)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 cursor-grab active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
+                  activeSourceId === source.id
+                    ? 'bg-black text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } ${source.custom ? 'pr-7' : ''}`}
+                title={t('latestNews.dragToReorder')}
+              >
+                {source.name}
+              </button>
+              {source.custom && (
+                <button
+                  onClick={() => handleRemoveSource(source.id)}
+                  className={`absolute right-1.5 p-0.5 rounded-full transition-colors ${
+                    activeSourceId === source.id ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-black'
+                  }`}
+                  aria-label={t('latestNews.removeCustomSource', { name: source.name })}
+                  title={t('latestNews.removeCustomSource', { name: source.name })}
+                >
+                  <XIcon className="w-3 h-3" />
+                </button>
+              )}
+            </span>
           ))}
+          <button
+            onClick={() => { setShowAddForm(v => !v); setAddError(null); }}
+            className={`px-3 py-1.5 text-sm font-medium rounded-full border border-dashed transition-colors ${
+              showAddForm
+                ? 'border-black text-black bg-gray-50'
+                : 'border-gray-300 text-gray-500 hover:border-black hover:text-black'
+            }`}
+            title={t('latestNews.addCustomSourceHint')}
+          >
+            {'+ RSS'}
+          </button>
+          <button
+            onClick={() => setShowManagePanel(v => !v)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-full border border-dashed transition-colors ${
+              showManagePanel
+                ? 'border-black text-black bg-gray-50'
+                : 'border-gray-300 text-gray-500 hover:border-black hover:text-black'
+            }`}
+            title={t('latestNews.manageSourcesHint')}
+          >
+            {t('latestNews.manageSources')}
+          </button>
           {!isLoading && !error && articles.length > 0 && (
             <div className="ml-auto flex items-center gap-2">
               <button
@@ -365,22 +473,76 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
           <p className="text-xs text-red-600 -mt-2 mb-3">{extractError}</p>
         )}
 
-        {hotConcepts.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
-            <span className="text-xs font-semibold text-stone-500 mr-1">{t('latestNews.hotConcepts')}</span>
-            {hotConcepts.map(({ tag, sourceCount, count }) => (
+        {showAddForm && (
+          <div className="mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={newSourceName}
+                onChange={e => setNewSourceName(e.target.value)}
+                placeholder={t('latestNews.customSourceNamePlaceholder')}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black sm:w-36"
+                aria-label={t('latestNews.customSourceNamePlaceholder')}
+              />
+              <input
+                type="url"
+                value={newSourceUrl}
+                onChange={e => setNewSourceUrl(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !(e.nativeEvent as any).isComposing && (e as any).keyCode !== 229) handleAddSource();
+                }}
+                placeholder={t('latestNews.customSourceUrlPlaceholder')}
+                className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                aria-label={t('latestNews.customSourceUrlPlaceholder')}
+              />
               <button
-                key={tag}
-                onClick={() => onAnalyze(locale === 'zh' ? `${tag}（多源热点概念）` : `${tag} (trending concept across sources)`)}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-white text-stone-800 border border-stone-300 hover:bg-black hover:text-white hover:border-black transition-colors"
-                title={t('latestNews.hotConceptHint', { tag, sources: String(sourceCount), count: String(count) })}
+                onClick={handleAddSource}
+                className="px-4 py-1.5 text-sm font-medium rounded-lg bg-black text-white hover:bg-gray-800 transition-colors"
               >
-                # {tag}
-                <span className="text-[10px] font-semibold text-orange-600">
-                  ×{count}{sourceCount >= 2 ? ` · ${t('latestNews.crossSource', { sources: String(sourceCount) })}` : ''}
-                </span>
+                {t('latestNews.addCustomSource')}
               </button>
-            ))}
+            </div>
+            {addError && <p className="text-xs text-red-600 mt-2">{addError}</p>}
+          </div>
+        )}
+
+        {showManagePanel && (
+          <div className="mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <p className="text-xs text-stone-500 mb-2">{t('latestNews.manageSourcesDesc')}</p>
+            <ul className="space-y-1">
+              {manageableSources.map(source => {
+                const isHidden = sourcePrefs.hidden.includes(source.id);
+                return (
+                  <li key={source.id} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-white transition-colors">
+                    <span className={`text-sm ${isHidden ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                      {source.name}
+                      {source.custom && (
+                        <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-stone-200 text-stone-600 no-underline inline-block align-middle">
+                          {t('latestNews.customBadge')}
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      onClick={() => toggleSourceHidden(source.id)}
+                      role="switch"
+                      aria-checked={!isHidden}
+                      aria-label={t(isHidden ? 'latestNews.showSource' : 'latestNews.hideSource', { name: source.name })}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-black transition-colors"
+                    >
+                      <span
+                        className={`relative inline-flex h-4 w-7 shrink-0 rounded-full transition-colors ${!isHidden ? 'bg-black' : 'bg-gray-300'}`}
+                        aria-hidden="true"
+                      >
+                        <span
+                          className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${!isHidden ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+                        />
+                      </span>
+                      {t(isHidden ? 'latestNews.hiddenLabel' : 'latestNews.visibleLabel')}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 
