@@ -9,8 +9,13 @@ import {
   loadCustomSources,
   saveCustomSources,
   getDisplaySources,
+  loadSourcePrefs,
+  saveSourcePrefs,
+  applySourcePrefs,
+  moveId,
   type NewsArticle,
   type NewsSource,
+  type SourcePrefs,
 } from '../services/newsService';
 
 // Type-only re-exports keep Fast Refresh working (constants must be imported
@@ -169,6 +174,16 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
   const [newSourceName, setNewSourceName] = useState('');
   const [newSourceUrl, setNewSourceUrl] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
+  const [sourcePrefs, setSourcePrefs] = useState<SourcePrefs>(() => loadSourcePrefs());
+  const [showManagePanel, setShowManagePanel] = useState(false);
+  // Dragged tab id: ref is the source of truth (state updates don't commit
+  // between dragstart and drop); state only drives the dim style.
+  const draggingIdRef = React.useRef<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const startDrag = (id: string | null) => {
+    draggingIdRef.current = id;
+    setDraggingId(id);
+  };
   const [conceptTags, setConceptTags] = useState<Record<string, string[]>>({});
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -240,11 +255,45 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articles, autoExtract]);
 
-  // Tabs: visible built-ins + user's custom feeds
-  const displaySources = React.useMemo(
+  // All user-manageable sources (before user hide/order prefs)
+  const manageableSources = React.useMemo(
     () => getDisplaySources(customSources),
     [customSources]
   );
+
+  // Tabs: manageable sources with user prefs applied (hide + drag order)
+  const displaySources = React.useMemo(
+    () => applySourcePrefs(manageableSources, sourcePrefs),
+    [manageableSources, sourcePrefs]
+  );
+
+  const updatePrefs = (next: SourcePrefs) => {
+    setSourcePrefs(next);
+    saveSourcePrefs(next);
+  };
+
+  const toggleSourceHidden = (id: string) => {
+    const hidden = sourcePrefs.hidden.includes(id)
+      ? sourcePrefs.hidden.filter(h => h !== id)
+      : [...sourcePrefs.hidden, id];
+    updatePrefs({ ...sourcePrefs, hidden });
+  };
+
+  const handleTabDrop = (targetId: string) => {
+    const fromId = draggingIdRef.current;
+    if (!fromId || fromId === targetId) return;
+    // Persist the full new tab order (current visible order with the move applied)
+    const order = moveId(displaySources.map(s => s.id), fromId, targetId);
+    updatePrefs({ ...sourcePrefs, order });
+    startDrag(null);
+  };
+
+  // Active tab hidden or removed: fall back to the first visible tab
+  useEffect(() => {
+    if (displaySources.length > 0 && !displaySources.some(s => s.id === activeSourceId)) {
+      setActiveSourceId(displaySources[0].id);
+    }
+  }, [displaySources, activeSourceId]);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -322,14 +371,34 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
 
         <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-4 mb-4">
           {displaySources.map(source => (
-            <span key={source.id} className="relative inline-flex items-center group/tab">
+            <span
+              key={source.id}
+              className={`relative inline-flex items-center group/tab transition-opacity ${
+                draggingId === source.id ? 'opacity-40' : ''
+              }`}
+              draggable
+              onDragStart={e => {
+                startDrag(source.id);
+                if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={e => {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                handleTabDrop(source.id);
+              }}
+              onDragEnd={() => startDrag(null)}
+            >
               <button
                 onClick={() => setActiveSourceId(source.id)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 cursor-grab active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${
                   activeSourceId === source.id
                     ? 'bg-black text-white shadow-md'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 } ${source.custom ? 'pr-7' : ''}`}
+                title={t('latestNews.dragToReorder')}
               >
                 {source.name}
               </button>
@@ -357,6 +426,17 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
             title={t('latestNews.addCustomSourceHint')}
           >
             {'+ RSS'}
+          </button>
+          <button
+            onClick={() => setShowManagePanel(v => !v)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-full border border-dashed transition-colors ${
+              showManagePanel
+                ? 'border-black text-black bg-gray-50'
+                : 'border-gray-300 text-gray-500 hover:border-black hover:text-black'
+            }`}
+            title={t('latestNews.manageSourcesHint')}
+          >
+            {t('latestNews.manageSources')}
           </button>
           {!isLoading && !error && articles.length > 0 && (
             <div className="ml-auto flex items-center gap-2">
@@ -423,6 +503,46 @@ const LatestNews: React.FC<LatestNewsProps> = ({ onAnalyze, sources }) => {
               </button>
             </div>
             {addError && <p className="text-xs text-red-600 mt-2">{addError}</p>}
+          </div>
+        )}
+
+        {showManagePanel && (
+          <div className="mb-4 p-3 rounded-xl bg-stone-50 border border-stone-200">
+            <p className="text-xs text-stone-500 mb-2">{t('latestNews.manageSourcesDesc')}</p>
+            <ul className="space-y-1">
+              {manageableSources.map(source => {
+                const isHidden = sourcePrefs.hidden.includes(source.id);
+                return (
+                  <li key={source.id} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-white transition-colors">
+                    <span className={`text-sm ${isHidden ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                      {source.name}
+                      {source.custom && (
+                        <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-stone-200 text-stone-600 no-underline inline-block align-middle">
+                          {t('latestNews.customBadge')}
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      onClick={() => toggleSourceHidden(source.id)}
+                      role="switch"
+                      aria-checked={!isHidden}
+                      aria-label={t(isHidden ? 'latestNews.showSource' : 'latestNews.hideSource', { name: source.name })}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-black transition-colors"
+                    >
+                      <span
+                        className={`relative inline-flex h-4 w-7 shrink-0 rounded-full transition-colors ${!isHidden ? 'bg-black' : 'bg-gray-300'}`}
+                        aria-hidden="true"
+                      >
+                        <span
+                          className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${!isHidden ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+                        />
+                      </span>
+                      {t(isHidden ? 'latestNews.hiddenLabel' : 'latestNews.visibleLabel')}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 

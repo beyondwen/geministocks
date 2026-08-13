@@ -102,7 +102,16 @@
     "customSourceUrlPlaceholder": "RSS URL, e.g. https://example.com/feed",
     "customSourceRequired": "Name and RSS URL are required",
     "customSourceInvalidUrl": "Invalid RSS URL",
-    "customSourceDuplicate": "This RSS source already exists"
+    "customSourceDuplicate": "This RSS source already exists",
+    "manageSources": "Manage",
+    "manageSourcesHint": "Manage sources (hide/show)",
+    "manageSourcesDesc": "Toggle off to hide a source from the tabs (it is not deleted); drag the tabs above to reorder.",
+    "dragToReorder": "Drag to reorder",
+    "hideSource": "Hide {{name}}",
+    "showSource": "Show {{name}}",
+    "hiddenLabel": "Hidden",
+    "visibleLabel": "Visible",
+    "customBadge": "Custom"
   },
   "loader": {
     "analyzing": "Analyzing...",

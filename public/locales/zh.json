@@ -102,7 +102,16 @@
     "customSourceUrlPlaceholder": "RSS 地址，如 https://example.com/feed",
     "customSourceRequired": "请填写名称和 RSS 地址",
     "customSourceInvalidUrl": "RSS 地址格式不正确",
-    "customSourceDuplicate": "该 RSS 源已存在"
+    "customSourceDuplicate": "该 RSS 源已存在",
+    "manageSources": "管理",
+    "manageSourcesHint": "管理订阅源（隐藏/显示）",
+    "manageSourcesDesc": "关闭开关可从标签栏隐藏对应订阅源（不会删除）；直接拖动上方标签可调整顺序。",
+    "dragToReorder": "拖动可调整顺序",
+    "hideSource": "隐藏 {{name}}",
+    "showSource": "显示 {{name}}",
+    "hiddenLabel": "已隐藏",
+    "visibleLabel": "显示中",
+    "customBadge": "自定义"
   },
   "loader": {
     "analyzing": "正在分析中...",

@@ -61,6 +61,64 @@ export const saveCustomSources = (sources: NewsSource[]): void => {
 export const getDisplaySources = (custom: NewsSource[]): NewsSource[] =>
   [...NEWS_SOURCES.filter(s => !s.hidden), ...custom];
 
+// --- User source preferences: hide + drag-reorder (localStorage) ---
+
+export interface SourcePrefs {
+  /** Tab order as source ids; ids not listed keep natural order after the listed ones. */
+  order: string[];
+  /** Source ids the user chose to hide from the tabs. */
+  hidden: string[];
+}
+
+const SOURCE_PREFS_KEY = 'news-source-prefs';
+
+export const loadSourcePrefs = (): SourcePrefs => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SOURCE_PREFS_KEY) || '{}');
+    return {
+      order: Array.isArray(raw.order) ? raw.order.filter((x: any) => typeof x === 'string') : [],
+      hidden: Array.isArray(raw.hidden) ? raw.hidden.filter((x: any) => typeof x === 'string') : [],
+    };
+  } catch {
+    return { order: [], hidden: [] };
+  }
+};
+
+export const saveSourcePrefs = (prefs: SourcePrefs): void => {
+  try {
+    localStorage.setItem(SOURCE_PREFS_KEY, JSON.stringify(prefs));
+  } catch { /* best-effort */ }
+};
+
+/**
+ * Pure: apply user prefs to a source list — drop user-hidden ids, then sort
+ * by position in prefs.order (ids not in order keep natural order, after the
+ * ordered ones). Safe against stale ids (removed sources are simply ignored).
+ */
+export const applySourcePrefs = (sources: NewsSource[], prefs: SourcePrefs): NewsSource[] => {
+  const hidden = new Set(prefs.hidden);
+  const rank = (id: string) => {
+    const i = prefs.order.indexOf(id);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  return sources
+    .filter(s => !hidden.has(s.id))
+    .map((s, naturalIndex) => ({ s, naturalIndex }))
+    .sort((a, b) => rank(a.s.id) - rank(b.s.id) || a.naturalIndex - b.naturalIndex)
+    .map(({ s }) => s);
+};
+
+/** Pure: move id `fromId` so it lands at `toId`'s position in the given id list. */
+export const moveId = (ids: string[], fromId: string, toId: string): string[] => {
+  const from = ids.indexOf(fromId);
+  const to = ids.indexOf(toId);
+  if (from === -1 || to === -1 || from === to) return ids;
+  const next = [...ids];
+  next.splice(from, 1);
+  next.splice(to, 0, fromId);
+  return next;
+};
+
 /**
  * English financial media RSS (free feeds), used ONLY for indicator scanning.
  * Institutional signals (price targets, tariff game) live mostly in EN media.
