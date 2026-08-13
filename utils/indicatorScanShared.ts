@@ -1,7 +1,6 @@
 // Shared indicator-scan logic: prompt builders + response parsers.
-// Framework-free and environment-free (no browser APIs, no process.env) so it can
-// be used BOTH by the client (services/geminiService.ts, user's own model) and
-// the server precompute endpoint (api/indicators.ts, site's key).
+// Framework-free and environment-free (no browser APIs, no process.env),
+// consumed by services/geminiService.ts (user's own model) and unit tests.
 
 import type { SentimentScanResult } from './sentimentUtils';
 import type { TacoScanResult } from './tacoUtils';

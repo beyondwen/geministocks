@@ -5,7 +5,6 @@ import { isApiConfigured } from '../services/apiConfigService';
 import { type NewsSource } from '../services/newsService';
 import { gatherIndicatorArticles, TACO_QUERIES } from '../services/indicatorNewsService';
 import { deriveTacoPhase, computeEdgeDecay, decayBand, type TacoScanResult, type TacoPhase } from '../utils/tacoUtils';
-import { fetchPrecomputedIndicators } from '../services/precomputedIndicatorsService';
 import { SparklesIcon } from './icons/Icons';
 
 const STORAGE_KEY = 'taco-monitor';
@@ -47,26 +46,13 @@ const SIGNAL_KEYS = ['threatEscalation', 'marketPanic', 'walkback', 'complacency
 const TacoMonitor: React.FC<{ sources: NewsSource[] }> = ({ sources }) => {
   const { t, locale } = useI18n();
   const [scan, setScan] = useState<TacoScanResult | null>(null);
-  const [isPrecomputed, setIsPrecomputed] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    const stored = loadStored();
-    setScan(stored);
-
-    // No manual scan stored: show the site-precomputed result (zero config).
-    if (!stored) {
-      let cancelled = false;
-      fetchPrecomputedIndicators(locale).then(pre => {
-        if (cancelled || !pre) return;
-        setScan(prev => prev ?? pre.taco);
-        setIsPrecomputed(true);
-      });
-      return () => { cancelled = true; };
-    }
-  }, [locale]);
+    setScan(loadStored());
+  }, []);
 
   const handleScan = async () => {
     if (!isApiConfigured()) {
@@ -80,7 +66,6 @@ const TacoMonitor: React.FC<{ sources: NewsSource[] }> = ({ sources }) => {
       const { articles } = await gatherIndicatorArticles(sources, TACO_QUERIES);
       const result = await analyzeTacoSignals(articles, locale);
       setScan(result);
-      setIsPrecomputed(false); // manual scan overrides the site-precomputed view
       saveStored(result);
     } catch (err) {
       console.error('TACO scan failed:', err instanceof Error ? err.message : err);
@@ -179,11 +164,6 @@ const TacoMonitor: React.FC<{ sources: NewsSource[] }> = ({ sources }) => {
       {/* Scan meta + signals detail */}
       {scan && (
         <p className="text-[10px] text-gray-400 mb-2">
-          {isPrecomputed && (
-            <span className="inline-block px-1.5 py-0.5 mr-1.5 rounded bg-blue-50 text-blue-600 border border-blue-200 font-medium">
-              {t('taco.precomputed')}
-            </span>
-          )}
           {t('taco.lastScan', {
             count: String(scan.articleCount),
             time: new Date(scan.scannedAt).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),

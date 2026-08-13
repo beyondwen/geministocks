@@ -579,8 +579,7 @@
       "high": "High",
       "extreme": "Extreme"
     },
-    "disclaimer": "This gauge combines AI interpretation of public news with a manually entered valuation percentile. Research reference only, not investment advice. Major tops are rare events — treat this as a position-sizing input, not a sell-everything switch.",
-    "precomputed": "Site precomputed"
+    "disclaimer": "This gauge combines AI interpretation of public news with a manually entered valuation percentile. Research reference only, not investment advice. Major tops are rare events — treat this as a position-sizing input, not a sell-everything switch."
   },
   "taco": {
     "title": "TACO Cycle Monitor",
@@ -619,7 +618,6 @@
       "complacency": "Threat Numbness",
       "tacoMentions": "TACO Meme Exposure"
     },
-    "disclaimer": "AI interpretation of public news; the phase reflects the current news window only. Past validity of the TACO pattern does not guarantee the future — the one failure may cost far more than all prior small wins. Research reference only, not investment advice.",
-    "precomputed": "Site precomputed"
+    "disclaimer": "AI interpretation of public news; the phase reflects the current news window only. Past validity of the TACO pattern does not guarantee the future — the one failure may cost far more than all prior small wins. Research reference only, not investment advice."
   }
 }
