@@ -361,17 +361,17 @@ const MainPage: React.FC = () => {
                       />
                     </Suspense>
                 ) : (
-                  // DASHBOARD VIEW
+                  // DASHBOARD VIEW: indicators first (zero-config value), then news, then history
                   <div className="space-y-8 animate-fade-in">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                      <MarketThermometer sources={NEWS_SOURCES} />
+                      <TacoMonitor sources={NEWS_SOURCES} />
+                    </div>
                     <div className="grid grid-cols-1 gap-8 items-start">
                       {showLatestNews && <LatestNews 
                         onAnalyze={handleNewsSelect} 
                         sources={NEWS_SOURCES}
                       />}
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                      <MarketThermometer sources={NEWS_SOURCES} />
-                      <TacoMonitor sources={NEWS_SOURCES} />
                     </div>
                      <AnalysisHistory
                         history={topicHistory.map(h => ({

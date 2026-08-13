@@ -15,6 +15,27 @@ export interface NewsSource {
   type?: 'rss' | 'json';
 }
 
+/** Display news sources (also part of the indicator scan window). */
+export const NEWS_SOURCES: NewsSource[] = [
+  { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
+  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
+  { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
+  { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
+  { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
+  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+];
+
+/**
+ * English financial media RSS (free feeds), used ONLY for indicator scanning.
+ * Institutional signals (price targets, tariff game) live mostly in EN media.
+ */
+export const ENGLISH_FINANCE_SOURCES: NewsSource[] = [
+  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+  { id: 'yahoo-finance', name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
+];
+
 /** Fetch one source and return its articles sorted by date (newest first). */
 export const fetchNewsSource = async (source: NewsSource): Promise<NewsArticle[]> => {
   let fetchedArticles: Omit<NewsArticle, 'sourceName'>[] = [];

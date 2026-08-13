@@ -6,7 +6,7 @@
 //      in the news list) to fix the topic mismatch of Chinese tech/A-share heavy feeds.
 
 import { searchExa, isExaSearchEnabled, type ExaResult } from './exaSearchService';
-import { fetchAllSources, type NewsArticle, type NewsSource } from './newsService';
+import { fetchAllSources, ENGLISH_FINANCE_SOURCES, type NewsArticle, type NewsSource } from './newsService';
 
 /** Minimal shape the AI scanners need. */
 export interface IndicatorArticle {
@@ -15,15 +15,7 @@ export interface IndicatorArticle {
   sourceName: string;
 }
 
-/**
- * English financial media RSS (free feeds), used ONLY for indicator scanning.
- * Institutional signals (price targets, tariff game) live mostly in EN media.
- */
-export const ENGLISH_FINANCE_SOURCES: NewsSource[] = [
-  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
-  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
-  { id: 'yahoo-finance', name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
-];
+export { ENGLISH_FINANCE_SOURCES };
 
 /** Targeted queries for the exit-pressure thermometer (institutional top signals). */
 export const THERMOMETER_QUERIES: string[] = [

@@ -3,20 +3,11 @@ import { NewspaperIcon, SparklesIcon, XIcon, ExternalLinkIcon } from './icons/Ic
 import { useI18n } from '../hooks/useI18n';
 import { extractNewsConcepts } from '../services/geminiService';
 import { isApiConfigured } from '../services/apiConfigService';
-import { fetchNewsSource, fetchAllSources, type NewsArticle, type NewsSource } from '../services/newsService';
+import { fetchNewsSource, fetchAllSources, NEWS_SOURCES, type NewsArticle, type NewsSource } from '../services/newsService';
 
 // Re-export so existing imports (App.tsx) keep working
 export type { NewsArticle, NewsSource };
-
-export const NEWS_SOURCES: NewsSource[] = [
-  { id: 'xueqiu', name: '雪球', url: 'https://xueqiu.com/hots/topic/rss' },
-  { id: '36kr', name: '36氪', url: 'https://36kr.com/feed' },
-  { id: 'geekinsight', name: '极客洞察', url: 'https://api.newshacker.me/rss' },
-  { id: 'bloomberg', name: '彭博', url: 'https://bbg.buzzing.cc/feed.xml' },
-  { id: 'buzzing', name: 'Buzzing', url: 'https://www.buzzing.cc/feed.xml' },
-  { id: 'cnbc', name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
-  { id: 'marketwatch', name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
-];
+export { NEWS_SOURCES };
 
 const SOURCE_COLORS: { [key: string]: string } = {
   '36氪': 'bg-gray-100 text-gray-800',

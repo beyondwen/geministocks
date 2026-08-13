@@ -5,6 +5,7 @@ import { isApiConfigured } from '../services/apiConfigService';
 import { type NewsSource } from '../services/newsService';
 import { gatherIndicatorArticles, THERMOMETER_QUERIES } from '../services/indicatorNewsService';
 import { computeExitPressure, pressureBand, type SentimentScanResult } from '../utils/sentimentUtils';
+import { fetchPrecomputedIndicators } from '../services/precomputedIndicatorsService';
 import { SparklesIcon } from './icons/Icons';
 
 const STORAGE_KEY = 'market-thermometer';
@@ -45,6 +46,7 @@ const MarketThermometer: React.FC<{ sources: NewsSource[] }> = ({ sources }) => 
   const { t, locale } = useI18n();
   const [buffettPercentile, setBuffettPercentile] = useState<number | null>(null);
   const [scan, setScan] = useState<SentimentScanResult | null>(null);
+  const [isPrecomputed, setIsPrecomputed] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -53,7 +55,21 @@ const MarketThermometer: React.FC<{ sources: NewsSource[] }> = ({ sources }) => 
     const stored = loadStored();
     setBuffettPercentile(stored.buffettPercentile);
     setScan(stored.scan);
-  }, []);
+
+    // No manual scan stored: show the site-precomputed result so first-time
+    // visitors see a live gauge with zero configuration. Fails soft in dev.
+    if (!stored.scan) {
+      let cancelled = false;
+      fetchPrecomputedIndicators(locale).then(pre => {
+        if (cancelled || !pre) return;
+        setScan(prev => prev ?? pre.sentiment);
+        setIsPrecomputed(true);
+        // Slow variable default from the site, unless the user set their own
+        setBuffettPercentile(prev => prev ?? pre.buffettPercentile);
+      });
+      return () => { cancelled = true; };
+    }
+  }, [locale]);
 
   const handlePercentileChange = (value: number) => {
     setBuffettPercentile(value);
@@ -72,6 +88,7 @@ const MarketThermometer: React.FC<{ sources: NewsSource[] }> = ({ sources }) => 
       const { articles } = await gatherIndicatorArticles(sources, THERMOMETER_QUERIES);
       const result = await analyzeMarketSentiment(articles, locale);
       setScan(result);
+      setIsPrecomputed(false); // manual scan overrides the site-precomputed view
       saveStored({ buffettPercentile, scan: result });
     } catch (err) {
       console.error('Thermometer scan failed:', err instanceof Error ? err.message : err);
@@ -162,6 +179,11 @@ const MarketThermometer: React.FC<{ sources: NewsSource[] }> = ({ sources }) => 
           </div>
           {scan ? (
             <p className="text-[10px] text-gray-400 leading-relaxed">
+              {isPrecomputed && (
+                <span className="inline-block px-1.5 py-0.5 mr-1.5 rounded bg-blue-50 text-blue-600 border border-blue-200 font-medium">
+                  {t('thermometer.precomputed')}
+                </span>
+              )}
               {t('thermometer.lastScan', {
                 count: String(scan.articleCount),
                 time: new Date(scan.scannedAt).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
